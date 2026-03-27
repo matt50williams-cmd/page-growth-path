@@ -1,15 +1,20 @@
 import { useState, useEffect } from "react";
-import { ExternalLink, RefreshCw, X, ChevronRight, TrendingUp, AlertCircle, CheckCircle2, DollarSign, Users, Eye, ShoppingCart, BarChart2, LogOut } from "lucide-react";
+import { ExternalLink, RefreshCw, X, ChevronRight, TrendingUp, AlertCircle, CheckCircle2, DollarSign, Users, Eye, ShoppingCart, BarChart2, LogOut, Trash2 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, FunnelChart, Funnel, LabelList } from 'recharts';
+import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const API_BASE = "https://pageaudit-engine.onrender.com";
 
-function apiFetch(path) {
+function apiFetch(path, options = {}) {
   const token = localStorage.getItem('pageaudit_token');
   return fetch(`${API_BASE}${path}`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(options.headers || {}),
+    },
   }).then(r => r.json());
 }
 
@@ -148,6 +153,29 @@ function AuditDetail({ auditId, onClose }) {
   );
 }
 
+function DeleteConfirm({ audit, onConfirm, onCancel }) {
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+        <h2 className="text-lg font-bold text-gray-900 mb-2">Delete Audit?</h2>
+        <p className="text-sm text-gray-500 mb-6">
+          Are you sure you want to delete the audit for <strong>{audit.customer_name || audit.email}</strong>? This cannot be undone.
+        </p>
+        <div className="flex gap-3">
+          <button onClick={onCancel}
+            className="flex-1 border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-semibold hover:border-gray-400 transition-colors">
+            Cancel
+          </button>
+          <button onClick={onConfirm}
+            className="flex-1 bg-red-500 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-red-600 transition-colors">
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const TABS = ["Overview", "Customers", "Revenue", "Funnel", "Drop-offs"];
 
 export default function Backoffice() {
@@ -160,13 +188,12 @@ export default function Backoffice() {
   const [funnel, setFunnel] = useState(null);
   const [loading, setLoading] = useState(true);
   const [viewingId, setViewingId] = useState(null);
+  const [deletingAudit, setDeletingAudit] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
   useEffect(() => {
-    if (user && user.role !== 'admin') {
-      navigate('/dashboard');
-    }
+    if (user && user.role !== 'admin') navigate('/dashboard');
   }, [user, navigate]);
 
   const loadAll = async () => {
@@ -191,13 +218,21 @@ export default function Backoffice() {
 
   useEffect(() => { loadAll(); }, []);
 
+  const handleDelete = async (audit) => {
+    try {
+      await apiFetch(`/api/admin/audits/${audit.id}`, { method: 'DELETE' });
+      setAudits(prev => prev.filter(a => a.id !== audit.id));
+      setDeletingAudit(null);
+    } catch (err) {
+      console.error('Delete failed:', err);
+    }
+  };
+
   const filtered = audits.filter(o => {
     const matchStatus = statusFilter === 'all' || o.status === statusFilter;
     const matchSearch = !searchTerm || o.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) || o.email?.toLowerCase().includes(searchTerm.toLowerCase());
     return matchStatus && matchSearch;
   });
-
-  const COLORS = ['#1877F2', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
   const statusBreakdown = [
     { name: 'Completed', value: audits.filter(a => a.status === 'completed').length, fill: '#10b981' },
@@ -207,12 +242,12 @@ export default function Backoffice() {
   ].filter(d => d.value > 0);
 
   const funnelSteps = funnel?.funnel_counts ? [
-    { name: 'Landing Views', value: funnel.funnel_counts.find(f => f.event_type === 'landing_viewed')?.count || 0 },
-    { name: 'Intake Started', value: funnel.funnel_counts.find(f => f.event_type === 'intake_submitted')?.count || 0 },
-    { name: 'Preview Viewed', value: funnel.funnel_counts.find(f => f.event_type === 'preview_viewed')?.count || 0 },
-    { name: 'Unlock Clicked', value: funnel.funnel_counts.find(f => f.event_type === 'unlock_clicked')?.count || 0 },
-    { name: 'Paid', value: funnel.funnel_counts.find(f => f.event_type === 'payment_success')?.count || 0 },
-    { name: 'Account Created', value: funnel.funnel_counts.find(f => f.event_type === 'account_created')?.count || 0 },
+    { name: 'Landing Views', value: Number(funnel.funnel_counts.find(f => f.event_type === 'landing_viewed')?.count || 0) },
+    { name: 'Intake Submitted', value: Number(funnel.funnel_counts.find(f => f.event_type === 'intake_submitted')?.count || 0) },
+    { name: 'Preview Viewed', value: Number(funnel.funnel_counts.find(f => f.event_type === 'preview_viewed')?.count || 0) },
+    { name: 'Unlock Clicked', value: Number(funnel.funnel_counts.find(f => f.event_type === 'unlock_clicked')?.count || 0) },
+    { name: 'Paid', value: Number(funnel.funnel_counts.find(f => f.event_type === 'payment_success')?.count || 0) },
+    { name: 'Account Created', value: Number(funnel.funnel_counts.find(f => f.event_type === 'account_created')?.count || 0) },
   ] : [];
 
   if (loading) {
@@ -225,7 +260,6 @@ export default function Backoffice() {
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
-      {/* Nav */}
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -242,7 +276,6 @@ export default function Backoffice() {
             </button>
           </div>
         </div>
-        {/* Tabs */}
         <div className="max-w-7xl mx-auto px-6 flex gap-1 overflow-x-auto">
           {TABS.map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)}
@@ -255,30 +288,25 @@ export default function Backoffice() {
 
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
 
-        {/* ── OVERVIEW TAB ── */}
+        {/* OVERVIEW */}
         {activeTab === "Overview" && (
           <div className="space-y-8">
             <div>
               <h1 className="text-2xl font-bold text-gray-900 mb-1">Command Center</h1>
               <p className="text-gray-500 text-sm">Everything you need to run and grow PageAudit Pro.</p>
             </div>
-
-            {/* Today vs All Time */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <MetricCard icon={Eye} label="Views Today" value={overview?.today?.views ?? '—'} color="text-blue-600" bg="bg-blue-50" />
               <MetricCard icon={ShoppingCart} label="Sales Today" value={overview?.today?.sales ?? '—'} color="text-green-600" bg="bg-green-50" />
               <MetricCard icon={DollarSign} label="Revenue Today" value={`$${(overview?.today?.revenue ?? 0).toFixed(2)}`} color="text-emerald-600" bg="bg-emerald-50" />
               <MetricCard icon={Users} label="Total Users" value={overview?.all_time?.users ?? '—'} color="text-purple-600" bg="bg-purple-50" />
             </div>
-
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <MetricCard icon={TrendingUp} label="All-Time Revenue" value={`$${(overview?.all_time?.revenue ?? 0).toFixed(2)}`} color="text-emerald-600" bg="bg-emerald-50" />
               <MetricCard icon={ShoppingCart} label="All-Time Sales" value={overview?.all_time?.sales ?? '—'} color="text-blue-600" bg="bg-blue-50" />
               <MetricCard icon={BarChart2} label="Conversion Rate" value={`${overview?.all_time?.conversion_rate ?? 0}%`} color="text-orange-600" bg="bg-orange-50" />
               <MetricCard icon={CheckCircle2} label="Total Audits" value={audits.length} color="text-indigo-600" bg="bg-indigo-50" />
             </div>
-
-            {/* Charts row */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
                 <h3 className="font-bold text-gray-900 mb-4">Audit Status Breakdown</h3>
@@ -293,7 +321,6 @@ export default function Backoffice() {
                   </ResponsiveContainer>
                 ) : <p className="text-sm text-gray-400 text-center py-12">No data yet</p>}
               </div>
-
               <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
                 <h3 className="font-bold text-gray-900 mb-4">Quick Stats</h3>
                 <div className="space-y-4">
@@ -314,11 +341,10 @@ export default function Backoffice() {
           </div>
         )}
 
-        {/* ── CUSTOMERS TAB ── */}
+        {/* CUSTOMERS */}
         {activeTab === "Customers" && (
           <div className="space-y-6">
             <h1 className="text-2xl font-bold text-gray-900">All Customers</h1>
-
             <div className="flex flex-col sm:flex-row gap-3">
               <input type="text" placeholder="Search by name or email..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
                 className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1877F2]/30" />
@@ -331,9 +357,7 @@ export default function Backoffice() {
                 <option value="failed">Failed</option>
               </select>
             </div>
-
             <p className="text-xs text-gray-400">{filtered.length} results</p>
-
             <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
               <table className="w-full text-sm">
                 <thead>
@@ -363,9 +387,14 @@ export default function Backoffice() {
                       <td className="px-4 py-3">{audit.paid ? <span className="text-green-600 font-semibold text-xs">✓ ${audit.amount_paid}</span> : <span className="text-gray-400 text-xs">—</span>}</td>
                       <td className="px-4 py-3 text-xs text-gray-500">{audit.created_at ? new Date(audit.created_at).toLocaleDateString() : "—"}</td>
                       <td className="px-4 py-3 text-right">
-                        <button onClick={() => setViewingId(audit.id)} className="text-xs text-[#1877F2] hover:underline inline-flex items-center gap-1">
-                          View <ChevronRight className="w-3.5 h-3.5" />
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          <button onClick={() => setViewingId(audit.id)} className="text-xs text-[#1877F2] hover:underline inline-flex items-center gap-1">
+                            View <ChevronRight className="w-3.5 h-3.5" />
+                          </button>
+                          <button onClick={() => setDeletingAudit(audit)} className="text-xs text-red-400 hover:text-red-600 inline-flex items-center gap-1">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -376,18 +405,16 @@ export default function Backoffice() {
           </div>
         )}
 
-        {/* ── REVENUE TAB ── */}
+        {/* REVENUE */}
         {activeTab === "Revenue" && (
           <div className="space-y-8">
             <h1 className="text-2xl font-bold text-gray-900">Revenue</h1>
-
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <MetricCard icon={DollarSign} label="All-Time Revenue" value={`$${(revenue?.all_time?.revenue ?? 0).toFixed(2)}`} color="text-emerald-600" bg="bg-emerald-50" />
               <MetricCard icon={ShoppingCart} label="Total Paid Audits" value={revenue?.all_time?.paid_audits ?? '—'} color="text-blue-600" bg="bg-blue-50" />
               <MetricCard icon={DollarSign} label="Revenue Today" value={`$${(revenue?.today?.revenue ?? 0).toFixed(2)}`} color="text-green-600" bg="bg-green-50" />
               <MetricCard icon={Users} label="Total Users" value={revenue?.total_users ?? '—'} color="text-purple-600" bg="bg-purple-50" />
             </div>
-
             <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
               <h3 className="font-bold text-gray-900 mb-6">Daily Revenue (Last 30 Days)</h3>
               {revenue?.daily_revenue?.length > 0 ? (
@@ -404,7 +431,6 @@ export default function Backoffice() {
                 <div className="flex items-center justify-center h-40 text-gray-400 text-sm">No revenue data yet — make your first sale!</div>
               )}
             </div>
-
             <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
               <h3 className="font-bold text-gray-900 mb-6">Daily Orders</h3>
               {revenue?.daily_revenue?.length > 0 ? (
@@ -424,11 +450,10 @@ export default function Backoffice() {
           </div>
         )}
 
-        {/* ── FUNNEL TAB ── */}
+        {/* FUNNEL */}
         {activeTab === "Funnel" && (
           <div className="space-y-8">
             <h1 className="text-2xl font-bold text-gray-900">Conversion Funnel</h1>
-
             {funnelSteps.length > 0 ? (
               <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
                 <h3 className="font-bold text-gray-900 mb-6">Full Funnel</h3>
@@ -460,7 +485,6 @@ export default function Backoffice() {
                 No funnel data yet. Traffic tracking will appear here once visitors start coming.
               </div>
             )}
-
             {funnel?.campaigns?.length > 0 && (
               <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
                 <h3 className="font-bold text-gray-900 mb-4">Campaign Performance</h3>
@@ -492,14 +516,13 @@ export default function Backoffice() {
           </div>
         )}
 
-        {/* ── DROP-OFFS TAB ── */}
+        {/* DROP-OFFS */}
         {activeTab === "Drop-offs" && (
           <div className="space-y-6">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Warm Leads</h1>
-              <p className="text-gray-500 text-sm mt-1">People who started but didn't buy — these are your best re-engagement opportunities.</p>
+              <p className="text-gray-500 text-sm mt-1">People who started but didn't buy — your best re-engagement opportunities.</p>
             </div>
-
             {funnel?.dropoffs?.length > 0 ? (
               <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
                 <table className="w-full text-sm">
@@ -539,6 +562,13 @@ export default function Backoffice() {
       </div>
 
       {viewingId && <AuditDetail auditId={viewingId} onClose={() => setViewingId(null)} />}
+      {deletingAudit && (
+        <DeleteConfirm
+          audit={deletingAudit}
+          onConfirm={() => handleDelete(deletingAudit)}
+          onCancel={() => setDeletingAudit(null)}
+        />
+      )}
     </div>
   );
 }
