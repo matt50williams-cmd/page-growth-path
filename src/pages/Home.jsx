@@ -39,9 +39,7 @@ export default function Home() {
       <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-gray-100">
         <div className="max-w-5xl mx-auto px-6 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-[#1877F2] flex items-center justify-center">
-              <BarChart2 className="w-4 h-4 text-white" />
-            </div>
+            <img src="/logo.png" alt="PageAudit Pro" className="w-8 h-8 object-contain" />
             <span className="font-bold text-sm tracking-tight text-gray-900">PageAudit Pro</span>
           </div>
           <a href="mailto:support@pageauditpros.com" className="text-xs text-gray-500 hover:text-gray-700 transition-colors">
