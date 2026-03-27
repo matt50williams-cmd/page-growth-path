@@ -1,90 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
-import { trackEvent, EVENTS } from "@/utils/tracking";
 import remarkGfm from "remark-gfm";
-import { CheckCircle, AlertCircle, TrendingUp, Zap, ChevronRight, Download, Share2, Copy, ClipboardCheck } from "lucide-react";
+import { CheckCircle, Download, Share2, Copy, ClipboardCheck } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
 const API_BASE = "https://pageaudit-engine.onrender.com";
-
-function parseConsultantReport(text) {
-  if (!text) return {};
-  try {
-    const sections = {};
-    const sectionPatterns = [
-      { key: 'executiveSummary', patterns: ['executive summary', 'summary'] },
-      { key: 'holding', patterns: ["what's holding", 'holding you back', 'current challenges', "what's actually holding"] },
-      { key: 'shouldDo', patterns: ['what you should do', 'action plan', 'instead'] },
-      { key: 'weeklyPlan', patterns: ['weekly content plan', 'content calendar', 'posting schedule'] },
-      { key: 'sevenDay', patterns: ['7-day plan', 'seven-day', '7 day action', 'day-by-day'] },
-      { key: 'postIdeas', patterns: ['post ideas', 'content ideas', 'high-performing', 'sample posts'] },
-      { key: 'tactics', patterns: ['growth tactics', 'growth levers', 'tactics'] },
-      { key: 'strategy', patterns: ['final strategy', 'strategy', 'roadmap'] },
-    ];
-    const lines = text.split('\n');
-    let currentSection = null;
-    let currentContent = [];
-    lines.forEach(line => {
-      const lower = line.toLowerCase().trim();
-      const matchedPattern = sectionPatterns.find(s => s.patterns.some(p => lower.includes(p)));
-      const isHeader = /^#{1,6}\s+/.test(line) || /^[A-Z][A-Za-z\s]{4,}:?$/.test(line.trim());
-      if (matchedPattern && isHeader) {
-        if (currentSection) sections[currentSection] = currentContent.join('\n').trim();
-        currentSection = matchedPattern.key;
-        currentContent = [];
-      } else if (currentSection && line.trim()) {
-        currentContent.push(line);
-      }
-    });
-    if (currentSection) sections[currentSection] = currentContent.join('\n').trim();
-    return sections;
-  } catch (e) {
-    return {};
-  }
-}
-
-function scoreColor(score) {
-  if (score >= 75) return { bar: "bg-green-500", text: "text-green-600", ring: "#22c55e" };
-  if (score >= 50) return { bar: "bg-[#1877F2]", text: "text-[#1877F2]", ring: "#1877F2" };
-  return { bar: "bg-orange-400", text: "text-orange-500", ring: "#f97316" };
-}
-
-function BulletList({ items, icon: Icon, iconClass }) {
-  if (!items || !items.length) return null;
-  return (
-    <ul className="space-y-3">
-      {items.map((item, i) => (
-        <li key={i} className="flex items-start gap-3 text-sm text-gray-700 leading-relaxed">
-          {Icon ? <Icon className={`w-4 h-4 shrink-0 mt-0.5 ${iconClass}`} /> : <span className={`w-1.5 h-1.5 rounded-full mt-2 shrink-0 ${iconClass}`} />}
-          {item}
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-const SECTION_META = {
-  'executive summary': { icon: '📊', accent: 'border-l-blue-500', badge: 'bg-blue-50 text-blue-700' },
-  'holding you back': { icon: '⚠️', accent: 'border-l-red-400', badge: 'bg-red-50 text-red-700' },
-  'should do instead': { icon: '✅', accent: 'border-l-green-500', badge: 'bg-green-50 text-green-700' },
-  'weekly content': { icon: '📅', accent: 'border-l-purple-400', badge: 'bg-purple-50 text-purple-700' },
-  '7-day': { icon: '🗓️', accent: 'border-l-indigo-400', badge: 'bg-indigo-50 text-indigo-700' },
-  'post ideas': { icon: '💡', accent: 'border-l-yellow-400', badge: 'bg-yellow-50 text-yellow-700' },
-  'growth tactics': { icon: '🚀', accent: 'border-l-orange-400', badge: 'bg-orange-50 text-orange-700' },
-  'final strategy': { icon: '🎯', accent: 'border-l-teal-500', badge: 'bg-teal-50 text-teal-700' },
-  'strategy': { icon: '🎯', accent: 'border-l-teal-500', badge: 'bg-teal-50 text-teal-700' },
-};
-
-const DEFAULT_META = { icon: '📌', accent: 'border-l-gray-300', badge: 'bg-gray-50 text-gray-600' };
-
-function getSectionMeta(title) {
-  const lower = title.toLowerCase();
-  for (const [key, meta] of Object.entries(SECTION_META)) {
-    if (lower.includes(key)) return meta;
-  }
-  return DEFAULT_META;
-}
 
 function cleanMarkdown(text) {
   if (!text) return text;
@@ -114,6 +35,31 @@ function splitIntoSections(text) {
   }
   if (current) sections.push(current);
   return sections.filter(s => s.lines.some(l => l.trim()));
+}
+
+const SECTION_META = {
+  'executive summary': { icon: '📊', accent: 'border-l-blue-500', badge: 'bg-blue-50 text-blue-700' },
+  'growth blocker': { icon: '🚧', accent: 'border-l-red-400', badge: 'bg-red-50 text-red-700' },
+  'action plan': { icon: '✅', accent: 'border-l-green-500', badge: 'bg-green-50 text-green-700' },
+  '7-day': { icon: '📅', accent: 'border-l-green-500', badge: 'bg-green-50 text-green-700' },
+  'content strategy': { icon: '💡', accent: 'border-l-yellow-400', badge: 'bg-yellow-50 text-yellow-700' },
+  'content': { icon: '💡', accent: 'border-l-yellow-400', badge: 'bg-yellow-50 text-yellow-700' },
+  'followers into': { icon: '💰', accent: 'border-l-purple-400', badge: 'bg-purple-50 text-purple-700' },
+  'customers': { icon: '💰', accent: 'border-l-purple-400', badge: 'bg-purple-50 text-purple-700' },
+  'roadmap': { icon: '🗺️', accent: 'border-l-teal-500', badge: 'bg-teal-50 text-teal-700' },
+  '30-day': { icon: '🗺️', accent: 'border-l-teal-500', badge: 'bg-teal-50 text-teal-700' },
+  'going on': { icon: '🔍', accent: 'border-l-blue-400', badge: 'bg-blue-50 text-blue-700' },
+  'competitor': { icon: '🏆', accent: 'border-l-orange-400', badge: 'bg-orange-50 text-orange-700' },
+};
+
+const DEFAULT_META = { icon: '📌', accent: 'border-l-gray-300', badge: 'bg-gray-50 text-gray-600' };
+
+function getSectionMeta(title) {
+  const lower = title.toLowerCase();
+  for (const [key, meta] of Object.entries(SECTION_META)) {
+    if (lower.includes(key)) return meta;
+  }
+  return DEFAULT_META;
 }
 
 const markdownComponents = {
@@ -185,13 +131,11 @@ export default function Report() {
   const { id } = useParams();
   const { isLoadingAuth } = useAuth();
   const [submission, setSubmission] = useState(null);
-  const [scores, setScores] = useState({});
   const [rawText, setRawText] = useState("");
   const [scrolled, setScrolled] = useState(false);
   const [copied, setCopied] = useState(false);
   const [reportCopied, setReportCopied] = useState(false);
   const [error, setError] = useState(false);
-  const [analysis, setAnalysis] = useState(null);
   const [reportId, setReportId] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -201,18 +145,7 @@ export default function Report() {
       email: data.email || "",
       facebook_url: data.pageUrl || data.facebook_url || "",
       mainGoal: data.mainGoal || data.goals || "",
-      postingFrequency: data.postingFrequency || data.posting_frequency || "",
-      contentType: data.contentType || data.content_type || "",
     });
-    setScores({
-      overall: data.overall_score || data.scores?.overall || null,
-      visibility: data.visibility_score || data.scores?.visibility || null,
-      content: data.content_score || data.scores?.content || null,
-      consistency: data.consistency_score || data.scores?.consistency || null,
-      engagement: data.engagement_score || data.scores?.engagement || null,
-      growth: data.growth_score || data.scores?.growth || null,
-    });
-    if (data.analysis) setAnalysis(typeof data.analysis === 'string' ? JSON.parse(data.analysis) : data.analysis);
     const text = data.report_text || data.report || data.reportText || "";
     setRawText(text);
   };
@@ -220,7 +153,6 @@ export default function Report() {
   useEffect(() => {
     if (isLoadingAuth) return;
     setLoading(true);
-
     const loadReport = async () => {
       if (id && id !== ":id") {
         const tryLocal = (key) => {
@@ -236,7 +168,6 @@ export default function Report() {
           setLoading(false);
           return;
         }
-
         try {
           const token = localStorage.getItem('pageaudit_token');
           const res = await fetch(`${API_BASE}/api/audits/${id}`, {
@@ -251,13 +182,11 @@ export default function Report() {
             setError(true);
           }
         } catch (err) {
-          console.error("Error fetching report:", err);
           setError(true);
         }
         setLoading(false);
         return;
       }
-
       const savedReport = localStorage.getItem("pageAuditReport");
       if (!savedReport) { setError(true); setLoading(false); return; }
       try {
@@ -270,7 +199,6 @@ export default function Report() {
       }
       setLoading(false);
     };
-
     loadReport();
   }, [id, isLoadingAuth]);
 
@@ -324,22 +252,6 @@ export default function Report() {
       </div>
     );
   }
-
-  // Filter out ALL scraper failure messages from all three boxes
-  const scrapeFailureWords = [
-    'scraper', 'failure', 'unable', 'unavailable', 'error', 'no verified',
-    'no data', 'could not', 'retrieve', 'lack of insights', 'resolve scraper',
-    'scraper access', 'data collection issue', 'verify current', 'limits tailored',
-    'not available', 'scrape', 'failed to', 'cannot access', 'access issue',
-    'data unavailable', 'metric', 'follower count', 'engagement metric'
-  ];
-
-  const filterItems = (items) =>
-    (items || []).filter(p => !scrapeFailureWords.some(w => p.toLowerCase().includes(w)));
-
-  const coreProblems = filterItems(analysis?.core_problems);
-  const strengths = filterItems(analysis?.strengths);
-  const opportunities = filterItems(analysis?.opportunities);
 
   return (
     <div className="min-h-screen bg-[#f7f8fa] font-sans text-black">
@@ -410,52 +322,6 @@ export default function Report() {
                 </button>
               </div>
             </div>
-          </div>
-        )}
-
-        {(coreProblems.length > 0 || strengths.length > 0 || opportunities.length > 0) && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {coreProblems.length > 0 && (
-              <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-                    <AlertCircle className="w-4 h-4 text-red-600" />
-                  </span>
-                  <h3 className="text-sm font-bold text-gray-900">Core Issues</h3>
-                </div>
-                <BulletList items={coreProblems} icon={ChevronRight} iconClass="text-red-500" />
-              </div>
-            )}
-            {strengths.length > 0 && (
-              <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center shrink-0">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                  </span>
-                  <h3 className="text-sm font-bold text-gray-900">Strengths</h3>
-                </div>
-                <BulletList items={strengths} icon={ChevronRight} iconClass="text-green-500" />
-              </div>
-            )}
-            {opportunities.length > 0 && (
-              <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-                    <Zap className="w-4 h-4 text-[#1877F2]" />
-                  </span>
-                  <h3 className="text-sm font-bold text-gray-900">Opportunities</h3>
-                </div>
-                <BulletList items={opportunities} icon={ChevronRight} iconClass="text-[#1877F2]" />
-              </div>
-            )}
-          </div>
-        )}
-
-        {rawText && (coreProblems.length > 0 || strengths.length > 0 || opportunities.length > 0) && (
-          <div className="flex items-center gap-4">
-            <div className="flex-1 h-px bg-gray-200" />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Full Strategy Report</span>
-            <div className="flex-1 h-px bg-gray-200" />
           </div>
         )}
 

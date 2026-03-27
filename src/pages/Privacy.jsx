@@ -1,16 +1,17 @@
 import Footer from '@/components/Footer';
+import { useNavigate } from 'react-router-dom';
 
 export default function Privacy() {
+  const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-white text-gray-900 font-sans antialiased flex flex-col">
       <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-gray-100">
         <div className="max-w-5xl mx-auto px-6 py-3.5 flex items-center justify-between">
-          <a href="/" className="font-bold text-sm tracking-tight text-gray-900 hover:text-[#1877F2] transition-colors">
-            PageAudit Pro
-          </a>
-          <a href="/" className="text-xs text-gray-500 hover:text-black transition-colors">
-            Back to Home
-          </a>
+          <span className="font-bold text-sm tracking-tight text-gray-900">PageAudit Pro</span>
+          <button onClick={() => navigate(-1)}
+            className="text-xs font-semibold text-[#1877F2] hover:underline">
+            ← Back
+          </button>
         </div>
       </nav>
 
@@ -22,9 +23,7 @@ export default function Privacy() {
           </div>
 
           <div>
-            <p className="text-gray-700 leading-relaxed">
-              We respect your privacy and are committed to protecting your information.
-            </p>
+            <p className="text-gray-700 leading-relaxed">We respect your privacy and are committed to protecting your information.</p>
           </div>
 
           <div>
@@ -61,23 +60,17 @@ export default function Privacy() {
 
           <div>
             <h2 className="text-xl font-bold text-gray-900 mb-4">Data Sharing</h2>
-            <p className="text-gray-700 leading-relaxed text-sm">
-              We do not sell your personal information. We may use trusted third-party services (such as hosting, analytics, and payment providers) to operate our platform.
-            </p>
+            <p className="text-gray-700 leading-relaxed text-sm">We do not sell your personal information. We may use trusted third-party services (such as hosting, analytics, and payment providers) to operate our platform.</p>
           </div>
 
           <div>
             <h2 className="text-xl font-bold text-gray-900 mb-4">Data Security</h2>
-            <p className="text-gray-700 leading-relaxed text-sm">
-              We take reasonable measures to protect your information.
-            </p>
+            <p className="text-gray-700 leading-relaxed text-sm">We take reasonable measures to protect your information.</p>
           </div>
 
           <div>
             <h2 className="text-xl font-bold text-gray-900 mb-4">Your Consent</h2>
-            <p className="text-gray-700 leading-relaxed text-sm">
-              By using this website, you consent to this policy.
-            </p>
+            <p className="text-gray-700 leading-relaxed text-sm">By using this website, you consent to this policy.</p>
           </div>
 
           <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 md:p-8">
@@ -89,7 +82,6 @@ export default function Privacy() {
           </div>
         </div>
       </div>
-
       <Footer />
     </div>
   );
