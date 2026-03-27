@@ -44,9 +44,13 @@ function FacebookPageLookup({ value, onChange }) {
   const [imgSrc, setImgSrc] = useState("");
   const [searching, setSearching] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const [attempts, setAttempts] = useState(0);
 
   const cleanPageName = (name) => {
-    return name.trim().replace(/https?:\/\/(www\.)?facebook\.com\//i, '').replace(/\/$/, '').replace(/\s+/g, '');
+    return name.trim()
+      .replace(/https?:\/\/(www\.)?facebook\.com\//i, '')
+      .replace(/\/$/, '')
+      .replace(/\s+/g, '');
   };
 
   const handleSearch = async () => {
@@ -62,6 +66,7 @@ function FacebookPageLookup({ value, onChange }) {
     setImgSrc(pic);
     setConfirmed(false);
     onChange("");
+    setAttempts(prev => prev + 1);
     setSearching(false);
   };
 
@@ -73,10 +78,20 @@ function FacebookPageLookup({ value, onChange }) {
   const handleReset = () => {
     setConfirmed(false);
     setPreviewUrl("");
-    setPageName("");
     setImgSrc("");
     setImgError(false);
     onChange("");
+    // Keep pageName so they can tweak and search again
+  };
+
+  const handleChangeConfirmed = () => {
+    setConfirmed(false);
+    setPreviewUrl("");
+    setImgSrc("");
+    setImgError(false);
+    setPageName("");
+    onChange("");
+    setAttempts(0);
   };
 
   return (
@@ -110,15 +125,26 @@ function FacebookPageLookup({ value, onChange }) {
                 ) : (
                   <Search className="w-4 h-4" />
                 )}
-                Find
+                {attempts > 0 ? 'Search Again' : 'Find'}
               </button>
             </div>
-            <p className="text-xs text-gray-400 mt-2">Type your Facebook page name or username</p>
+
+            {attempts > 0 && !previewUrl && (
+              <p className="text-xs text-orange-500 mt-2 font-medium">
+                💡 Try a different variation — use your exact Facebook username or page URL
+              </p>
+            )}
+
+            {attempts === 0 && (
+              <p className="text-xs text-gray-400 mt-2">Type your Facebook page name or username exactly as it appears</p>
+            )}
           </div>
 
           {previewUrl && (
             <div className="bg-blue-50 border-2 border-[#1877F2] rounded-2xl p-5">
-              <p className="text-xs font-bold text-[#1877F2] uppercase tracking-wide mb-4">Is this your page?</p>
+              <p className="text-xs font-bold text-[#1877F2] uppercase tracking-wide mb-4">
+                Is this your page?
+              </p>
 
               <div className="bg-white rounded-xl p-4 mb-4 flex items-center gap-4 border border-gray-100 shadow-sm">
                 {!imgError ? (
@@ -144,7 +170,7 @@ function FacebookPageLookup({ value, onChange }) {
               </div>
 
               <p className="text-xs text-gray-500 mb-4">
-                Does this look right? Click <strong>"Open on Facebook"</strong> to double-check, then confirm below.
+                Click <strong>"Open on Facebook"</strong> to verify it's the right page, then confirm below.
               </p>
 
               <div className="flex gap-3">
@@ -157,6 +183,13 @@ function FacebookPageLookup({ value, onChange }) {
                   Not right, try again
                 </button>
               </div>
+
+              {attempts >= 2 && (
+                <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-xl p-3">
+                  <p className="text-xs text-yellow-800 font-semibold mb-1">💡 Can't find your page?</p>
+                  <p className="text-xs text-yellow-700">Try pasting your Facebook URL directly in the box below instead.</p>
+                </div>
+              )}
             </div>
           )}
 
@@ -198,9 +231,9 @@ function FacebookPageLookup({ value, onChange }) {
               <p className="text-xs text-green-600 truncate">{previewUrl || value}</p>
             </div>
           </div>
-          <button type="button" onClick={handleReset}
+          <button type="button" onClick={handleChangeConfirmed}
             className="text-xs text-green-700 hover:underline font-semibold">
-            Not right? Change it
+            Not right? Start over
           </button>
         </div>
       )}
@@ -337,7 +370,7 @@ export default function SubmitPage() {
 
   const stepSubs = [
     "Enter your contact info so we can send you your audit.",
-    "Search for your page name and confirm it's correct — no copy/pasting needed!",
+    "Search for your page and confirm it's correct — no copy/pasting needed!",
     "Help us understand what you're trying to achieve.",
     "This helps us assess your current posting strategy.",
     "We'll analyze your content performance on this.",
@@ -445,3 +478,5 @@ export default function SubmitPage() {
     </div>
   );
 }
+
+
