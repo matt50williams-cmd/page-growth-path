@@ -179,7 +179,7 @@ function DeleteConfirm({ audit, onConfirm, onCancel }) {
 const TABS = ["Overview", "Customers", "Revenue", "Funnel", "Drop-offs"];
 
 export default function Backoffice() {
-  const { user, logout } = useAuth();
+  const { user, logout, isLoadingAuth } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("Overview");
   const [audits, setAudits] = useState([]);
@@ -193,8 +193,9 @@ export default function Backoffice() {
   const [statusFilter, setStatusFilter] = useState('all');
 
   useEffect(() => {
-    if (user && user.role !== 'admin') navigate('/dashboard');
-  }, [user, navigate]);
+    if (isLoadingAuth) return;
+    if (!user || user.role !== 'admin') navigate('/dashboard');
+  }, [user, isLoadingAuth, navigate]);
 
   const loadAll = async () => {
     setLoading(true);
@@ -250,7 +251,7 @@ export default function Backoffice() {
     { name: 'Account Created', value: Number(funnel.funnel_counts.find(f => f.event_type === 'account_created')?.count || 0) },
   ] : [];
 
-  if (loading) {
+  if (isLoadingAuth || loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-gray-200 border-t-[#1877F2] rounded-full animate-spin" />
@@ -288,7 +289,6 @@ export default function Backoffice() {
 
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
 
-        {/* OVERVIEW */}
         {activeTab === "Overview" && (
           <div className="space-y-8">
             <div>
@@ -341,7 +341,6 @@ export default function Backoffice() {
           </div>
         )}
 
-        {/* CUSTOMERS */}
         {activeTab === "Customers" && (
           <div className="space-y-6">
             <h1 className="text-2xl font-bold text-gray-900">All Customers</h1>
@@ -405,7 +404,6 @@ export default function Backoffice() {
           </div>
         )}
 
-        {/* REVENUE */}
         {activeTab === "Revenue" && (
           <div className="space-y-8">
             <h1 className="text-2xl font-bold text-gray-900">Revenue</h1>
@@ -450,7 +448,6 @@ export default function Backoffice() {
           </div>
         )}
 
-        {/* FUNNEL */}
         {activeTab === "Funnel" && (
           <div className="space-y-8">
             <h1 className="text-2xl font-bold text-gray-900">Conversion Funnel</h1>
@@ -482,7 +479,7 @@ export default function Backoffice() {
               </div>
             ) : (
               <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center text-gray-400">
-                No funnel data yet. Traffic tracking will appear here once visitors start coming.
+                No funnel data yet.
               </div>
             )}
             {funnel?.campaigns?.length > 0 && (
@@ -516,7 +513,6 @@ export default function Backoffice() {
           </div>
         )}
 
-        {/* DROP-OFFS */}
         {activeTab === "Drop-offs" && (
           <div className="space-y-6">
             <div>
@@ -554,7 +550,7 @@ export default function Backoffice() {
               </div>
             ) : (
               <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center text-gray-400">
-                No drop-offs yet. Once people start the form without buying, they'll appear here.
+                No drop-offs yet.
               </div>
             )}
           </div>
