@@ -38,47 +38,58 @@ function MultiCard({ selected, onClick, children }) {
 }
 
 function generateVariations(name) {
-  const cleaned = name.trim().replace(/\s+/g, '');
-  const withDots = name.trim().replace(/\s+/g, '.');
-  const withDashes = name.trim().replace(/\s+/g, '-');
+  const raw = name.trim();
+  const cleaned = raw.replace(/\s+/g, '');
   const lower = cleaned.toLowerCase();
+  const title = raw.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join('');
+  const withDots = raw.replace(/\s+/g, '.');
+  const withDashes = raw.replace(/\s+/g, '-');
+  const withUnder = raw.replace(/\s+/g, '_');
+  const lowerDots = raw.toLowerCase().replace(/\s+/g, '.');
+  const lowerDashes = raw.toLowerCase().replace(/\s+/g, '-');
+  const lowerUnder = raw.toLowerCase().replace(/\s+/g, '_');
+  const withThe = `the${lower}`;
+  const withThe2 = `The${title}`;
+  const withOfficial = `${lower}official`;
+  const withOfficial2 = `${title}Official`;
+  const withPage = `${lower}page`;
+  const withBiz = `${lower}biz`;
+  const withHQ = `${lower}hq`;
+  const withReal = `real${lower}`;
+  const withGet = `get${lower}`;
+  const withMy = `my${lower}`;
+  const withPro = `${lower}pro`;
+  const withUS = `${lower}us`;
+  const withCo = `${lower}co`;
+  const withInc = `${lower}inc`;
+
   const variations = [
     cleaned,
     lower,
+    title,
     withDots,
     withDashes,
-  ];
-  return [...new Set(variations)].slice(0, 4);
-}
+    withUnder,
+    lowerDots,
+    lowerDashes,
+    lowerUnder,
+    withThe,
+    withThe2,
+    withOfficial,
+    withOfficial2,
+    withPage,
+    withBiz,
+    withHQ,
+    withReal,
+    withGet,
+    withMy,
+    withPro,
+    withUS,
+    withCo,
+    withInc,
+  ].filter(Boolean);
 
-function VariationCard({ variation, onSelect }) {
-  const [imgError, setImgError] = useState(false);
-  const url = `https://www.facebook.com/${variation}`;
-  const pic = `https://graph.facebook.com/${variation}/picture?type=large&redirect=true`;
-
-  return (
-    <div className="bg-white rounded-xl p-3 border border-gray-100 shadow-sm flex items-center gap-3">
-      {!imgError ? (
-        <img src={pic} alt={variation} onError={() => setImgError(true)}
-          className="w-12 h-12 rounded-full object-cover border-2 border-gray-100 shrink-0" />
-      ) : (
-        <div className="w-12 h-12 rounded-full bg-[#1877F2] flex items-center justify-center shrink-0">
-          <span className="text-white font-bold text-lg">f</span>
-        </div>
-      )}
-      <div className="flex-1 min-w-0">
-        <p className="font-semibold text-gray-900 text-sm truncate">{variation}</p>
-        <a href={url} target="_blank" rel="noopener noreferrer"
-          className="text-xs text-[#1877F2] hover:underline">
-          Open on Facebook ↗
-        </a>
-      </div>
-      <button type="button" onClick={() => onSelect(url, variation)}
-        className="shrink-0 bg-[#1877F2] text-white text-xs font-bold px-3 py-2 rounded-lg hover:bg-[#1457C0] transition-colors">
-        Select
-      </button>
-    </div>
-  );
+  return [...new Set(variations)].slice(0, 20);
 }
 
 function FacebookPageLookup({ value, onChange }) {
@@ -86,29 +97,29 @@ function FacebookPageLookup({ value, onChange }) {
   const [confirmed, setConfirmed] = useState(false);
   const [previewUrl, setPreviewUrl] = useState("");
   const [imgSrc, setImgSrc] = useState("");
-  const [searching, setSearching] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const [varIndex, setVarIndex] = useState(0);
   const [showVariations, setShowVariations] = useState(false);
-  const [variations, setVariations] = useState([]);
   const [confirmedName, setConfirmedName] = useState("");
+  const [pasteUrl, setPasteUrl] = useState("");
+  const [noMoreVariations, setNoMoreVariations] = useState(false);
+  const [allVariations, setAllVariations] = useState([]);
 
-  const cleanPageName = (name) => {
-    return name.trim()
-      .replace(/https?:\/\/(www\.)?facebook\.com\//i, '')
-      .replace(/\/$/, '')
-      .replace(/\s+/g, '');
-  };
-
-  const handleSearch = async () => {
+  const handleSearch = () => {
     if (!pageName.trim()) return;
     setSearching(true);
     setImgError(false);
     setShowVariations(false);
+    setNoMoreVariations(false);
+    setVarIndex(0);
 
-    const cleaned = cleanPageName(pageName);
+    const cleaned = pageName.trim().replace(/\s+/g, '');
     const url = `https://www.facebook.com/${cleaned}`;
     const pic = `https://graph.facebook.com/${cleaned}/picture?type=large&redirect=true`;
+    const vars = generateVariations(pageName);
 
+    setAllVariations(vars);
     setPreviewUrl(url);
     setImgSrc(pic);
     setConfirmed(false);
@@ -118,26 +129,36 @@ function FacebookPageLookup({ value, onChange }) {
 
   const handleConfirm = () => {
     setConfirmed(true);
-    setConfirmedName(pageName);
+    setConfirmedName(showVariations ? allVariations[varIndex] : pageName.trim().replace(/\s+/g, ''));
     onChange(previewUrl);
     setShowVariations(false);
   };
 
   const handleNotRight = () => {
+    const vars = generateVariations(pageName);
+    setAllVariations(vars);
     setShowVariations(true);
-    setVariations(generateVariations(pageName));
-    setPreviewUrl("");
-    setImgSrc("");
+    setVarIndex(0);
+    setImgError(false);
     onChange("");
+    const v = vars[0];
+    setPreviewUrl(`https://www.facebook.com/${v}`);
+    setImgSrc(`https://graph.facebook.com/${v}/picture?type=large&redirect=true`);
   };
 
-  const handleSelectVariation = (url, name) => {
-    setPreviewUrl(url);
-    setImgSrc(`https://graph.facebook.com/${name}/picture?type=large&redirect=true`);
-    setConfirmedName(name);
-    setConfirmed(true);
-    setShowVariations(false);
-    onChange(url);
+  const handleNextVariation = () => {
+    const next = varIndex + 1;
+    if (next >= allVariations.length) {
+      setNoMoreVariations(true);
+      setPreviewUrl("");
+      setImgSrc("");
+    } else {
+      setVarIndex(next);
+      setImgError(false);
+      const v = allVariations[next];
+      setPreviewUrl(`https://www.facebook.com/${v}`);
+      setImgSrc(`https://graph.facebook.com/${v}/picture?type=large&redirect=true`);
+    }
   };
 
   const handleStartOver = () => {
@@ -148,9 +169,26 @@ function FacebookPageLookup({ value, onChange }) {
     setPageName("");
     onChange("");
     setShowVariations(false);
-    setVariations([]);
+    setAllVariations([]);
     setConfirmedName("");
+    setPasteUrl("");
+    setNoMoreVariations(false);
+    setVarIndex(0);
   };
+
+  const handlePasteUrl = (e) => {
+    const val = e.target.value;
+    setPasteUrl(val);
+    if (val.includes('facebook.com')) {
+      onChange(val);
+      setPreviewUrl(val);
+      setConfirmedName(val.replace(/https?:\/\/(www\.)?facebook\.com\//i, '').replace(/\/$/, ''));
+      setImgSrc("");
+      setConfirmed(true);
+    }
+  };
+
+  const currentVariationName = showVariations ? allVariations[varIndex] : pageName.trim().replace(/\s+/g, '');
 
   return (
     <div className="space-y-4">
@@ -164,7 +202,7 @@ function FacebookPageLookup({ value, onChange }) {
             <div className="flex gap-2">
               <input
                 type="text"
-                placeholder="e.g. Allred Heating or AllredHeating"
+                placeholder="e.g. Righteous Network or AllredHeating"
                 value={pageName}
                 onChange={(e) => {
                   setPageName(e.target.value);
@@ -172,6 +210,8 @@ function FacebookPageLookup({ value, onChange }) {
                   setConfirmed(false);
                   setImgSrc("");
                   setShowVariations(false);
+                  setNoMoreVariations(false);
+                  setVarIndex(0);
                   onChange("");
                 }}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -180,33 +220,44 @@ function FacebookPageLookup({ value, onChange }) {
               <button type="button" onClick={handleSearch}
                 disabled={!pageName.trim() || searching}
                 className="inline-flex items-center gap-2 bg-[#1877F2] text-white px-5 py-3.5 text-sm font-bold rounded-2xl hover:bg-[#1457C0] transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0">
-                {searching ? (
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <Search className="w-4 h-4" />
-                )}
+                {searching
+                  ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  : <Search className="w-4 h-4" />}
                 Find
               </button>
             </div>
             <p className="text-xs text-gray-400 mt-2">Type your Facebook page name or username</p>
           </div>
 
-          {/* FIRST RESULT */}
-          {previewUrl && !showVariations && (
+          {/* PAGE PREVIEW — ONE AT A TIME */}
+          {previewUrl && !noMoreVariations && (
             <div className="bg-blue-50 border-2 border-[#1877F2] rounded-2xl p-5">
-              <p className="text-xs font-bold text-[#1877F2] uppercase tracking-wide mb-4">Is this your page?</p>
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-xs font-bold text-[#1877F2] uppercase tracking-wide">
+                  Is this your page?
+                </p>
+                {showVariations && (
+                  <span className="text-xs text-gray-400 bg-white px-2 py-1 rounded-full border border-gray-200">
+                    {varIndex + 1} of {allVariations.length}
+                  </span>
+                )}
+              </div>
 
               <div className="bg-white rounded-xl p-4 mb-4 flex items-center gap-4 border border-gray-100 shadow-sm">
                 {!imgError ? (
-                  <img src={imgSrc} alt={pageName} onError={() => setImgError(true)}
-                    className="w-16 h-16 rounded-full object-cover border-2 border-gray-100 shrink-0" />
+                  <img
+                    src={imgSrc}
+                    alt={currentVariationName}
+                    onError={() => setImgError(true)}
+                    className="w-16 h-16 rounded-full object-cover border-2 border-gray-100 shrink-0"
+                  />
                 ) : (
                   <div className="w-16 h-16 rounded-full bg-[#1877F2] flex items-center justify-center shrink-0">
                     <span className="text-white font-bold text-2xl">f</span>
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-gray-900 text-base truncate">{pageName}</p>
+                  <p className="font-bold text-gray-900 text-base truncate">{currentVariationName}</p>
                   <p className="text-xs text-gray-400 truncate mt-0.5">{previewUrl}</p>
                   <a href={previewUrl} target="_blank" rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-xs text-[#1877F2] hover:underline font-semibold mt-1">
@@ -224,27 +275,29 @@ function FacebookPageLookup({ value, onChange }) {
                   className="flex-1 inline-flex items-center justify-center gap-2 bg-[#1877F2] text-white px-4 py-3 text-sm font-bold rounded-xl hover:bg-[#1457C0] transition-colors">
                   <Check className="w-4 h-4" /> Yes, that's my page!
                 </button>
-                <button type="button" onClick={handleNotRight}
+                <button type="button"
+                  onClick={showVariations ? handleNextVariation : handleNotRight}
                   className="flex-1 border-2 border-gray-200 text-gray-600 px-4 py-3 text-sm font-semibold rounded-xl hover:border-gray-400 transition-colors">
-                  Not right, try again
+                  {showVariations ? `Next → (${allVariations.length - varIndex - 1} left)` : "Not right, try again"}
                 </button>
               </div>
             </div>
           )}
 
-          {/* VARIATIONS */}
-          {showVariations && (
-            <div className="bg-orange-50 border-2 border-orange-300 rounded-2xl p-5">
-              <p className="text-xs font-bold text-orange-700 uppercase tracking-wide mb-1">Let's find your page</p>
-              <p className="text-xs text-orange-600 mb-4">Here are some variations to try. Click <strong>Select</strong> on the right one, or edit the name above and search again.</p>
-
-              <div className="space-y-3 mb-4">
-                {variations.map((v) => (
-                  <VariationCard key={v} variation={v} onSelect={handleSelectVariation} />
-                ))}
-              </div>
-
-              <p className="text-xs text-gray-500 text-center">Still not finding it? Edit the name above and click Find again.</p>
+          {/* NO MORE VARIATIONS */}
+          {noMoreVariations && (
+            <div className="bg-yellow-50 border-2 border-yellow-300 rounded-2xl p-5 text-center">
+              <p className="text-sm font-bold text-yellow-800 mb-2">😕 Couldn't find your page automatically</p>
+              <p className="text-xs text-yellow-700 mb-3">We tried {allVariations.length} variations! Try editing the name above or paste your Facebook URL directly below.</p>
+              <button type="button" onClick={() => {
+                setNoMoreVariations(false);
+                setPreviewUrl("");
+                setShowVariations(false);
+                setVarIndex(0);
+              }}
+                className="text-xs text-[#1877F2] hover:underline font-semibold">
+                ← Try a different name
+              </button>
             </div>
           )}
 
@@ -254,19 +307,14 @@ function FacebookPageLookup({ value, onChange }) {
             <input
               type="url"
               placeholder="https://www.facebook.com/yourbusiness"
-              onChange={(e) => {
-                if (e.target.value.includes('facebook.com')) {
-                  onChange(e.target.value);
-                  setPreviewUrl(e.target.value);
-                  setConfirmed(true);
-                }
-              }}
+              value={pasteUrl}
+              onChange={handlePasteUrl}
               className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#1877F2] transition-all"
             />
           </div>
         </>
       ) : (
-        /* CONFIRMED STATE */
+        /* CONFIRMED */
         <div className="bg-green-50 border-2 border-green-400 rounded-2xl p-5">
           <div className="flex items-center gap-4 mb-3">
             {imgSrc && !imgError ? (
@@ -284,7 +332,7 @@ function FacebookPageLookup({ value, onChange }) {
                 </div>
                 <p className="font-bold text-green-800 text-sm">Page Confirmed!</p>
               </div>
-              <p className="text-sm font-semibold text-gray-800">{confirmedName || pageName}</p>
+              <p className="text-sm font-semibold text-gray-800">{confirmedName}</p>
               <p className="text-xs text-green-600 truncate">{previewUrl || value}</p>
             </div>
           </div>
@@ -535,6 +583,7 @@ export default function SubmitPage() {
     </div>
   );
 }
+
 
 
 
