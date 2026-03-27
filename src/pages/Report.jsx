@@ -223,7 +223,6 @@ export default function Report() {
 
     const loadReport = async () => {
       if (id && id !== ":id") {
-        // Try localStorage first
         const tryLocal = (key) => {
           const raw = localStorage.getItem(key);
           if (!raw) return null;
@@ -238,7 +237,6 @@ export default function Report() {
           return;
         }
 
-        // Fetch from backend
         try {
           const token = localStorage.getItem('pageaudit_token');
           const res = await fetch(`${API_BASE}/api/audits/${id}`, {
@@ -260,7 +258,6 @@ export default function Report() {
         return;
       }
 
-      // No ID — load from localStorage
       const savedReport = localStorage.getItem("pageAuditReport");
       if (!savedReport) { setError(true); setLoading(false); return; }
       try {
@@ -328,9 +325,21 @@ export default function Report() {
     );
   }
 
-  const coreProblems = analysis?.core_problems || [];
-  const strengths = analysis?.strengths || [];
-  const opportunities = analysis?.opportunities || [];
+  // Filter out ALL scraper failure messages from all three boxes
+  const scrapeFailureWords = [
+    'scraper', 'failure', 'unable', 'unavailable', 'error', 'no verified',
+    'no data', 'could not', 'retrieve', 'lack of insights', 'resolve scraper',
+    'scraper access', 'data collection issue', 'verify current', 'limits tailored',
+    'not available', 'scrape', 'failed to', 'cannot access', 'access issue',
+    'data unavailable', 'metric', 'follower count', 'engagement metric'
+  ];
+
+  const filterItems = (items) =>
+    (items || []).filter(p => !scrapeFailureWords.some(w => p.toLowerCase().includes(w)));
+
+  const coreProblems = filterItems(analysis?.core_problems);
+  const strengths = filterItems(analysis?.strengths);
+  const opportunities = filterItems(analysis?.opportunities);
 
   return (
     <div className="min-h-screen bg-[#f7f8fa] font-sans text-black">

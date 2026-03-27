@@ -1,257 +1,187 @@
 import { useState, useEffect } from "react";
-import { ExternalLink, RefreshCw, X, ChevronRight, TrendingUp, AlertCircle, CheckCircle2, DollarSign, Users, Eye, ShoppingCart, BarChart2, LogOut, Trash2 } from "lucide-react";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
-import { useNavigate } from "react-router-dom";
-import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Loader2, Eye, EyeOff, CheckCircle } from "lucide-react";
 
 const API_BASE = "https://pageaudit-engine.onrender.com";
 
-function apiFetch(path, options = {}) {
-  const token = localStorage.getItem('pageaudit_token');
-  return fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(options.headers || {}),
-    },
-  }).then(r => r.json());
-}
+const FACEBOOK_TIPS = [
+  {
+    emoji: "⏰",
+    title: "Best Time to Post",
+    tip: "Facebook pages get 3x more reach when posted between 1pm–4pm on weekdays. Wednesday at 3pm is consistently the highest engagement window for business pages."
+  },
+  {
+    emoji: "🎥",
+    title: "Video Gets 5x More Reach",
+    tip: "Facebook's algorithm heavily favors native video over images or links. Even a 60-second phone video outperforms a professional photo post by 5x on average reach."
+  },
+  {
+    emoji: "💬",
+    title: "The First 30 Minutes Are Everything",
+    tip: "Facebook decides how widely to distribute your post based on engagement in the first 30 minutes. Reply to every comment immediately after posting to signal that your content is worth showing to more people."
+  },
+  {
+    emoji: "🪝",
+    title: "The Hook Is 90% of Your Post",
+    tip: "Only the first 2 lines show before 'See More.' If those lines don't stop the scroll, nobody reads the rest. Start every post with a bold statement, a question, or a surprising fact."
+  },
+  {
+    emoji: "📊",
+    title: "Consistency Beats Perfection",
+    tip: "Pages that post 4-5 times per week grow 3x faster than pages that post sporadically — even if the content is simpler. The algorithm rewards consistency above all else."
+  },
+  {
+    emoji: "🤝",
+    title: "Engagement Beats Broadcasting",
+    tip: "Pages that respond to 100% of comments grow their reach 40% faster. Facebook tracks your response rate and rewards pages that create real conversations."
+  },
+  {
+    emoji: "📱",
+    title: "Stories Are Underused Gold",
+    tip: "Less than 20% of business pages use Facebook Stories consistently — yet Stories show at the TOP of every feed. Posting one Story per day puts you ahead of 80% of your competitors instantly."
+  },
+  {
+    emoji: "🎯",
+    title: "One CTA Per Post",
+    tip: "Posts with a single clear call-to-action (comment, share, click, DM) outperform posts with multiple asks by 300%. Pick one action and ask for it directly."
+  },
+  {
+    emoji: "🔁",
+    title: "Resharing Your Best Content",
+    tip: "Your best performing post from 6 months ago is brand new to 90% of your current followers. Resharing top content every 90 days is one of the easiest wins most pages completely ignore."
+  },
+  {
+    emoji: "❓",
+    title: "Questions Triple Engagement",
+    tip: "Posts that end with a direct question get 3x more comments than posts that don't. Ask simple, easy-to-answer questions that your audience can respond to in one sentence."
+  },
+  {
+    emoji: "🏷️",
+    title: "Tag Strategically",
+    tip: "Tagging relevant local businesses, partners, or community pages exposes your post to their entire audience for free. One strategic tag can double your post's reach overnight."
+  },
+  {
+    emoji: "📅",
+    title: "The 3-2-1 Content Rule",
+    tip: "For every 6 posts: 3 should educate or entertain, 2 should build community and engagement, and 1 should directly promote your product or service. Pages that sell too often get ignored."
+  },
+];
 
-function StatusBadge({ status }) {
-  const statusMap = {
-    pending: { color: "bg-orange-100 text-orange-600", label: "Pending" },
-    analyzing: { color: "bg-blue-100 text-blue-700", label: "Analyzing" },
-    completed: { color: "bg-green-100 text-green-700", label: "Completed" },
-    failed: { color: "bg-red-100 text-red-600", label: "Failed" },
-  };
-  const config = statusMap[status] || { color: "bg-gray-100 text-gray-500", label: status || "Unknown" };
-  return <span className={`inline-flex text-xs font-semibold px-2.5 py-1 rounded-full ${config.color}`}>{config.label}</span>;
-}
-
-function MetricCard({ icon: Icon, label, value, subtext, color = "text-blue-600", bg = "bg-blue-50" }) {
-  return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-2">{label}</p>
-          <p className="text-3xl font-bold text-gray-900">{value}</p>
-          {subtext && <p className="text-xs text-gray-400 mt-1">{subtext}</p>}
-        </div>
-        <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center`}>
-          <Icon className={`w-5 h-5 ${color}`} />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Field({ label, value }) {
-  return (
-    <div>
-      <p className="text-xs text-gray-400 mb-1">{label}</p>
-      <div className="text-sm text-gray-800 break-words">{value || "—"}</div>
-    </div>
-  );
-}
-
-function AuditDetail({ auditId, onClose }) {
-  const [audit, setAudit] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    apiFetch(`/api/audits/${auditId}`)
-      .then(data => { setAudit(data); setLoading(false); })
-      .catch(() => setLoading(false));
-  }, [auditId]);
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-start justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl my-8">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <div>
-            <h2 className="font-bold text-gray-900 text-base">Audit Details</h2>
-            <p className="text-xs text-gray-400 font-mono">ID: {auditId}</p>
-          </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-black"><X className="w-5 h-5" /></button>
-        </div>
-
-        {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <div className="w-7 h-7 border-2 border-gray-200 border-t-[#1877F2] rounded-full animate-spin" />
-          </div>
-        ) : audit ? (
-          <div className="px-6 py-5 space-y-6">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <Field label="Status" value={<StatusBadge status={audit.status} />} />
-              <Field label="Name" value={audit.customer_name} />
-              <Field label="Email" value={<span className="font-mono text-xs">{audit.email}</span>} />
-              <Field label="Paid" value={audit.paid ? <span className="text-green-600 font-semibold">✓ ${audit.amount_paid}</span> : <span className="text-gray-400">No</span>} />
-            </div>
-
-            <div className="border-t pt-4 space-y-3">
-              <p className="text-xs uppercase tracking-widest text-gray-400 font-semibold">Page Info</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field label="Facebook URL" value={
-                  audit.facebook_url ? (
-                    <a href={audit.facebook_url} target="_blank" rel="noopener noreferrer" className="text-[#1877F2] underline text-xs inline-flex items-center gap-1">
-                      View Page <ExternalLink className="w-3 h-3" />
-                    </a>
-                  ) : "—"
-                } />
-                <Field label="Goals" value={audit.goals} />
-                <Field label="Posting Frequency" value={audit.posting_frequency} />
-                <Field label="Content Type" value={audit.content_type} />
-              </div>
-            </div>
-
-            {(audit.overall_score || audit.visibility_score) && (
-              <div className="border-t pt-4 space-y-3">
-                <p className="text-xs uppercase tracking-widest text-gray-400 font-semibold">Scores</p>
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-                  {[
-                    { label: "Overall", value: audit.overall_score },
-                    { label: "Visibility", value: audit.visibility_score },
-                    { label: "Content", value: audit.content_score },
-                    { label: "Consistency", value: audit.consistency_score },
-                    { label: "Engagement", value: audit.engagement_score },
-                    { label: "Growth", value: audit.growth_score },
-                  ].map(({ label, value }) => value ? (
-                    <div key={label} className="bg-gray-50 rounded-lg p-3 text-center">
-                      <p className="text-xs text-gray-500 mb-1">{label}</p>
-                      <p className="text-lg font-bold text-[#1877F2]">{Math.round(value)}</p>
-                    </div>
-                  ) : null)}
-                </div>
-              </div>
-            )}
-
-            {audit.report_text && (
-              <div className="border-t pt-4 space-y-3">
-                <p className="text-xs uppercase tracking-widest text-gray-400 font-semibold">Report Preview</p>
-                <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm max-h-80 overflow-y-auto text-gray-700 leading-relaxed whitespace-pre-wrap">
-                  {audit.report_text.slice(0, 2000)}{audit.report_text.length > 2000 ? '...' : ''}
-                </div>
-                <a href={`/report/${audit.id}`} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-xs text-[#1877F2] hover:underline">
-                  View Full Report <ExternalLink className="w-3 h-3" />
-                </a>
-              </div>
-            )}
-
-            <div className="border-t pt-4 grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs">
-              <Field label="Created" value={audit.created_at ? new Date(audit.created_at).toLocaleDateString() : "—"} />
-              <Field label="Updated" value={audit.updated_at ? new Date(audit.updated_at).toLocaleDateString() : "—"} />
-              <Field label="Scraper" value={<span className="capitalize">{audit.scraper_status || "—"}</span>} />
-            </div>
-          </div>
-        ) : (
-          <div className="px-6 py-8 text-center text-gray-500">Audit not found</div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function DeleteConfirm({ audit, onConfirm, onCancel }) {
-  return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-        <h2 className="text-lg font-bold text-gray-900 mb-2">Delete Audit?</h2>
-        <p className="text-sm text-gray-500 mb-6">
-          Are you sure you want to delete the audit for <strong>{audit.customer_name || audit.email}</strong>? This cannot be undone.
-        </p>
-        <div className="flex gap-3">
-          <button onClick={onCancel}
-            className="flex-1 border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-semibold hover:border-gray-400 transition-colors">
-            Cancel
-          </button>
-          <button onClick={onConfirm}
-            className="flex-1 bg-red-500 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-red-600 transition-colors">
-            Delete
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-const TABS = ["Overview", "Customers", "Revenue", "Funnel", "Drop-offs"];
-
-export default function Backoffice() {
-  const { user, logout, isLoadingAuth } = useAuth();
+export default function CreateAccount() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("Overview");
-  const [audits, setAudits] = useState([]);
-  const [overview, setOverview] = useState(null);
-  const [revenue, setRevenue] = useState(null);
-  const [funnel, setFunnel] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [viewingId, setViewingId] = useState(null);
-  const [deletingAudit, setDeletingAudit] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [searchParams] = useSearchParams();
+  const { signup } = useAuth();
+  const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [tipIndex, setTipIndex] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const [completedSteps, setCompletedSteps] = useState([]);
+
+  const steps = [
+    "Securing your account...",
+    "Analyzing your Facebook page...",
+    "Identifying growth blockers...",
+    "Building your content strategy...",
+    "Writing your 7-day action plan...",
+    "Finalizing your report...",
+  ];
 
   useEffect(() => {
-    if (isLoadingAuth) return;
-    if (!user || user.role !== 'admin') navigate('/dashboard');
-  }, [user, isLoadingAuth, navigate]);
+    if (!loading) return;
 
-  const loadAll = async () => {
+    // Rotate tips every 8 seconds
+    const tipTimer = setInterval(() => {
+      setTipIndex(prev => (prev + 1) % FACEBOOK_TIPS.length);
+    }, 8000);
+
+    // Progress bar over 75 seconds
+    const progressTimer = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 95) return 95;
+        return prev + (95 / 75);
+      });
+    }, 1000);
+
+    // Complete steps one by one
+    steps.forEach((_, i) => {
+      setTimeout(() => {
+        setCompletedSteps(prev => [...prev, i]);
+      }, (i + 1) * 10000);
+    });
+
+    return () => {
+      clearInterval(tipTimer);
+      clearInterval(progressTimer);
+    };
+  }, [loading]);
+
+  useEffect(() => {
+    const savedOrder = localStorage.getItem("pageAuditOrder");
+    if (!savedOrder) { navigate("/submit-your-page"); return; }
+    const orderData = JSON.parse(savedOrder);
+    setOrder(orderData);
+
+    const sessionId = searchParams.get("session_id");
+    if (sessionId) {
+      fetch(`${API_BASE}/api/stripe/verify/${sessionId}`)
+        .then(r => r.json())
+        .then(result => {
+          if (result.paid) localStorage.setItem("pageAuditPaid", "true");
+        })
+        .catch(err => console.error("Payment verification failed:", err));
+    }
+  }, [navigate, searchParams]);
+
+  const validatePasswords = () => {
+    if (!password) { setPasswordError("Password is required"); return false; }
+    if (password.length < 8) { setPasswordError("Password must be at least 8 characters"); return false; }
+    if (password !== confirmPassword) { setPasswordError("Passwords do not match"); return false; }
+    setPasswordError("");
+    return true;
+  };
+
+  const handleCreateAccount = async () => {
+    if (!validatePasswords()) return;
+    if (!agreedToTerms) { setError("Please agree to the Terms & Conditions to continue."); return; }
     setLoading(true);
+    setError(null);
+    setProgress(0);
+    setCompletedSteps([]);
+    setTipIndex(0);
+
     try {
-      const [auditsData, overviewData, revenueData, funnelData] = await Promise.all([
-        apiFetch('/api/admin/audits'),
-        apiFetch('/api/admin/overview'),
-        apiFetch('/api/admin/revenue'),
-        apiFetch('/api/admin/funnel'),
-      ]);
-      setAudits(Array.isArray(auditsData) ? auditsData : []);
-      setOverview(overviewData);
-      setRevenue(revenueData);
-      setFunnel(funnelData);
+      await signup(order.email, password, order.name);
+      const auditId = order.auditId || searchParams.get("audit_id");
+      if (auditId) {
+        try {
+          await fetch(`${API_BASE}/api/audits/${auditId}/run`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+          });
+        } catch (err) {
+          console.error("Audit run failed:", err);
+        }
+      }
+      localStorage.removeItem("pageAuditOrder");
+      navigate("/dashboard");
     } catch (err) {
-      console.error('Failed to load backoffice data:', err);
-    } finally {
-      setLoading(false);
+      if (err.message?.includes("already exists")) {
+        navigate("/login");
+      } else {
+        setError(err.message || "Something went wrong. Please try again.");
+        setLoading(false);
+      }
     }
   };
 
-  useEffect(() => { loadAll(); }, []);
-
-  const handleDelete = async (audit) => {
-    try {
-      await apiFetch(`/api/admin/audits/${audit.id}`, { method: 'DELETE' });
-      setAudits(prev => prev.filter(a => a.id !== audit.id));
-      setDeletingAudit(null);
-    } catch (err) {
-      console.error('Delete failed:', err);
-    }
-  };
-
-  const filtered = audits.filter(o => {
-    const matchStatus = statusFilter === 'all' || o.status === statusFilter;
-    const matchSearch = !searchTerm || o.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) || o.email?.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchStatus && matchSearch;
-  });
-
-  const statusBreakdown = [
-    { name: 'Completed', value: audits.filter(a => a.status === 'completed').length, fill: '#10b981' },
-    { name: 'Analyzing', value: audits.filter(a => a.status === 'analyzing').length, fill: '#1877F2' },
-    { name: 'Pending', value: audits.filter(a => a.status === 'pending').length, fill: '#f59e0b' },
-    { name: 'Failed', value: audits.filter(a => a.status === 'failed').length, fill: '#ef4444' },
-  ].filter(d => d.value > 0);
-
-  const funnelSteps = funnel?.funnel_counts ? [
-    { name: 'Landing Views', value: Number(funnel.funnel_counts.find(f => f.event_type === 'landing_viewed')?.count || 0) },
-    { name: 'Intake Submitted', value: Number(funnel.funnel_counts.find(f => f.event_type === 'intake_submitted')?.count || 0) },
-    { name: 'Preview Viewed', value: Number(funnel.funnel_counts.find(f => f.event_type === 'preview_viewed')?.count || 0) },
-    { name: 'Unlock Clicked', value: Number(funnel.funnel_counts.find(f => f.event_type === 'unlock_clicked')?.count || 0) },
-    { name: 'Paid', value: Number(funnel.funnel_counts.find(f => f.event_type === 'payment_success')?.count || 0) },
-    { name: 'Account Created', value: Number(funnel.funnel_counts.find(f => f.event_type === 'account_created')?.count || 0) },
-  ] : [];
-
-  if (isLoadingAuth || loading) {
+  if (!order) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-gray-200 border-t-[#1877F2] rounded-full animate-spin" />
@@ -259,312 +189,164 @@ export default function Backoffice() {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50 font-sans">
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="font-bold text-gray-900">PageAudit Pro</span>
-            <span className="text-xs bg-purple-100 text-purple-700 px-2.5 py-1 rounded-full font-semibold">Admin</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-gray-500">{user?.email}</span>
-            <button onClick={loadAll} className="text-xs text-gray-500 hover:text-black border border-gray-200 px-3 py-1.5 rounded-lg hover:border-gray-400 inline-flex items-center gap-1.5">
-              <RefreshCw className="w-3.5 h-3.5" /> Refresh
-            </button>
-            <button onClick={() => logout('/')} className="text-xs text-gray-500 hover:text-black border border-gray-200 px-3 py-1.5 rounded-lg hover:border-gray-400 inline-flex items-center gap-1.5">
-              <LogOut className="w-3.5 h-3.5" /> Logout
-            </button>
+  if (loading) {
+    const currentTip = FACEBOOK_TIPS[tipIndex];
+    const currentStep = Math.min(Math.floor(completedSteps.length), steps.length - 1);
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#0f2a6b] via-[#1877F2] to-[#2563eb] flex flex-col">
+        <nav className="px-6 py-4">
+          <span className="font-bold text-white text-sm tracking-tight">PageAudit Pro</span>
+        </nav>
+
+        <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
+          <div className="w-full max-w-2xl space-y-6">
+
+            {/* Header */}
+            <div className="text-center">
+              <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-4">
+                <div className="w-10 h-10 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+              </div>
+              <h1 className="text-3xl font-extrabold text-white mb-2">Building Your Report</h1>
+              <p className="text-blue-200">Our AI is analyzing your Facebook page right now. This takes about 60 seconds.</p>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="bg-white/10 rounded-full h-3 overflow-hidden">
+              <div
+                className="h-full bg-white rounded-full transition-all duration-1000"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+
+            {/* Steps */}
+            <div className="bg-white/10 rounded-2xl p-5 space-y-3">
+              {steps.map((step, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 transition-all ${
+                    completedSteps.includes(i)
+                      ? 'bg-green-400'
+                      : i === currentStep
+                      ? 'bg-white/30 border-2 border-white animate-pulse'
+                      : 'bg-white/10'
+                  }`}>
+                    {completedSteps.includes(i) && <CheckCircle className="w-3 h-3 text-white" />}
+                  </div>
+                  <span className={`text-sm ${completedSteps.includes(i) ? 'text-green-300 line-through' : i === currentStep ? 'text-white font-semibold' : 'text-blue-300'}`}>
+                    {step}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Rotating Tip */}
+            <div className="bg-white rounded-2xl p-6 shadow-xl">
+              <div className="flex items-start gap-4">
+                <span className="text-3xl shrink-0">{currentTip.emoji}</span>
+                <div>
+                  <p className="text-xs font-bold text-[#1877F2] uppercase tracking-wide mb-1">
+                    💡 Facebook Pro Tip
+                  </p>
+                  <h3 className="font-bold text-gray-900 mb-2">{currentTip.title}</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">{currentTip.tip}</p>
+                </div>
+              </div>
+              <div className="flex gap-1 mt-4 justify-center">
+                {FACEBOOK_TIPS.slice(0, 8).map((_, i) => (
+                  <div key={i} className={`h-1 rounded-full transition-all ${i === tipIndex % 8 ? 'w-6 bg-[#1877F2]' : 'w-1.5 bg-gray-200'}`} />
+                ))}
+              </div>
+            </div>
+
+            <p className="text-center text-blue-200 text-sm">
+              Don't close this page — you'll be redirected automatically when your report is ready.
+            </p>
           </div>
         </div>
-        <div className="max-w-7xl mx-auto px-6 flex gap-1 overflow-x-auto">
-          {TABS.map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)}
-              className={`text-sm font-medium px-4 py-2.5 border-b-2 whitespace-nowrap transition-colors ${activeTab === tab ? 'border-[#1877F2] text-[#1877F2]' : 'border-transparent text-gray-500 hover:text-gray-900'}`}>
-              {tab}
-            </button>
-          ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 font-sans flex flex-col">
+      <nav className="bg-white border-b border-gray-100">
+        <div className="max-w-5xl mx-auto px-6 py-4">
+          <span className="font-bold text-base text-black tracking-tight">PageAudit Pro</span>
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
+      <div className="flex-1 flex items-center justify-center px-4 py-10">
+        <div className="w-full max-w-lg">
+          <div className="bg-white border border-gray-100 rounded-3xl shadow-sm px-7 py-8">
 
-        {activeTab === "Overview" && (
-          <div className="space-y-8">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-1">Command Center</h1>
-              <p className="text-gray-500 text-sm">Everything you need to run and grow PageAudit Pro.</p>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <MetricCard icon={Eye} label="Views Today" value={overview?.today?.views ?? '—'} color="text-blue-600" bg="bg-blue-50" />
-              <MetricCard icon={ShoppingCart} label="Sales Today" value={overview?.today?.sales ?? '—'} color="text-green-600" bg="bg-green-50" />
-              <MetricCard icon={DollarSign} label="Revenue Today" value={`$${(overview?.today?.revenue ?? 0).toFixed(2)}`} color="text-emerald-600" bg="bg-emerald-50" />
-              <MetricCard icon={Users} label="Total Users" value={overview?.all_time?.users ?? '—'} color="text-purple-600" bg="bg-purple-50" />
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <MetricCard icon={TrendingUp} label="All-Time Revenue" value={`$${(overview?.all_time?.revenue ?? 0).toFixed(2)}`} color="text-emerald-600" bg="bg-emerald-50" />
-              <MetricCard icon={ShoppingCart} label="All-Time Sales" value={overview?.all_time?.sales ?? '—'} color="text-blue-600" bg="bg-blue-50" />
-              <MetricCard icon={BarChart2} label="Conversion Rate" value={`${overview?.all_time?.conversion_rate ?? 0}%`} color="text-orange-600" bg="bg-orange-50" />
-              <MetricCard icon={CheckCircle2} label="Total Audits" value={audits.length} color="text-indigo-600" bg="bg-indigo-50" />
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-                <h3 className="font-bold text-gray-900 mb-4">Audit Status Breakdown</h3>
-                {statusBreakdown.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={220}>
-                    <PieChart>
-                      <Pie data={statusBreakdown} cx="50%" cy="50%" outerRadius={80} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
-                        {statusBreakdown.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                ) : <p className="text-sm text-gray-400 text-center py-12">No data yet</p>}
+            <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6 flex items-center gap-3">
+              <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />
+              <div>
+                <p className="text-sm font-bold text-green-800">Payment Confirmed!</p>
+                <p className="text-xs text-green-600">Create your account to access your full report.</p>
               </div>
-              <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-                <h3 className="font-bold text-gray-900 mb-4">Quick Stats</h3>
-                <div className="space-y-4">
-                  {[
-                    { label: "Completion Rate", value: audits.length > 0 ? `${Math.round((audits.filter(a=>a.status==='completed').length / audits.length)*100)}%` : '—', color: 'text-green-600' },
-                    { label: "Failure Rate", value: audits.length > 0 ? `${Math.round((audits.filter(a=>a.status==='failed').length / audits.length)*100)}%` : '—', color: 'text-red-600' },
-                    { label: "Avg Revenue per Sale", value: overview?.all_time?.sales > 0 ? `$${(overview.all_time.revenue / overview.all_time.sales).toFixed(2)}` : '—', color: 'text-emerald-600' },
-                    { label: "Paid Audits", value: audits.filter(a => a.paid).length, color: 'text-blue-600' },
-                  ].map(({ label, value, color }) => (
-                    <div key={label} className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">{label}</span>
-                      <span className={`font-bold text-sm ${color}`}>{value}</span>
-                    </div>
-                  ))}
+            </div>
+
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">Secure Your Access</h1>
+            <p className="text-sm text-gray-400 mb-8">Your report will be ready in about 60 seconds after you create your account.</p>
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+            )}
+
+            <div className="space-y-5">
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-1.5">Email Address</label>
+                <input type="email" value={order?.email || ""} readOnly
+                  className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3.5 text-sm text-gray-600 bg-gray-50 cursor-not-allowed" />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-1.5">Create Password</label>
+                <div className="relative">
+                  <input type={showPassword ? "text" : "password"} value={password}
+                    onChange={e => { setPassword(e.target.value); if (passwordError) setPasswordError(""); }}
+                    placeholder="Min 8 characters"
+                    className={`w-full border-2 rounded-2xl px-4 py-3.5 text-sm focus:outline-none transition-all pr-10 ${passwordError ? "border-red-300" : "border-gray-100 focus:border-[#1877F2]"}`} />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
-            </div>
-          </div>
-        )}
 
-        {activeTab === "Customers" && (
-          <div className="space-y-6">
-            <h1 className="text-2xl font-bold text-gray-900">All Customers</h1>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <input type="text" placeholder="Search by name or email..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-                className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1877F2]/30" />
-              <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-                className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1877F2]/30">
-                <option value="all">All Statuses</option>
-                <option value="completed">Completed</option>
-                <option value="analyzing">Analyzing</option>
-                <option value="pending">Pending</option>
-                <option value="failed">Failed</option>
-              </select>
-            </div>
-            <p className="text-xs text-gray-400">{filtered.length} results</p>
-            <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-100">
-                    {["Name / Email", "Facebook Page", "Goals", "Status", "Score", "Paid", "Date", ""].map(h => (
-                      <th key={h} className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-3 whitespace-nowrap">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {filtered.map(audit => (
-                    <tr key={audit.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3">
-                        <p className="font-medium text-gray-900">{audit.customer_name || "—"}</p>
-                        <p className="text-xs text-gray-400 font-mono">{audit.email}</p>
-                      </td>
-                      <td className="px-4 py-3 text-xs">
-                        {audit.facebook_url ? (
-                          <a href={audit.facebook_url} target="_blank" rel="noopener noreferrer" className="text-[#1877F2] hover:underline inline-flex items-center gap-1">
-                            View <ExternalLink className="w-3 h-3" />
-                          </a>
-                        ) : "—"}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-gray-500 max-w-[120px] truncate">{audit.goals || "—"}</td>
-                      <td className="px-4 py-3"><StatusBadge status={audit.status} /></td>
-                      <td className="px-4 py-3 font-bold text-[#1877F2] text-center">{audit.overall_score ? Math.round(audit.overall_score) : "—"}</td>
-                      <td className="px-4 py-3">{audit.paid ? <span className="text-green-600 font-semibold text-xs">✓ ${audit.amount_paid}</span> : <span className="text-gray-400 text-xs">—</span>}</td>
-                      <td className="px-4 py-3 text-xs text-gray-500">{audit.created_at ? new Date(audit.created_at).toLocaleDateString() : "—"}</td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button onClick={() => setViewingId(audit.id)} className="text-xs text-[#1877F2] hover:underline inline-flex items-center gap-1">
-                            View <ChevronRight className="w-3.5 h-3.5" />
-                          </button>
-                          <button onClick={() => setDeletingAudit(audit)} className="text-xs text-red-400 hover:text-red-600 inline-flex items-center gap-1">
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {filtered.length === 0 && <p className="text-center text-gray-400 text-sm py-12">No customers match your filters.</p>}
-            </div>
-          </div>
-        )}
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-1.5">Confirm Password</label>
+                <input type={showPassword ? "text" : "password"} value={confirmPassword}
+                  onChange={e => { setConfirmPassword(e.target.value); if (passwordError) setPasswordError(""); }}
+                  placeholder="Confirm your password"
+                  className={`w-full border-2 rounded-2xl px-4 py-3.5 text-sm focus:outline-none transition-all ${passwordError ? "border-red-300" : "border-gray-100 focus:border-[#1877F2]"}`} />
+              </div>
 
-        {activeTab === "Revenue" && (
-          <div className="space-y-8">
-            <h1 className="text-2xl font-bold text-gray-900">Revenue</h1>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <MetricCard icon={DollarSign} label="All-Time Revenue" value={`$${(revenue?.all_time?.revenue ?? 0).toFixed(2)}`} color="text-emerald-600" bg="bg-emerald-50" />
-              <MetricCard icon={ShoppingCart} label="Total Paid Audits" value={revenue?.all_time?.paid_audits ?? '—'} color="text-blue-600" bg="bg-blue-50" />
-              <MetricCard icon={DollarSign} label="Revenue Today" value={`$${(revenue?.today?.revenue ?? 0).toFixed(2)}`} color="text-green-600" bg="bg-green-50" />
-              <MetricCard icon={Users} label="Total Users" value={revenue?.total_users ?? '—'} color="text-purple-600" bg="bg-purple-50" />
-            </div>
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-              <h3 className="font-bold text-gray-900 mb-6">Daily Revenue (Last 30 Days)</h3>
-              {revenue?.daily_revenue?.length > 0 ? (
-                <ResponsiveContainer width="100%" height={280}>
-                  <LineChart data={revenue.daily_revenue}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={d => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} />
-                    <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `$${v}`} />
-                    <Tooltip formatter={v => [`$${Number(v).toFixed(2)}`, 'Revenue']} />
-                    <Line type="monotone" dataKey="revenue" stroke="#1877F2" strokeWidth={2} dot={false} />
-                  </LineChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex items-center justify-center h-40 text-gray-400 text-sm">No revenue data yet — make your first sale!</div>
-              )}
-            </div>
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-              <h3 className="font-bold text-gray-900 mb-6">Daily Orders</h3>
-              {revenue?.daily_revenue?.length > 0 ? (
-                <ResponsiveContainer width="100%" height={220}>
-                  <BarChart data={revenue.daily_revenue}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={d => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} />
-                    <YAxis tick={{ fontSize: 11 }} />
-                    <Tooltip />
-                    <Bar dataKey="orders" fill="#1877F2" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex items-center justify-center h-32 text-gray-400 text-sm">No orders yet.</div>
-              )}
-            </div>
-          </div>
-        )}
+              {passwordError && <p className="text-xs text-red-500 -mt-3">{passwordError}</p>}
 
-        {activeTab === "Funnel" && (
-          <div className="space-y-8">
-            <h1 className="text-2xl font-bold text-gray-900">Conversion Funnel</h1>
-            {funnelSteps.length > 0 ? (
-              <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-                <h3 className="font-bold text-gray-900 mb-6">Full Funnel</h3>
-                <div className="space-y-3">
-                  {funnelSteps.map((step, i) => {
-                    const top = funnelSteps[0].value || 1;
-                    const pct = Math.round((Number(step.value) / top) * 100);
-                    const dropoff = i > 0 ? Math.round(((funnelSteps[i-1].value - step.value) / (funnelSteps[i-1].value || 1)) * 100) : 0;
-                    return (
-                      <div key={step.name}>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-medium text-gray-700">{step.name}</span>
-                          <div className="flex items-center gap-3">
-                            {i > 0 && dropoff > 0 && <span className="text-xs text-red-500">-{dropoff}% drop</span>}
-                            <span className="text-sm font-bold text-gray-900">{step.value}</span>
-                            <span className="text-xs text-gray-400">{pct}%</span>
-                          </div>
-                        </div>
-                        <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-[#1877F2] rounded-full transition-all" style={{ width: `${pct}%` }} />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+              <div className="flex items-start gap-3 pt-2">
+                <input type="checkbox" id="terms" checked={agreedToTerms}
+                  onChange={e => setAgreedToTerms(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 rounded border-gray-300 text-[#1877F2] focus:ring-[#1877F2] cursor-pointer" />
+                <label htmlFor="terms" className="text-xs text-gray-500 leading-relaxed cursor-pointer">
+                  I agree to the{" "}
+                  <Link to="/terms" target="_blank" className="text-[#1877F2] hover:underline font-medium">Terms & Conditions</Link>
+                  {" "}and{" "}
+                  <Link to="/privacy" target="_blank" className="text-[#1877F2] hover:underline font-medium">Privacy Policy</Link>
+                </label>
               </div>
-            ) : (
-              <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center text-gray-400">
-                No funnel data yet.
-              </div>
-            )}
-            {funnel?.campaigns?.length > 0 && (
-              <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-                <h3 className="font-bold text-gray-900 mb-4">Campaign Performance</h3>
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-gray-50 border-b border-gray-100">
-                      {["Source", "Campaign", "Views", "Intakes", "Purchases", "Conv %"].map(h => (
-                        <th key={h} className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider px-3 py-2">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {funnel.campaigns.map((c, i) => (
-                      <tr key={i} className="hover:bg-gray-50">
-                        <td className="px-3 py-2 font-medium">{c.utm_source || "—"}</td>
-                        <td className="px-3 py-2 text-gray-500">{c.utm_campaign || "—"}</td>
-                        <td className="px-3 py-2">{c.views}</td>
-                        <td className="px-3 py-2">{c.intakes}</td>
-                        <td className="px-3 py-2 font-bold text-green-600">{c.purchases}</td>
-                        <td className="px-3 py-2 text-[#1877F2] font-bold">
-                          {c.views > 0 ? `${Math.round((c.purchases / c.views) * 100)}%` : "—"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
 
-        {activeTab === "Drop-offs" && (
-          <div className="space-y-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Warm Leads</h1>
-              <p className="text-gray-500 text-sm mt-1">People who started but didn't buy — your best re-engagement opportunities.</p>
+              <button onClick={handleCreateAccount} disabled={loading || !password || !confirmPassword || !agreedToTerms}
+                className="w-full inline-flex items-center justify-center gap-2 bg-[#1877F2] text-white px-10 py-4 font-bold text-base rounded-2xl hover:bg-[#1457C0] transition-all shadow-lg shadow-blue-200 disabled:opacity-60 disabled:cursor-not-allowed mt-2">
+                {loading ? <><Loader2 className="w-5 h-5 animate-spin" /> Building your report...</> : "Create Account & Get My Report →"}
+              </button>
             </div>
-            {funnel?.dropoffs?.length > 0 ? (
-              <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-gray-50 border-b border-gray-100">
-                      {["Email", "Facebook Page", "Source", "Campaign", "Date"].map(h => (
-                        <th key={h} className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-3">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {funnel.dropoffs.map((d, i) => (
-                      <tr key={i} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 font-mono text-xs text-gray-700">{d.email || "—"}</td>
-                        <td className="px-4 py-3 text-xs">
-                          {d.facebook_url ? (
-                            <a href={d.facebook_url} target="_blank" rel="noopener noreferrer" className="text-[#1877F2] hover:underline inline-flex items-center gap-1">
-                              View <ExternalLink className="w-3 h-3" />
-                            </a>
-                          ) : "—"}
-                        </td>
-                        <td className="px-4 py-3 text-xs text-gray-500">{d.utm_source || "organic"}</td>
-                        <td className="px-4 py-3 text-xs text-gray-500">{d.utm_campaign || "—"}</td>
-                        <td className="px-4 py-3 text-xs text-gray-500">{d.created_at ? new Date(d.created_at).toLocaleDateString() : "—"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center text-gray-400">
-                No drop-offs yet.
-              </div>
-            )}
           </div>
-        )}
+        </div>
       </div>
-
-      {viewingId && <AuditDetail auditId={viewingId} onClose={() => setViewingId(null)} />}
-      {deletingAudit && (
-        <DeleteConfirm
-          audit={deletingAudit}
-          onConfirm={() => handleDelete(deletingAudit)}
-          onCancel={() => setDeletingAudit(null)}
-        />
-      )}
     </div>
   );
 }
