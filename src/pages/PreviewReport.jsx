@@ -190,14 +190,27 @@ export default function PreviewReport() {
               {unlocking ? 'Redirecting...' : 'Claim My Report →'}
             </button>
 
-            {/* TIMER — RIGHT UNDER BUTTON */}
+            {/* TIMER UNDER BUTTON */}
             <div className={`mt-4 text-center text-sm font-bold py-3 px-4 rounded-xl ${timerExpired ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-orange-50 text-orange-700 border border-orange-200'}`}>
               {timerExpired
                 ? "⚠️ Your hold has expired — claim now before it's gone"
                 : `⏳ We're holding your report for: ${timerDisplay}`}
             </div>
 
-            <p className="text-xs text-gray-400 text-center mt-3">🔒 Secure payment · No contracts · No hidden fees</p>
+            {/* TERMS */}
+            <p className="text-xs text-gray-400 text-center mt-3">
+              🔒 Secure payment · No contracts · No hidden fees
+            </p>
+            <p className="text-xs text-gray-400 text-center mt-2">
+              By purchasing you agree to our{" "}
+              <a href="/terms" target="_blank" className="text-[#1877F2] hover:underline font-medium">
+                Terms & Conditions
+              </a>
+              {" "}and{" "}
+              <a href="/privacy" target="_blank" className="text-[#1877F2] hover:underline font-medium">
+                Privacy Policy
+              </a>
+            </p>
           </div>
 
           {order && (
@@ -256,6 +269,12 @@ export default function PreviewReport() {
                 {unlocking ? 'Redirecting...' : 'Yes! Claim My Report for $39.99 →'}
               </button>
               <p className="text-xs text-gray-400 mt-3">🔒 Secure · One-time · Instant access</p>
+              <p className="text-xs text-gray-400 mt-2">
+                By purchasing you agree to our{" "}
+                <a href="/terms" target="_blank" className="text-[#1877F2] hover:underline font-medium">Terms & Conditions</a>
+                {" "}and{" "}
+                <a href="/privacy" target="_blank" className="text-[#1877F2] hover:underline font-medium">Privacy Policy</a>
+              </p>
             </div>
           </div>
         </div>
