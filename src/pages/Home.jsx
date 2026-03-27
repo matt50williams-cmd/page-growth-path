@@ -3,8 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { trackEvent, EVENTS } from "@/utils/tracking";
 import Footer from "@/components/Footer";
-import { base44 } from "@/api/base44Client";
-import { getStoredUtmParams } from "@/utils/utm";
 
 function SectionLabel({ text, color = "text-[#1877F2]" }) {
   return (
@@ -24,38 +22,20 @@ function PrimaryButton({ onClick, children, className = "" }) {
 }
 
 export default function Home() {
-  useEffect(() => {
-    const trackLandingView = async () => {
-      const utm = getStoredUtmParams() || {};
-      console.log("landing_viewed event fired");
-      try {
-        await base44.functions.invoke('trackFunnel', {
-          event_type: 'landing_viewed',
-          utm_source: utm.utm_source || null,
-          utm_campaign: utm.utm_campaign || null,
-          utm_adset: utm.utm_adset || null,
-          utm_ad: utm.utm_ad || null,
-        });
-      } catch (err) {
-        console.error("Failed to track landing_viewed:", err);
-      }
-    };
-    trackLandingView();
-  }, []);
   const navigate = useNavigate();
 
   useEffect(() => {
     trackEvent(EVENTS.LANDING_VIEWED);
   }, []);
+
   const goToAudit = () => {
-    console.log("[FUNNEL] HOME → SUBMIT");
     navigate("/submit-your-page");
   };
 
   return (
     <div className="min-h-screen bg-white text-gray-900 font-sans antialiased flex flex-col">
 
-      {/* ── NAV ── */}
+      {/* NAV */}
       <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-gray-100">
         <div className="max-w-5xl mx-auto px-6 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -64,11 +44,11 @@ export default function Home() {
             </div>
             <span className="font-bold text-sm tracking-tight text-gray-900">PageAudit Pro</span>
           </div>
-          <a href="mailto:support@yourdomain.com" className="text-xs text-gray-500 hover:text-gray-700 transition-colors">
+          <a href="mailto:support@pageauditpros.com" className="text-xs text-gray-500 hover:text-gray-700 transition-colors">
             Help
           </a>
           <button
-            onClick={() => base44.auth.redirectToLogin("/dashboard")}
+            onClick={() => navigate("/login")}
             className="inline-flex items-center gap-2.5 bg-gradient-to-b from-[#2563EB] to-[#1d4ed8] text-white font-bold rounded-xl hover:from-[#1d4ed8] hover:to-[#1e40af] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200 shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 text-sm px-5 py-2.5"
           >
             Login <ArrowRight className="w-4 h-4" />
@@ -76,7 +56,7 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* ── HERO ── */}
+      {/* HERO */}
       <section className="px-4 pt-24 pb-28 bg-white">
         <div className="max-w-3xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-100 text-[#1877F2] text-xs font-semibold px-4 py-2 rounded-full mb-8">
@@ -94,7 +74,7 @@ export default function Home() {
             <PrimaryButton onClick={goToAudit} className="text-base px-10 py-5">
               Get My Page Audit <ArrowRight className="w-5 h-5" />
             </PrimaryButton>
-            <a href="mailto:support@yourdomain.com" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
+            <a href="mailto:support@pageauditpros.com" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
               Need help? Contact support
             </a>
             <div className="flex flex-wrap justify-center gap-x-8 gap-y-2">
@@ -108,7 +88,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── PROBLEM ── */}
+      {/* PROBLEM */}
       <section className="px-4 py-24 bg-[#fafafa] border-y border-gray-100">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-16">
@@ -135,7 +115,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── SOLUTION ── */}
+      {/* SOLUTION */}
       <section className="px-4 py-24 bg-white">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-16">
@@ -166,7 +146,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── VALUE ── */}
+      {/* VALUE */}
       <section className="px-4 py-24 bg-gradient-to-br from-[#1565D3] via-[#1877F2] to-[#1e90ff]">
         <div className="max-w-2xl mx-auto text-center space-y-6">
           <SectionLabel text="Personalized, Not Generic" color="text-blue-200" />
@@ -188,7 +168,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── RESULTS ── */}
+      {/* RESULTS */}
       <section className="px-4 py-24 bg-white">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-16">
@@ -200,7 +180,7 @@ export default function Home() {
           </div>
           <div className="space-y-3 max-w-xl mx-auto">
             {[
-              "A clear breakdown of exactly what's hurting your growth",
+              "A clear breakdown of exactly what's holding your growth back",
               "A 7-day action plan you can implement immediately",
               "Content ideas tailored to your business and audience",
               "A roadmap for consistent, long-term customer growth",
@@ -222,7 +202,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── PRICING ── */}
+      {/* PRICING */}
       <section className="px-4 py-24 bg-[#fafafa] border-y border-gray-100">
         <div className="max-w-md mx-auto">
           <div className="text-center mb-14">
@@ -232,7 +212,6 @@ export default function Home() {
           </div>
 
           <div className="relative bg-white border-2 border-[#1877F2] rounded-3xl px-8 pt-10 pb-8 shadow-2xl shadow-blue-100 text-center overflow-hidden">
-            {/* Top badge */}
             <div className="absolute top-0 inset-x-0 flex justify-center">
               <span className="bg-[#1877F2] text-white text-xs font-bold px-5 py-1.5 rounded-b-xl tracking-wide">
                 LIMITED TIME OFFER
@@ -240,7 +219,6 @@ export default function Home() {
             </div>
 
             <p className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-3">Business Page Audit</p>
-
             <p className="text-sm text-gray-400 mb-1">
               <span className="line-through text-gray-300 mr-2">Normally $79</span>
               <span className="text-green-600 font-bold">50% off — Today only</span>
