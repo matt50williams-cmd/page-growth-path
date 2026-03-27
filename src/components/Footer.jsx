@@ -8,7 +8,7 @@ export default function Footer() {
         <div className="flex items-center gap-6 text-xs text-gray-500">
           <Link to="/privacy" className="hover:text-black transition-colors">Privacy Policy</Link>
           <Link to="/terms" className="hover:text-black transition-colors">Terms & Conditions</Link>
-          <a href="mailto:support@yourdomain.com" className="hover:text-black transition-colors">Help</a>
+          <a href="mailto:support@pageauditpros.com" className="hover:text-black transition-colors">Help</a>
           <span>© 2026 PageAudit Pro. All rights reserved.</span>
         </div>
       </div>

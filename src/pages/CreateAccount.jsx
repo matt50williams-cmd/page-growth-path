@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 
@@ -16,6 +16,7 @@ export default function CreateAccount() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [passwordError, setPasswordError] = useState("");
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [messageIndex, setMessageIndex] = useState(0);
 
   const messages = [
@@ -64,7 +65,12 @@ export default function CreateAccount() {
 
   const handleCreateAccount = async () => {
     if (!validatePasswords()) return;
+    if (!agreedToTerms) {
+      setError("Please agree to the Terms & Conditions to continue.");
+      return;
+    }
     setLoading(true);
+    setError(null);
 
     try {
       await signup(order.email, password, order.name);
@@ -177,8 +183,24 @@ export default function CreateAccount() {
 
               {passwordError && <p className="text-xs text-red-500 -mt-3">{passwordError}</p>}
 
-              <button onClick={handleCreateAccount} disabled={loading || !password || !confirmPassword}
-                className="w-full inline-flex items-center justify-center gap-2 bg-[#1877F2] text-white px-10 py-4 font-bold text-base rounded-2xl hover:bg-[#1457C0] transition-all shadow-lg shadow-blue-200 disabled:opacity-60 disabled:cursor-not-allowed mt-6">
+              <div className="flex items-start gap-3 pt-2">
+                <input type="checkbox" id="terms" checked={agreedToTerms}
+                  onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 rounded border-gray-300 text-[#1877F2] focus:ring-[#1877F2] cursor-pointer" />
+                <label htmlFor="terms" className="text-xs text-gray-500 leading-relaxed cursor-pointer">
+                  I agree to the{" "}
+                  <Link to="/terms" target="_blank" className="text-[#1877F2] hover:underline font-medium">
+                    Terms & Conditions
+                  </Link>
+                  {" "}and{" "}
+                  <Link to="/privacy" target="_blank" className="text-[#1877F2] hover:underline font-medium">
+                    Privacy Policy
+                  </Link>
+                </label>
+              </div>
+
+              <button onClick={handleCreateAccount} disabled={loading || !password || !confirmPassword || !agreedToTerms}
+                className="w-full inline-flex items-center justify-center gap-2 bg-[#1877F2] text-white px-10 py-4 font-bold text-base rounded-2xl hover:bg-[#1457C0] transition-all shadow-lg shadow-blue-200 disabled:opacity-60 disabled:cursor-not-allowed mt-2">
                 {loading ? (<><Loader2 className="w-5 h-5 animate-spin" /> Setting up your account...</>) : "Create Account & View Report"}
               </button>
             </div>
