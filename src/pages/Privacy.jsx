@@ -6,12 +6,12 @@ export default function Privacy() {
   return (
     <div className="min-h-screen bg-white text-gray-900 font-sans antialiased flex flex-col">
       <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-gray-100">
-        <div className="max-w-5xl mx-auto px-6 py-3.5 flex items-center justify-between">
-          <span className="font-bold text-sm tracking-tight text-gray-900">PageAudit Pro</span>
+        <div className="max-w-5xl mx-auto px-6 py-3.5 flex items-center gap-4">
           <button onClick={() => navigate(-1)}
             className="text-xs font-semibold text-[#1877F2] hover:underline">
             ← Back
           </button>
+          <span className="font-bold text-sm tracking-tight text-gray-900">PageAudit Pro</span>
         </div>
       </nav>
 
