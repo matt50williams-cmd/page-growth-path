@@ -1,143 +1,115 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
-import { Download, Share2, Eye, Loader2, LogOut } from "lucide-react";
+import { useAuth } from "@/lib/AuthContext";
+import { Eye, Download, Share2, CheckCircle, Clock, AlertCircle, Loader2 } from "lucide-react";
+
+const API_BASE = "https://pageaudit-engine.onrender.com";
+
+function StatusBadge({ status }) {
+  const statusMap = {
+    pending: { color: "bg-orange-100 text-orange-600", label: "Pending" },
+    analyzing: { color: "bg-blue-100 text-blue-700", label: "Analyzing" },
+    completed: { color: "bg-green-100 text-green-700", label: "Completed" },
+    failed: { color: "bg-red-100 text-red-600", label: "Failed" },
+  };
+  const config = statusMap[status] || { color: "bg-gray-100 text-gray-500", label: status || "Unknown" };
+  return <span className={`inline-flex text-xs font-semibold px-2.5 py-1 rounded-full ${config.color}`}>{config.label}</span>;
+}
 
 export default function MyAudits() {
   const navigate = useNavigate();
+  const { user, logout, isLoadingAuth } = useAuth();
   const [audits, setAudits] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null);
+  const [copied, setCopied] = useState(null);
 
   useEffect(() => {
-    const init = async () => {
-      try {
-        const userData = await base44.auth.me();
-        setUser(userData);
-        
-        // Fetch audits created by this user
-        const auditData = await base44.entities.Audit.filter({ created_by: userData.email });
-        setAudits(auditData || []);
-      } catch (err) {
-        console.error("Error loading audits:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    init();
-  }, []);
+    if (isLoadingAuth) return;
+    if (!user) { navigate("/login"); return; }
 
-  const handleDownload = async (auditId, name) => {
-    try {
-      const response = await base44.functions.invoke('downloadAuditPDF', { auditId });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `audit-${name.replace(/\s/g, '-')}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.parentNode.removeChild(link);
-    } catch (err) {
-      console.error("Download error:", err);
-      alert("Failed to download PDF");
-    }
-  };
+    const token = localStorage.getItem('pageaudit_token');
+    fetch(`${API_BASE}/api/audits`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then(r => r.json())
+      .then(data => { setAudits(Array.isArray(data) ? data : []); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, [user, isLoadingAuth, navigate]);
 
   const handleShare = (auditId) => {
-    const url = `${window.location.origin}/report/${auditId}`;
-    navigator.clipboard.writeText(url);
-    alert("Report link copied to clipboard!");
+    navigator.clipboard.writeText(`${window.location.origin}/report/${auditId}`);
+    setCopied(auditId);
+    setTimeout(() => setCopied(null), 2500);
   };
 
-  const handleLogout = async () => {
-    await base44.auth.logout();
-  };
-
-  if (loading) {
+  if (loading || isLoadingAuth) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-[#1877F2]" />
+        <div className="w-8 h-8 border-2 border-gray-200 border-t-[#1877F2] rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* NAV */}
-      <nav className="bg-white border-b border-gray-100">
-        <div className="max-w-6xl mx-auto px-4 md:px-6 py-4 flex items-center justify-between">
-          <span className="font-bold text-base text-black tracking-tight">PageAudit Pro</span>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600">{user?.full_name || user?.email}</span>
-            <button
-              onClick={handleLogout}
-              className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-black px-3 py-2 border border-gray-200 rounded-lg"
-            >
-              <LogOut className="w-4 h-4" /> Logout
-            </button>
+    <div className="min-h-screen bg-gray-50 font-sans">
+      <nav className="bg-white border-b border-gray-100 sticky top-0 z-40">
+        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+          <span className="font-bold text-sm tracking-tight">PageAudit Pro</span>
+          <div className="flex items-center gap-3">
+            <button onClick={() => navigate("/dashboard")} className="text-xs text-gray-500 hover:text-black">Dashboard</button>
+            <button onClick={() => logout("/")} className="text-xs text-gray-500 hover:text-black border border-gray-200 px-3 py-1.5 rounded-lg">Logout</button>
           </div>
         </div>
       </nav>
 
-      <div className="max-w-6xl mx-auto px-4 md:px-6 py-10">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">My Audits</h1>
-          <p className="text-gray-600">View and manage your Facebook page audits</p>
-        </div>
+      <div className="max-w-5xl mx-auto px-4 md:px-6 py-10">
+        <h1 className="text-2xl font-bold text-gray-900 mb-8">My Audits</h1>
 
         {audits.length === 0 ? (
-          <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-            <p className="text-gray-600 mb-4">You haven't created any audits yet.</p>
-            <button
-              onClick={() => navigate("/submit-your-page")}
-              className="inline-flex items-center gap-2 bg-[#1877F2] text-white px-6 py-2 rounded-lg hover:bg-[#1457C0]"
-            >
-              Create Your First Audit
+          <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center">
+            <p className="text-gray-500 text-sm mb-4">No audits yet.</p>
+            <button onClick={() => navigate("/submit-your-page")}
+              className="bg-[#1877F2] text-white px-6 py-2 text-sm font-semibold rounded-lg hover:bg-[#1457C0] transition-colors">
+              Start Your First Audit
             </button>
           </div>
         ) : (
-          <div className="grid gap-4">
-            {audits.map((audit) => (
-              <div key={audit.id} className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-bold text-gray-900 mb-1">{audit.customer_name}</h3>
-                    <p className="text-sm text-gray-600 mb-3">{audit.email}</p>
-                    <p className="text-xs text-gray-500 mb-4">
-                      Created: {new Date(audit.created_date).toLocaleDateString()}
-                    </p>
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      <span className="inline-block bg-blue-50 text-[#1877F2] text-xs px-3 py-1 rounded-full">
-                        {audit.account_type}
-                      </span>
-                      <span className="inline-block bg-green-50 text-green-700 text-xs px-3 py-1 rounded-full">
-                        Completed
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => navigate(`/report/${audit.id}`)}
-                      className="inline-flex items-center gap-1.5 text-[#1877F2] hover:text-[#1457C0] text-sm font-medium px-3 py-2 border border-[#1877F2] rounded-lg"
-                    >
-                      <Eye className="w-4 h-4" /> View
-                    </button>
-                    <button
-                      onClick={() => handleShare(audit.id)}
-                      className="inline-flex items-center gap-1.5 text-gray-600 hover:text-gray-900 text-sm font-medium px-3 py-2 border border-gray-300 rounded-lg"
-                    >
-                      <Share2 className="w-4 h-4" /> Share
-                    </button>
-                    <button
-                      onClick={() => handleDownload(audit.id, audit.customer_name)}
-                      className="inline-flex items-center gap-1.5 text-gray-600 hover:text-gray-900 text-sm font-medium px-3 py-2 border border-gray-300 rounded-lg"
-                    >
-                      <Download className="w-4 h-4" /> PDF
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
+          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-100">
+                  {["Page", "Score", "Status", "Date", "Actions"].map(h => (
+                    <th key={h} className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-3">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {audits.map(audit => (
+                  <tr key={audit.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-gray-900">{audit.customer_name || "—"}</p>
+                      <p className="text-xs text-gray-400 truncate max-w-[200px]">{audit.facebook_url || "—"}</p>
+                    </td>
+                    <td className="px-4 py-3 font-bold text-[#1877F2]">{audit.overall_score ? Math.round(audit.overall_score) : "—"}</td>
+                    <td className="px-4 py-3"><StatusBadge status={audit.status} /></td>
+                    <td className="px-4 py-3 text-xs text-gray-500">{audit.created_at ? new Date(audit.created_at).toLocaleDateString() : "—"}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => navigate(`/report/${audit.id}`)}
+                          className="text-xs text-[#1877F2] hover:underline inline-flex items-center gap-1">
+                          <Eye className="w-3.5 h-3.5" /> View
+                        </button>
+                        <button onClick={() => handleShare(audit.id)}
+                          className="text-xs text-gray-500 hover:text-gray-700 inline-flex items-center gap-1">
+                          {copied === audit.id ? <CheckCircle className="w-3.5 h-3.5 text-green-500" /> : <Share2 className="w-3.5 h-3.5" />}
+                          {copied === audit.id ? "Copied!" : "Share"}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

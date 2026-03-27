@@ -1,66 +1,75 @@
 import { useEffect, useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { useNavigate } from "react-router-dom";
+
+const API_BASE = "https://pageaudit-engine.onrender.com";
 
 export default function ReportProcessing() {
+  const navigate = useNavigate();
   const params = new URLSearchParams(window.location.search);
-  const id = params.get("id");
-  const [submission, setSubmission] = useState(null);
+  const auditId = params.get("id") || params.get("audit_id");
+  const [audit, setAudit] = useState(null);
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    if (!id) return;
+    if (!auditId) return;
 
     const check = async () => {
-      const s = await base44.entities.Submission.filter({ id });
-      if (s && s.length > 0) {
-        setSubmission(s[0]);
-        if (s[0].status === "completed" && s[0].report_url) {
-          window.location.href = s[0].report_url;
+      try {
+        const token = localStorage.getItem('pageaudit_token');
+        const res = await fetch(`${API_BASE}/api/audits/${auditId}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        const data = await res.json();
+        if (data && !data.error) {
+          setAudit(data);
+          if (data.status === "completed") {
+            navigate(`/report/${auditId}`);
+          }
         }
+      } catch (err) {
+        console.error("Error checking audit:", err);
       }
       setChecking(false);
     };
 
     check();
-    const interval = setInterval(check, 30000); // re-check every 30s
+    const interval = setInterval(check, 10000);
     return () => clearInterval(interval);
-  }, [id]);
+  }, [auditId, navigate]);
 
   return (
     <div className="min-h-screen bg-white text-black font-sans flex flex-col">
-      {/* NAV */}
       <nav className="border-b border-gray-100">
         <div className="max-w-5xl mx-auto px-6 py-4">
           <span className="font-semibold text-base tracking-tight">PageAudit Pro</span>
         </div>
       </nav>
-
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-20 text-center">
-        {/* Spinner */}
         <div className="w-14 h-14 rounded-full border-4 border-gray-100 border-t-[#1877F2] animate-spin mb-8" />
-
         <h1 className="text-2xl md:text-3xl font-semibold text-black mb-3">
           Your Report is Being Prepared
         </h1>
         <p className="text-gray-600 text-base mb-2 max-w-md leading-relaxed">
-          We are reviewing your page and building your custom report.
+          We are analyzing your page and building your custom strategy report.
         </p>
         <p className="text-gray-400 text-sm">
-          Your report will be ready within 1 hour.
+          This usually takes about 60 seconds. You'll be redirected automatically.
         </p>
-
-        {submission && (
+        {audit && (
           <div className="mt-10 border border-gray-100 rounded-xl px-6 py-4 max-w-sm w-full text-left">
-            <p className="text-xs text-gray-400 uppercase tracking-widest mb-3">Your submission</p>
-            <p className="text-sm text-gray-700 mb-1"><span className="font-medium">Name:</span> {submission.name}</p>
-            <p className="text-sm text-gray-700 mb-1"><span className="font-medium">Email:</span> {submission.email}</p>
-            <p className="text-sm text-gray-700"><span className="font-medium">Type:</span> {submission.review_type} Review</p>
+            <p className="text-xs text-gray-400 uppercase tracking-widest mb-3">Your Audit</p>
+            <p className="text-sm text-gray-700 mb-1"><span className="font-medium">Name:</span> {audit.customer_name}</p>
+            <p className="text-sm text-gray-700 mb-1"><span className="font-medium">Email:</span> {audit.email}</p>
+            <p className="text-sm text-gray-700"><span className="font-medium">Status:</span> <span className="capitalize">{audit.status}</span></p>
           </div>
         )}
-
         <p className="text-xs text-gray-400 mt-10">
-          We'll send your report to your email when it's ready. You can close this page.
+          You can also check your dashboard anytime to view completed reports.
         </p>
+        <button onClick={() => navigate("/dashboard")}
+          className="mt-4 text-xs text-[#1877F2] hover:underline">
+          Go to Dashboard →
+        </button>
       </div>
     </div>
   );

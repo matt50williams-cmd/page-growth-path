@@ -1,140 +1,87 @@
-import { X, ExternalLink, Download, Calendar, Mail, User, Zap, CheckCircle2 } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import { base44 } from '@/api/base44Client';
-import { useState } from 'react';
+import { useState } from "react";
+import { X, ExternalLink } from "lucide-react";
 
-export default function AuditDetailModal({ audit, funnel, isOpen, onClose }) {
-  const [notes, setNotes] = useState(audit?.support_notes || '');
-  const [resolved, setResolved] = useState(audit?.support_resolved || false);
-  const [saving, setSaving] = useState(false);
+const API_BASE = "https://pageaudit-engine.onrender.com";
 
-  const handleSaveNotes = async () => {
-    setSaving(true);
-    await base44.entities.Audit.update(audit.id, {
-      support_notes: notes,
-      support_resolved: resolved,
-    }).catch(err => console.error('Failed to save notes:', err));
-    setSaving(false);
-  };
-  if (!isOpen || !audit) return null;
-
-  const events = (funnel || [])
-    .filter(e => e.email === audit.email)
-    .sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
-
-  const eventLabels = {
-    landing_viewed: { label: 'Landing Viewed', color: 'bg-gray-100 text-gray-700' },
-    intake_started: { label: 'Intake Started', color: 'bg-blue-100 text-blue-700' },
-    intake_submitted: { label: 'Intake Submitted', color: 'bg-purple-100 text-purple-700' },
-    preview_viewed: { label: 'Preview Viewed', color: 'bg-indigo-100 text-indigo-700' },
-    unlock_clicked: { label: 'Unlock Clicked', color: 'bg-orange-100 text-orange-700' },
-    payment_success: { label: 'Payment Success', color: 'bg-green-100 text-green-700' },
-    account_created: { label: 'Account Created', color: 'bg-emerald-100 text-emerald-700' },
-    report_viewed: { label: 'Report Viewed', color: 'bg-teal-100 text-teal-700' },
-  };
+export default function AuditDetailModal({ audit, onClose }) {
+  if (!audit) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-xl max-w-4xl w-full my-8">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-start justify-center p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl my-8">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div>
-            <h2 className="text-lg font-bold text-gray-900">{audit.customer_name || 'Unknown'}</h2>
-            <p className="text-sm text-gray-500">{audit.email}</p>
+            <h2 className="font-bold text-gray-900 text-base">Audit Details</h2>
+            <p className="text-xs text-gray-400 font-mono">ID: {audit.id}</p>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-black">
-            <X className="w-6 h-6" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6 space-y-8 max-h-[70vh] overflow-y-auto">
-          {/* User Info */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-gray-50 rounded-lg p-4">
-              <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Type</p>
-              <p className="text-sm font-bold text-gray-900">{audit.account_type || '—'}</p>
+        <div className="px-6 py-5 space-y-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div>
+              <p className="text-xs text-gray-400 mb-1">Name</p>
+              <p className="text-sm text-gray-800">{audit.customer_name || "—"}</p>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Score</p>
-              <p className="text-sm font-bold text-[#1877F2]">{audit.overall_score ?? '—'}</p>
+            <div>
+              <p className="text-xs text-gray-400 mb-1">Email</p>
+              <p className="text-sm font-mono text-gray-800">{audit.email || "—"}</p>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Status</p>
-              <p className="text-sm font-bold text-gray-900">{audit.status}</p>
+            <div>
+              <p className="text-xs text-gray-400 mb-1">Status</p>
+              <p className="text-sm text-gray-800 capitalize">{audit.status || "—"}</p>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <p className="text-xs text-gray-500 uppercase font-semibold mb-1">URL</p>
-              <a href={audit.facebook_url} target="_blank" rel="noopener noreferrer" className="text-sm text-[#1877F2] hover:underline flex items-center gap-1">
-                Visit <ExternalLink className="w-3 h-3" />
+            <div>
+              <p className="text-xs text-gray-400 mb-1">Paid</p>
+              <p className="text-sm text-gray-800">{audit.paid ? `✓ $${audit.amount_paid}` : "No"}</p>
+            </div>
+          </div>
+
+          {audit.facebook_url && (
+            <div>
+              <p className="text-xs text-gray-400 mb-1">Facebook Page</p>
+              <a href={audit.facebook_url} target="_blank" rel="noopener noreferrer"
+                className="text-xs text-[#1877F2] hover:underline inline-flex items-center gap-1">
+                {audit.facebook_url} <ExternalLink className="w-3 h-3" />
               </a>
             </div>
-          </div>
+          )}
 
-          {/* Timeline */}
-          <div>
-            <h3 className="text-sm font-bold text-gray-900 mb-4">Event Timeline</h3>
-            <div className="space-y-2">
-              {events.length > 0 ? (
-                events.map((evt, i) => (
-                  <div key={i} className={`flex items-center gap-3 p-3 rounded-lg ${eventLabels[evt.event_type]?.color || 'bg-gray-100 text-gray-700'}`}>
-                    <span className="text-xs font-bold uppercase">{eventLabels[evt.event_type]?.label || evt.event_type}</span>
-                    <span className="text-xs text-gray-500 ml-auto">{new Date(evt.created_date).toLocaleString()}</span>
+          {(audit.overall_score || audit.visibility_score) && (
+            <div className="border-t pt-4">
+              <p className="text-xs uppercase tracking-widest text-gray-400 font-semibold mb-3">Scores</p>
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+                {[
+                  { label: "Overall", value: audit.overall_score },
+                  { label: "Visibility", value: audit.visibility_score },
+                  { label: "Content", value: audit.content_score },
+                  { label: "Consistency", value: audit.consistency_score },
+                  { label: "Engagement", value: audit.engagement_score },
+                  { label: "Growth", value: audit.growth_score },
+                ].map(({ label, value }) => value ? (
+                  <div key={label} className="bg-gray-50 rounded-lg p-3 text-center">
+                    <p className="text-xs text-gray-500 mb-1">{label}</p>
+                    <p className="text-lg font-bold text-[#1877F2]">{Math.round(value)}</p>
                   </div>
-                ))
-              ) : (
-                <p className="text-sm text-gray-500">No events recorded</p>
-              )}
-            </div>
-          </div>
-
-          {/* Support Notes */}
-          <div>
-            <h3 className="text-sm font-bold text-gray-900 mb-4">Support Notes</h3>
-            <div className="space-y-3">
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Add support notes here..."
-                className="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#1877F2] resize-none h-24"
-              />
-              <div className="flex items-center gap-3">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={resolved}
-                    onChange={(e) => setResolved(e.target.checked)}
-                    className="w-4 h-4 rounded border-gray-300 text-[#1877F2] focus:ring-[#1877F2]"
-                  />
-                  <span className="text-sm text-gray-700 font-medium">Mark as resolved</span>
-                </label>
-                <button
-                  onClick={handleSaveNotes}
-                  disabled={saving}
-                  className="ml-auto px-4 py-2 bg-[#1877F2] text-white text-xs font-semibold rounded-lg hover:bg-[#1457C0] disabled:opacity-50 transition-colors"
-                >
-                  {saving ? 'Saving...' : 'Save'}
-                </button>
+                ) : null)}
               </div>
-              {resolved && (
-                <div className="flex items-center gap-2 text-xs text-green-700 bg-green-50 p-2 rounded border border-green-200">
-                  <CheckCircle2 className="w-4 h-4" />
-                  Issue resolved
-                </div>
-              )}
             </div>
-          </div>
+          )}
 
-          {/* Report */}
           {audit.report_text && (
-            <div>
-              <h3 className="text-sm font-bold text-gray-900 mb-4">Report</h3>
-              <div className="bg-gray-50 rounded-lg p-4 prose prose-sm max-w-none">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{audit.report_text}</ReactMarkdown>
+            <div className="border-t pt-4">
+              <p className="text-xs uppercase tracking-widest text-gray-400 font-semibold mb-3">Report Preview</p>
+              <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm max-h-60 overflow-y-auto text-gray-700 leading-relaxed">
+                {audit.report_text.slice(0, 1000)}{audit.report_text.length > 1000 ? '...' : ''}
               </div>
+              <a href={`/report/${audit.id}`} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs text-[#1877F2] hover:underline mt-2">
+                View Full Report <ExternalLink className="w-3 h-3" />
+              </a>
             </div>
-           )}
+          )}
         </div>
       </div>
     </div>
