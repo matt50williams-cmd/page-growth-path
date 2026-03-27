@@ -37,6 +37,50 @@ function MultiCard({ selected, onClick, children }) {
   );
 }
 
+function generateVariations(name) {
+  const cleaned = name.trim().replace(/\s+/g, '');
+  const withDots = name.trim().replace(/\s+/g, '.');
+  const withDashes = name.trim().replace(/\s+/g, '-');
+  const lower = cleaned.toLowerCase();
+  const variations = [
+    cleaned,
+    lower,
+    withDots,
+    withDashes,
+  ];
+  return [...new Set(variations)].slice(0, 4);
+}
+
+function VariationCard({ variation, onSelect }) {
+  const [imgError, setImgError] = useState(false);
+  const url = `https://www.facebook.com/${variation}`;
+  const pic = `https://graph.facebook.com/${variation}/picture?type=large&redirect=true`;
+
+  return (
+    <div className="bg-white rounded-xl p-3 border border-gray-100 shadow-sm flex items-center gap-3">
+      {!imgError ? (
+        <img src={pic} alt={variation} onError={() => setImgError(true)}
+          className="w-12 h-12 rounded-full object-cover border-2 border-gray-100 shrink-0" />
+      ) : (
+        <div className="w-12 h-12 rounded-full bg-[#1877F2] flex items-center justify-center shrink-0">
+          <span className="text-white font-bold text-lg">f</span>
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold text-gray-900 text-sm truncate">{variation}</p>
+        <a href={url} target="_blank" rel="noopener noreferrer"
+          className="text-xs text-[#1877F2] hover:underline">
+          Open on Facebook ↗
+        </a>
+      </div>
+      <button type="button" onClick={() => onSelect(url, variation)}
+        className="shrink-0 bg-[#1877F2] text-white text-xs font-bold px-3 py-2 rounded-lg hover:bg-[#1457C0] transition-colors">
+        Select
+      </button>
+    </div>
+  );
+}
+
 function FacebookPageLookup({ value, onChange }) {
   const [pageName, setPageName] = useState("");
   const [confirmed, setConfirmed] = useState(false);
@@ -44,7 +88,9 @@ function FacebookPageLookup({ value, onChange }) {
   const [imgSrc, setImgSrc] = useState("");
   const [searching, setSearching] = useState(false);
   const [imgError, setImgError] = useState(false);
-  const [attempts, setAttempts] = useState(0);
+  const [showVariations, setShowVariations] = useState(false);
+  const [variations, setVariations] = useState([]);
+  const [confirmedName, setConfirmedName] = useState("");
 
   const cleanPageName = (name) => {
     return name.trim()
@@ -57,6 +103,7 @@ function FacebookPageLookup({ value, onChange }) {
     if (!pageName.trim()) return;
     setSearching(true);
     setImgError(false);
+    setShowVariations(false);
 
     const cleaned = cleanPageName(pageName);
     const url = `https://www.facebook.com/${cleaned}`;
@@ -66,38 +113,50 @@ function FacebookPageLookup({ value, onChange }) {
     setImgSrc(pic);
     setConfirmed(false);
     onChange("");
-    setAttempts(prev => prev + 1);
     setSearching(false);
   };
 
   const handleConfirm = () => {
     setConfirmed(true);
+    setConfirmedName(pageName);
     onChange(previewUrl);
+    setShowVariations(false);
   };
 
-  const handleReset = () => {
-    setConfirmed(false);
+  const handleNotRight = () => {
+    setShowVariations(true);
+    setVariations(generateVariations(pageName));
     setPreviewUrl("");
     setImgSrc("");
-    setImgError(false);
     onChange("");
-    // Keep pageName so they can tweak and search again
   };
 
-  const handleChangeConfirmed = () => {
+  const handleSelectVariation = (url, name) => {
+    setPreviewUrl(url);
+    setImgSrc(`https://graph.facebook.com/${name}/picture?type=large&redirect=true`);
+    setConfirmedName(name);
+    setConfirmed(true);
+    setShowVariations(false);
+    onChange(url);
+  };
+
+  const handleStartOver = () => {
     setConfirmed(false);
     setPreviewUrl("");
     setImgSrc("");
     setImgError(false);
     setPageName("");
     onChange("");
-    setAttempts(0);
+    setShowVariations(false);
+    setVariations([]);
+    setConfirmedName("");
   };
 
   return (
     <div className="space-y-4">
       {!confirmed ? (
         <>
+          {/* SEARCH BOX */}
           <div>
             <label className="block text-sm font-semibold text-gray-900 mb-1.5">
               Your Facebook Page Name <span className="text-red-400">*</span>
@@ -105,13 +164,14 @@ function FacebookPageLookup({ value, onChange }) {
             <div className="flex gap-2">
               <input
                 type="text"
-                placeholder="e.g. RighteousNetwork or Matt's Plumbing"
+                placeholder="e.g. Allred Heating or AllredHeating"
                 value={pageName}
                 onChange={(e) => {
                   setPageName(e.target.value);
                   setPreviewUrl("");
                   setConfirmed(false);
                   setImgSrc("");
+                  setShowVariations(false);
                   onChange("");
                 }}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -125,37 +185,23 @@ function FacebookPageLookup({ value, onChange }) {
                 ) : (
                   <Search className="w-4 h-4" />
                 )}
-                {attempts > 0 ? 'Search Again' : 'Find'}
+                Find
               </button>
             </div>
-
-            {attempts > 0 && !previewUrl && (
-              <p className="text-xs text-orange-500 mt-2 font-medium">
-                💡 Try a different variation — use your exact Facebook username or page URL
-              </p>
-            )}
-
-            {attempts === 0 && (
-              <p className="text-xs text-gray-400 mt-2">Type your Facebook page name or username exactly as it appears</p>
-            )}
+            <p className="text-xs text-gray-400 mt-2">Type your Facebook page name or username</p>
           </div>
 
-          {previewUrl && (
+          {/* FIRST RESULT */}
+          {previewUrl && !showVariations && (
             <div className="bg-blue-50 border-2 border-[#1877F2] rounded-2xl p-5">
-              <p className="text-xs font-bold text-[#1877F2] uppercase tracking-wide mb-4">
-                Is this your page?
-              </p>
+              <p className="text-xs font-bold text-[#1877F2] uppercase tracking-wide mb-4">Is this your page?</p>
 
               <div className="bg-white rounded-xl p-4 mb-4 flex items-center gap-4 border border-gray-100 shadow-sm">
                 {!imgError ? (
-                  <img
-                    src={imgSrc}
-                    alt={pageName}
-                    onError={() => setImgError(true)}
-                    className="w-16 h-16 rounded-full object-cover border-2 border-gray-100 shrink-0"
-                  />
+                  <img src={imgSrc} alt={pageName} onError={() => setImgError(true)}
+                    className="w-16 h-16 rounded-full object-cover border-2 border-gray-100 shrink-0" />
                 ) : (
-                  <div className="w-16 h-16 rounded-full bg-[#1877F2] flex items-center justify-center shrink-0 border-2 border-gray-100">
+                  <div className="w-16 h-16 rounded-full bg-[#1877F2] flex items-center justify-center shrink-0">
                     <span className="text-white font-bold text-2xl">f</span>
                   </div>
                 )}
@@ -170,7 +216,7 @@ function FacebookPageLookup({ value, onChange }) {
               </div>
 
               <p className="text-xs text-gray-500 mb-4">
-                Click <strong>"Open on Facebook"</strong> to verify it's the right page, then confirm below.
+                Click <strong>"Open on Facebook"</strong> to verify, then confirm below.
               </p>
 
               <div className="flex gap-3">
@@ -178,21 +224,31 @@ function FacebookPageLookup({ value, onChange }) {
                   className="flex-1 inline-flex items-center justify-center gap-2 bg-[#1877F2] text-white px-4 py-3 text-sm font-bold rounded-xl hover:bg-[#1457C0] transition-colors">
                   <Check className="w-4 h-4" /> Yes, that's my page!
                 </button>
-                <button type="button" onClick={handleReset}
+                <button type="button" onClick={handleNotRight}
                   className="flex-1 border-2 border-gray-200 text-gray-600 px-4 py-3 text-sm font-semibold rounded-xl hover:border-gray-400 transition-colors">
                   Not right, try again
                 </button>
               </div>
-
-              {attempts >= 2 && (
-                <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-xl p-3">
-                  <p className="text-xs text-yellow-800 font-semibold mb-1">💡 Can't find your page?</p>
-                  <p className="text-xs text-yellow-700">Try pasting your Facebook URL directly in the box below instead.</p>
-                </div>
-              )}
             </div>
           )}
 
+          {/* VARIATIONS */}
+          {showVariations && (
+            <div className="bg-orange-50 border-2 border-orange-300 rounded-2xl p-5">
+              <p className="text-xs font-bold text-orange-700 uppercase tracking-wide mb-1">Let's find your page</p>
+              <p className="text-xs text-orange-600 mb-4">Here are some variations to try. Click <strong>Select</strong> on the right one, or edit the name above and search again.</p>
+
+              <div className="space-y-3 mb-4">
+                {variations.map((v) => (
+                  <VariationCard key={v} variation={v} onSelect={handleSelectVariation} />
+                ))}
+              </div>
+
+              <p className="text-xs text-gray-500 text-center">Still not finding it? Edit the name above and click Find again.</p>
+            </div>
+          )}
+
+          {/* PASTE URL FALLBACK */}
           <div className="border-t border-gray-100 pt-4">
             <p className="text-xs text-gray-400 mb-2 font-semibold">Or paste your Facebook URL directly:</p>
             <input
@@ -210,10 +266,11 @@ function FacebookPageLookup({ value, onChange }) {
           </div>
         </>
       ) : (
+        /* CONFIRMED STATE */
         <div className="bg-green-50 border-2 border-green-400 rounded-2xl p-5">
           <div className="flex items-center gap-4 mb-3">
             {imgSrc && !imgError ? (
-              <img src={imgSrc} alt={pageName}
+              <img src={imgSrc} alt={confirmedName}
                 className="w-14 h-14 rounded-full object-cover border-2 border-green-200 shrink-0" />
             ) : (
               <div className="w-14 h-14 rounded-full bg-[#1877F2] flex items-center justify-center shrink-0">
@@ -227,11 +284,11 @@ function FacebookPageLookup({ value, onChange }) {
                 </div>
                 <p className="font-bold text-green-800 text-sm">Page Confirmed!</p>
               </div>
-              <p className="text-sm font-semibold text-gray-800">{pageName}</p>
+              <p className="text-sm font-semibold text-gray-800">{confirmedName || pageName}</p>
               <p className="text-xs text-green-600 truncate">{previewUrl || value}</p>
             </div>
           </div>
-          <button type="button" onClick={handleChangeConfirmed}
+          <button type="button" onClick={handleStartOver}
             className="text-xs text-green-700 hover:underline font-semibold">
             Not right? Start over
           </button>
@@ -478,5 +535,9 @@ export default function SubmitPage() {
     </div>
   );
 }
+
+
+
+
 
 
