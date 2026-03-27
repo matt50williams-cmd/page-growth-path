@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Loader2, CheckCircle, Shield, Clock } from "lucide-react";
+import { ArrowRight, Loader2, CheckCircle, Shield } from "lucide-react";
 import { trackEvent, EVENTS } from "@/utils/tracking";
 
 const API_BASE = "https://pageaudit-engine.onrender.com";
@@ -14,6 +14,26 @@ const LOADING_MESSAGES = [
   "Identifying your #1 growth blocker...",
 ];
 
+function useCountdown(minutes) {
+  const [seconds, setSeconds] = useState(minutes * 60);
+  const [expired, setExpired] = useState(false);
+
+  useEffect(() => {
+    if (seconds <= 0) { setExpired(true); return; }
+    const timer = setInterval(() => {
+      setSeconds(prev => {
+        if (prev <= 1) { setExpired(true); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
+  const secs = String(seconds % 60).padStart(2, '0');
+  return { display: `${mins}:${secs}`, expired };
+}
+
 export default function PreviewReport() {
   const navigate = useNavigate();
   const [order, setOrder] = useState(null);
@@ -21,6 +41,7 @@ export default function PreviewReport() {
   const [error, setError] = useState(null);
   const [unlocking, setUnlocking] = useState(false);
   const [msgIndex, setMsgIndex] = useState(0);
+  const { display: timerDisplay, expired: timerExpired } = useCountdown(10);
 
   useEffect(() => {
     if (!unlocking) return;
@@ -82,7 +103,8 @@ export default function PreviewReport() {
     return (
       <div className="min-h-screen bg-white flex flex-col">
         <nav className="border-b border-gray-100">
-          <div className="max-w-5xl mx-auto px-6 py-4">
+          <div className="max-w-5xl mx-auto px-6 py-4 flex items-center gap-4">
+            <button onClick={() => navigate('/audit-preview')} className="text-xs font-semibold text-[#1877F2] hover:underline">← Back</button>
             <span className="font-bold text-base text-black tracking-tight">PageAudit Pro</span>
           </div>
         </nav>
@@ -117,13 +139,15 @@ export default function PreviewReport() {
 
   return (
     <div className="min-h-screen bg-white font-sans">
+
+      {/* NAV */}
       <nav className="bg-white border-b border-gray-100 sticky top-0 z-40">
-        <div className="max-w-4xl mx-auto px-4 md:px-6 py-3 flex items-center justify-between">
-          <span className="font-bold text-sm tracking-tight">PageAudit Pro</span>
-          <button onClick={() => navigate(-1)}
+        <div className="max-w-4xl mx-auto px-4 md:px-6 py-3 flex items-center gap-4">
+          <button onClick={() => navigate('/audit-preview')}
             className="text-xs font-semibold text-[#1877F2] hover:underline">
             ← Back
           </button>
+          <span className="font-bold text-sm tracking-tight">PageAudit Pro</span>
         </div>
       </nav>
 
@@ -142,7 +166,7 @@ export default function PreviewReport() {
           {/* PRICING CARD */}
           <div className="inline-block bg-white border-2 border-[#1877F2] rounded-2xl px-8 py-8 shadow-xl mb-8 text-left max-w-sm w-full">
             <p className="text-xs font-bold uppercase tracking-widest text-[#1877F2] mb-4 text-center">🔥 Limited Launch Pricing</p>
-            
+
             <div className="text-center mb-6">
               <p className="text-sm text-gray-400 mb-1">What agencies charge: <span className="line-through font-bold">$500–$2,000</span></p>
               <p className="text-sm text-gray-400 mb-1">Our regular price: <span className="line-through font-bold text-gray-500">$197</span></p>
@@ -155,27 +179,30 @@ export default function PreviewReport() {
             </div>
 
             <div className="flex flex-wrap justify-center gap-2 mb-6">
-              {[
-                { icon: Clock, text: "Ready in 60 min" },
-                { icon: Shield, text: "One-time payment" },
-              ].map(({ icon: Icon, text }) => (
-                <span key={text} className="inline-flex items-center gap-1.5 bg-green-50 border border-green-200 text-green-700 text-xs font-semibold px-3 py-1.5 rounded-full">
-                  <Icon className="w-3 h-3" />{text}
-                </span>
-              ))}
+              <span className="inline-flex items-center gap-1.5 bg-green-50 border border-green-200 text-green-700 text-xs font-semibold px-3 py-1.5 rounded-full">
+                <Shield className="w-3 h-3" /> One-time payment
+              </span>
             </div>
 
             <button onClick={handleUnlock} disabled={unlocking}
               className="w-full inline-flex items-center justify-center gap-2 bg-[#1877F2] text-white px-8 py-4 font-bold text-base rounded-xl hover:bg-[#1457C0] active:scale-[0.98] transition-all shadow-lg shadow-blue-200 disabled:opacity-60 disabled:cursor-not-allowed">
               {unlocking ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowRight className="w-5 h-5" />}
-              {unlocking ? 'Redirecting...' : 'Unlock Full Report →'}
+              {unlocking ? 'Redirecting...' : 'Claim My Report →'}
             </button>
+
+            {/* TIMER — RIGHT UNDER BUTTON */}
+            <div className={`mt-4 text-center text-sm font-bold py-3 px-4 rounded-xl ${timerExpired ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-orange-50 text-orange-700 border border-orange-200'}`}>
+              {timerExpired
+                ? "⚠️ Your hold has expired — claim now before it's gone"
+                : `⏳ We're holding your report for: ${timerDisplay}`}
+            </div>
+
             <p className="text-xs text-gray-400 text-center mt-3">🔒 Secure payment · No contracts · No hidden fees</p>
           </div>
 
           {order && (
             <p className="text-gray-500 text-sm mt-2">
-              Report prepared for <strong>{order.name}</strong> · {order.pageUrl}
+              Report prepared for <strong>{order.name}</strong>
             </p>
           )}
         </div>
@@ -209,9 +236,13 @@ export default function PreviewReport() {
         {/* BOTTOM CTA */}
         <div className="py-12 text-center">
           <div className="max-w-md mx-auto">
-            <h2 className="text-2xl font-extrabold text-gray-900 mb-2">Ready to fix your page?</h2>
-            <p className="text-gray-500 text-sm mb-6">Join 500+ business owners who stopped guessing and started growing.</p>
-            
+            <h2 className="text-2xl font-extrabold text-gray-900 mb-2">Don't let your report expire</h2>
+            <p className="text-gray-500 text-sm mb-6">
+              {timerExpired
+                ? "Your hold has expired. Claim your report now before it's gone."
+                : `We're holding your report for another ${timerDisplay}. Claim it before time runs out.`}
+            </p>
+
             <div className="bg-white border-2 border-[#1877F2] rounded-2xl p-6 shadow-xl mb-4">
               <p className="text-gray-400 text-sm mb-1">Regular price: <span className="line-through font-bold">$197</span></p>
               <div className="flex items-baseline justify-center gap-1 mb-4">
@@ -222,7 +253,7 @@ export default function PreviewReport() {
               <button onClick={handleUnlock} disabled={unlocking}
                 className="w-full inline-flex items-center justify-center gap-2 bg-[#1877F2] text-white px-10 py-4 font-bold text-base rounded-xl hover:bg-[#1457C0] active:scale-[0.98] transition-all shadow-lg shadow-blue-200 disabled:opacity-60 disabled:cursor-not-allowed">
                 {unlocking ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowRight className="w-5 h-5" />}
-                {unlocking ? 'Redirecting...' : 'Yes! Get My Audit for $39.99 →'}
+                {unlocking ? 'Redirecting...' : 'Yes! Claim My Report for $39.99 →'}
               </button>
               <p className="text-xs text-gray-400 mt-3">🔒 Secure · One-time · Instant access</p>
             </div>
