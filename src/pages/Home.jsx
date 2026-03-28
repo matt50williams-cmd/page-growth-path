@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Check, Star, BarChart2, Shield, Zap, Globe, TrendingUp } from "lucide-react";
+import { ArrowRight, Check, Star, BarChart2, Globe } from "lucide-react";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -59,7 +59,6 @@ export default function Home() {
             Get a full Facebook growth audit <strong className="text-white">AND a free website SEO score</strong> — both for just $39.99. Agencies charge $500–$2,000 for the same thing.
           </p>
 
-          {/* DUAL VALUE PROP */}
           <div className="flex flex-wrap justify-center gap-3 mb-8">
             <div className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 flex items-center gap-2 text-sm font-semibold backdrop-blur-sm">
               <span>📘</span> Full Facebook Growth Audit
@@ -69,23 +68,24 @@ export default function Home() {
             </div>
           </div>
 
-          {/* COUNTDOWN */}
+          {/* FIXED COUNTDOWN TIMER */}
           <div className="inline-block bg-white/10 border border-white/20 rounded-2xl px-6 py-4 mb-8 backdrop-blur-sm">
-            <p className="text-xs font-bold uppercase tracking-widest text-blue-200 mb-2">⏰ Limited Time Offer Expires In:</p>
-            <div className="flex items-center gap-3">
-              {[
-                { val: pad(timeLeft.hours), label: "HRS" },
-                { val: pad(timeLeft.minutes), label: "MIN" },
-                { val: pad(timeLeft.seconds), label: "SEC" },
-              ].map(({ val, label }, i) => (
-                <div key={label}>
-                  {i > 0 && <span className="text-2xl font-bold text-blue-200 mx-1">:</span>}
-                  <div className="text-center">
-                    <div className="text-3xl font-extrabold text-white">{val}</div>
-                    <div className="text-xs text-blue-200 font-semibold">{label}</div>
-                  </div>
-                </div>
-              ))}
+            <p className="text-xs font-bold uppercase tracking-widest text-blue-200 mb-3">⏰ Limited Time Offer Expires In:</p>
+            <div className="flex items-end justify-center gap-1">
+              <div className="text-center">
+                <div className="text-3xl font-extrabold text-white">{pad(timeLeft.hours)}</div>
+                <div className="text-xs text-blue-200 font-semibold">HRS</div>
+              </div>
+              <div className="text-2xl font-bold text-blue-200 mb-4 mx-1">:</div>
+              <div className="text-center">
+                <div className="text-3xl font-extrabold text-white">{pad(timeLeft.minutes)}</div>
+                <div className="text-xs text-blue-200 font-semibold">MIN</div>
+              </div>
+              <div className="text-2xl font-bold text-blue-200 mb-4 mx-1">:</div>
+              <div className="text-center">
+                <div className="text-3xl font-extrabold text-white">{pad(timeLeft.seconds)}</div>
+                <div className="text-xs text-blue-200 font-semibold">SEC</div>
+              </div>
             </div>
           </div>
 
@@ -107,7 +107,6 @@ export default function Home() {
           <p className="text-gray-500 text-center mb-10 max-w-xl mx-auto">Agencies charge $500–$2,000 for just the Facebook audit. We include both for $39.99.</p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Facebook Audit */}
             <div className="bg-white border-2 border-[#1877F2] rounded-3xl p-7 shadow-lg">
               <div className="flex items-center gap-3 mb-5">
                 <div className="w-10 h-10 rounded-xl bg-[#1877F2] flex items-center justify-center">
@@ -137,7 +136,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* SEO Score */}
             <div className="bg-white border-2 border-yellow-400 rounded-3xl p-7 shadow-lg relative overflow-hidden">
               <div className="absolute top-4 right-4 bg-yellow-400 text-yellow-900 text-xs font-extrabold px-3 py-1 rounded-full">
                 FREE BONUS
@@ -305,7 +303,6 @@ export default function Home() {
               <span className="text-3xl font-bold text-gray-400">.99</span>
             </div>
             <p className="text-green-600 font-semibold text-sm mb-6">You save $157</p>
-
             <div className="space-y-2 mb-6 text-left">
               {[
                 "✅ Full Facebook Growth Audit",
@@ -319,7 +316,6 @@ export default function Home() {
                 <p key={item} className="text-sm text-gray-700 font-medium">{item}</p>
               ))}
             </div>
-
             <button onClick={() => navigate('/submit-your-page')}
               className="w-full inline-flex items-center justify-center gap-2 bg-[#1877F2] text-white px-8 py-4 font-extrabold text-base rounded-xl hover:bg-[#1457C0] transition-all shadow-lg shadow-blue-200">
               Get My Audit + Free SEO Score <ArrowRight className="w-5 h-5" />
@@ -340,7 +336,7 @@ export default function Home() {
               { q: "What if I don't have a website?", a: "No problem — the website SEO score is a bonus. You'll still get the full Facebook growth audit even without a website." },
               { q: "How is this different from free tools?", a: "Free tools give generic scores. We give you a specific action plan written for YOUR business type, YOUR goals, and YOUR city. Completely personalized." },
               { q: "How long does it take?", a: "Our AI generates your report in minutes. You'll have your full audit and SEO score ready before you finish your coffee." },
-              { q: "What if I'm not happy with the report?", a: "We stand behind our work. If your report doesn't provide actionable insights, contact us at support@pageauditpros.com." },
+              { q: "What if I'm not happy with the report?", a: "Our reports are packed with specific, actionable insights tailored to your exact business. If you have any questions about your results, our support team at support@pageauditpros.com is here to help you get the most out of it." },
             ].map(({ q, a }) => (
               <div key={q} className="bg-white border border-gray-100 rounded-2xl p-5">
                 <p className="font-bold text-gray-900 mb-2 text-sm">Q: {q}</p>
