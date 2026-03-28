@@ -140,6 +140,17 @@ function generateVariations(name, email = "", website = "") {
   return [...new Set(all)].slice(0, 20);
 }
 
+function isValidFacebookUrl(url) {
+  if (!url) return false;
+  if (!url.includes('facebook.com')) return false;
+  if (url.includes('NOT_FOUND')) return false;
+  if (url.includes('profile.php')) return false;
+  const username = url.replace(/https?:\/\/(www\.)?facebook\.com\//i, '').replace(/\/$/, '').split('?')[0];
+  if (/^\d+$/.test(username)) return false;
+  if (username.length <= 4) return false;
+  return true;
+}
+
 function FacebookPageFinder({ value, onChange, email, website, preloadedUrl }) {
   const [pageName, setPageName] = useState("");
   const [confirmed, setConfirmed] = useState(false);
@@ -159,8 +170,11 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl }) {
   const [noFacebook, setNoFacebook] = useState(false);
 
   useEffect(() => {
-    if (preloadedUrl && !confirmed) {
-      const name = preloadedUrl.replace(/https?:\/\/(www\.)?facebook\.com\//i, '').replace(/\/$/, '').split('?')[0];
+    if (preloadedUrl && !confirmed && isValidFacebookUrl(preloadedUrl)) {
+      const name = preloadedUrl
+        .replace(/https?:\/\/(www\.)?facebook\.com\//i, '')
+        .replace(/\/$/, '')
+        .split('?')[0];
       setPreviewUrl(preloadedUrl);
       setImgSrc(FB_PHOTO(name));
       setPageName(name);
@@ -265,7 +279,7 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl }) {
         });
         const data = await response.json();
         const extracted = data?.content?.[0]?.text?.trim();
-        if (extracted) {
+        if (extracted && !extracted.includes('NOT_FOUND')) {
           let fbUrl = extracted.includes('facebook.com') ? extracted : `https://www.facebook.com/${extracted}`;
           let fbName = fbUrl.replace(/https?:\/\/(www\.)?facebook\.com\//i, '').replace(/\/$/, '').split('?')[0];
           setPreviewUrl(fbUrl);
@@ -565,7 +579,9 @@ export default function SubmitPage() {
         })
       });
       const data = await res.json();
-      if (data.facebook_url) setPreloadedFbUrl(data.facebook_url);
+      if (data.facebook_url && isValidFacebookUrl(data.facebook_url)) {
+        setPreloadedFbUrl(data.facebook_url);
+      }
       if (data.seo_score) setSeoScore(data.seo_score);
     } catch (err) {
       console.error('Background scrape failed:', err);
@@ -773,7 +789,7 @@ export default function SubmitPage() {
               </div>
             )}
 
-            {/* STEP 5 — Posting Frequency */}
+            {/* STEP 5 */}
             {step === 5 && (
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-1">How often do you post?</h1>
@@ -795,7 +811,7 @@ export default function SubmitPage() {
               </div>
             )}
 
-            {/* STEP 6 — Content Type */}
+            {/* STEP 6 */}
             {step === 6 && (
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-1">What do you post most?</h1>
@@ -818,7 +834,7 @@ export default function SubmitPage() {
               </div>
             )}
 
-            {/* STEP 7 — Facebook Page Finder */}
+            {/* STEP 7 */}
             {step === 7 && (
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-1">
@@ -876,8 +892,6 @@ export default function SubmitPage() {
     </div>
   );
 }
-
-
 
 
 
