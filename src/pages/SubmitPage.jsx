@@ -159,20 +159,19 @@ function isValidFbUrl(url) {
 }
 
 function getDisplayName(url, fallback = "") {
-  if (!url) return fallback;
+  if (!url) return fallback || "Facebook Page";
 
   if (url.includes("profile.php")) {
-    const idMatch = url.match(/id=(\d+)/);
-    return idMatch ? `Page ID: ${idMatch[1]}` : fallback;
+    return fallback || "Facebook Page";
   }
 
-  return (
-    url
-      .replace(/https?:\/\/(www\.)?facebook\.com\//i, "")
-      .replace(/\/$/, "")
-      .split("?")[0]
-      .split("/")[0] || fallback
-  );
+  const username = url
+    .replace(/https?:\/\/(www\.)?facebook\.com\//i, "")
+    .replace(/\/$/, "")
+    .split("?")[0]
+    .split("/")[0];
+
+  return fallback || username || "Facebook Page";
 }
 
 function getPhotoKey(url) {
@@ -214,9 +213,12 @@ async function getWebsiteData({ website, businessName, email, city }) {
 
 async function findFacebookCandidates({ pageName, businessName, website, email, city }) {
   const candidates = [];
-  let websiteData = {};
-
-  websiteData = await getWebsiteData({ website, businessName: businessName || pageName, email, city });
+  const websiteData = await getWebsiteData({
+    website,
+    businessName: businessName || pageName,
+    email,
+    city,
+  });
 
   if (websiteData?.facebook_url && isValidFbUrl(websiteData.facebook_url)) {
     candidates.push(websiteData.facebook_url);
@@ -254,18 +256,13 @@ async function findFacebookCandidates({ pageName, businessName, website, email, 
 function AvatarImage({ fbUrl, websiteLogoUrl, name, size = "large" }) {
   const [sourceIndex, setSourceIndex] = useState(0);
 
+  // WEBSITE LOGO FIRST so the gray Facebook silhouette does not win
   const sources = [];
-  if (fbUrl) {
-    sources.push(FB_PHOTO(getPhotoKey(fbUrl)));
-  }
-  if (websiteLogoUrl) {
-    sources.push(websiteLogoUrl);
-  }
+  if (websiteLogoUrl) sources.push(websiteLogoUrl);
+  if (fbUrl) sources.push(FB_PHOTO(getPhotoKey(fbUrl)));
 
   const dimensionClass =
-    size === "large"
-      ? "w-16 h-16 text-2xl"
-      : "w-14 h-14 text-xl";
+    size === "large" ? "w-16 h-16 text-2xl" : "w-14 h-14 text-xl";
 
   if (!sources.length || sourceIndex >= sources.length) {
     return (
@@ -392,7 +389,7 @@ function FacebookPageFinder({
     onChange("");
   };
 
-  const currentName = getDisplayName(previewUrl, pageName.trim());
+  const currentName = getDisplayName(previewUrl, businessName || pageName.trim());
 
   return (
     <div className="space-y-4">
@@ -454,7 +451,12 @@ function FacebookPageFinder({
               </div>
 
               <div className="bg-white rounded-xl p-4 mb-4 flex items-center gap-4 border border-gray-100 shadow-sm">
-                <AvatarImage fbUrl={previewUrl} websiteLogoUrl={websiteLogoUrl} name={currentName} size="large" />
+                <AvatarImage
+                  fbUrl={previewUrl}
+                  websiteLogoUrl={websiteLogoUrl}
+                  name={currentName}
+                  size="large"
+                />
 
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-gray-900 text-base truncate">{currentName}</p>
@@ -553,7 +555,12 @@ function FacebookPageFinder({
       ) : (
         <div className="bg-green-50 border-2 border-green-400 rounded-2xl p-5">
           <div className="flex items-center gap-4 mb-3">
-            <AvatarImage fbUrl={previewUrl || value} websiteLogoUrl={websiteLogoUrl} name={currentName} size="small" />
+            <AvatarImage
+              fbUrl={previewUrl || value}
+              websiteLogoUrl={websiteLogoUrl}
+              name={currentName}
+              size="small"
+            />
 
             <div>
               <div className="flex items-center gap-2 mb-1">
