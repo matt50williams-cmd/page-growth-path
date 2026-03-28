@@ -602,7 +602,7 @@ export default function SubmitPage() {
     if (step === 4) return form.mainGoal.length > 0;
     if (step === 5) return !!form.postingFrequency;
     if (step === 6) return !!form.contentType;
-    if (step === 7) return !!form.facebook_url;
+    if (step === 7) return true;
     return true;
   };
 
