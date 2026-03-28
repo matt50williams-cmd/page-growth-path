@@ -174,7 +174,6 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl, scr
   const [showUpload, setShowUpload] = useState(false);
   const [uploadLoading, setUploadLoading] = useState(false);
 
-  // Load preloaded URL from website scrape
   useEffect(() => {
     if (preloadedUrl && !confirmed && isValidFbUrl(preloadedUrl)) {
       const name = preloadedUrl
@@ -300,7 +299,7 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl, scr
         });
         const data = await response.json();
         const extracted = data?.content?.[0]?.text?.trim();
-        if (extracted && !extracted.includes('NOT_FOUND') && extracted.length > 0) {
+        if (extracted && !extracted.includes('NOT_FOUND')) {
           let fbUrl = extracted.includes('facebook.com')
             ? extracted
             : `https://www.facebook.com/${extracted}`;
@@ -337,7 +336,6 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl, scr
     <div className="space-y-4">
       {!confirmed ? (
         <>
-          {/* Scrape loading indicator */}
           {scrapeLoading && (
             <div className="bg-blue-50 border border-blue-200 rounded-2xl px-4 py-3 flex items-center gap-3">
               <div className="w-4 h-4 border-2 border-blue-200 border-t-[#1877F2] rounded-full animate-spin shrink-0" />
@@ -345,7 +343,6 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl, scr
             </div>
           )}
 
-          {/* Search box */}
           <div>
             <label className="block text-sm font-semibold text-gray-900 mb-1.5">
               Facebook Page Name <span className="text-gray-400 font-normal text-xs">(optional)</span>
@@ -381,7 +378,6 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl, scr
             )}
           </div>
 
-          {/* Preview card — one at a time */}
           {previewUrl && !noMore && (
             <div className="bg-blue-50 border-2 border-[#1877F2] rounded-2xl p-5">
               <div className="flex items-center justify-between mb-3">
@@ -425,7 +421,6 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl, scr
             </div>
           )}
 
-          {/* No more variations — show all fallbacks */}
           {noMore && (
             <div className="space-y-3">
               <div className="bg-yellow-50 border-2 border-yellow-300 rounded-2xl p-4 text-center">
@@ -433,7 +428,6 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl, scr
                 <p className="text-xs text-yellow-700">Try one of these options below:</p>
               </div>
 
-              {/* How to find URL */}
               <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
                 <button type="button" onClick={() => setShowHelp(!showHelp)}
                   className="w-full px-4 py-3.5 flex items-center justify-between text-sm font-semibold text-gray-700 hover:bg-gray-50">
@@ -462,7 +456,6 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl, scr
                 )}
               </div>
 
-              {/* Screenshot upload */}
               <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
                 <button type="button" onClick={() => setShowUpload(!showUpload)}
                   className="w-full px-4 py-3.5 flex items-center justify-between text-sm font-semibold text-gray-700 hover:bg-gray-50">
@@ -491,7 +484,6 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl, scr
                 )}
               </div>
 
-              {/* Google search */}
               <button type="button"
                 onClick={() => window.open(`https://www.google.com/search?q=site:facebook.com+"${pageName}"`, '_blank')}
                 className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3.5 flex items-center gap-3 hover:border-gray-400 transition-colors text-left">
@@ -503,14 +495,8 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl, scr
                 <span className="text-xs text-gray-400">↗</span>
               </button>
 
-              {/* Try different name */}
               <button type="button"
-                onClick={() => {
-                  setNoMore(false);
-                  setPreviewUrl("");
-                  setShowVariations(false);
-                  setVarIndex(0);
-                }}
+                onClick={() => { setNoMore(false); setPreviewUrl(""); setShowVariations(false); setVarIndex(0); }}
                 className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3.5 flex items-center gap-3 hover:border-gray-400 transition-colors text-left">
                 <span className="text-xl">✏️</span>
                 <div>
@@ -521,7 +507,6 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl, scr
             </div>
           )}
 
-          {/* Paste URL — always visible */}
           <div className="border-t border-gray-100 pt-4">
             <p className="text-xs text-gray-400 mb-2 font-semibold">Or paste your Facebook URL directly:</p>
             <input type="url"
@@ -532,7 +517,6 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl, scr
           </div>
         </>
       ) : (
-        /* Confirmed state */
         <div className="bg-green-50 border-2 border-green-400 rounded-2xl p-5">
           <div className="flex items-center gap-4 mb-3">
             {imgSrc && !imgError ? (
@@ -602,7 +586,7 @@ export default function SubmitPage() {
     return true;
   };
 
-  const fireBackgroundScrape = async (website, businessName, email) => {
+  const fireBackgroundScrape = async (website, businessName, email, city) => {
     if (!website && !businessName) return;
     setScrapeLoading(true);
     try {
@@ -613,7 +597,7 @@ export default function SubmitPage() {
           website_url: website || null,
           business_name: businessName,
           email: email,
-          city: form.city || null,
+          city: city || null,
         })
       });
       const data = await res.json();
@@ -640,7 +624,7 @@ export default function SubmitPage() {
     if (step === 4) return form.mainGoal.length > 0;
     if (step === 5) return !!form.postingFrequency;
     if (step === 6) return !!form.contentType;
-    if (step === 7) return true; // Facebook is optional!
+    if (step === 7) return true;
     return true;
   };
 
@@ -714,7 +698,6 @@ export default function SubmitPage() {
 
           <div className="bg-white border border-gray-100 rounded-3xl shadow-sm px-6 py-7">
 
-            {/* STEP 1 */}
             {step === 1 && (
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-1">Let's get started!</h1>
@@ -760,7 +743,6 @@ export default function SubmitPage() {
               </div>
             )}
 
-            {/* STEP 2 */}
             {step === 2 && (
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-1">What type of business are you?</h1>
@@ -779,7 +761,6 @@ export default function SubmitPage() {
               </div>
             )}
 
-            {/* STEP 3 */}
             {step === 3 && (
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-1">What city is your business in?</h1>
@@ -798,7 +779,6 @@ export default function SubmitPage() {
               </div>
             )}
 
-            {/* STEP 4 */}
             {step === 4 && (
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-1">What's your main goal?</h1>
@@ -827,7 +807,6 @@ export default function SubmitPage() {
               </div>
             )}
 
-            {/* STEP 5 */}
             {step === 5 && (
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-1">How often do you post?</h1>
@@ -849,7 +828,6 @@ export default function SubmitPage() {
               </div>
             )}
 
-            {/* STEP 6 */}
             {step === 6 && (
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-1">What do you post most?</h1>
@@ -872,7 +850,6 @@ export default function SubmitPage() {
               </div>
             )}
 
-            {/* STEP 7 — Facebook Page Finder */}
             {step === 7 && (
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-1">
@@ -881,7 +858,7 @@ export default function SubmitPage() {
                 <p className="text-sm text-gray-400 mb-6">
                   {preloadedFbUrl
                     ? "We found this from your website — is it correct?"
-                    : "Search for your page so we can analyze it. This is optional but makes your report much more accurate!"}
+                    : "Search for your page so we can analyze it. Optional but makes your report much more accurate!"}
                 </p>
                 <FacebookPageFinder
                   value={form.facebook_url}
@@ -895,7 +872,6 @@ export default function SubmitPage() {
               </div>
             )}
 
-            {/* Navigation */}
             <div className={`mt-8 flex ${step > 1 ? "justify-between" : "justify-end"}`}>
               {step > 1 && (
                 <button type="button" onClick={() => goToStep(step - 1)}
@@ -908,7 +884,7 @@ export default function SubmitPage() {
                 onClick={() => {
                   if (step === 1) {
                     if (!validateEmailField(form.email)) return;
-                    fireBackgroundScrape(form.website, form.name, form.email);
+                    fireBackgroundScrape(form.website, form.name, form.email, form.city);
                   }
                   if (step < TOTAL_STEPS) goToStep(step + 1);
                   else handleSubmit();
@@ -925,6 +901,8 @@ export default function SubmitPage() {
     </div>
   );
 }
+
+
 
 
 
