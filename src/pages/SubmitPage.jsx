@@ -587,9 +587,8 @@ export default function SubmitPage() {
     return true;
   };
 
-  // Fire AFTER city is entered (Step 3) so we have business name + city + website
-  const fireBackgroundScrape = async () => {
-    const { businessName, website, email, city } = form;
+  // Fire AFTER city is entered on Step 3 — now we have business name + city + website
+  const fireBackgroundScrape = async (website, businessName, email, city) => {
     if (!businessName && !website) return;
     setScrapeLoading(true);
     try {
@@ -661,8 +660,8 @@ export default function SubmitPage() {
       localStorage.setItem("pageAuditOrder", JSON.stringify({
         name: form.name,
         email: form.email,
-        website: form.website,
         businessName: form.businessName,
+        website: form.website,
         pageUrl: fbUrl,
         businessType: form.businessType,
         city: form.city,
@@ -715,13 +714,6 @@ export default function SubmitPage() {
                       className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:border-[#1877F2] transition-all" />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-1.5">Business Name <span className="text-red-400">*</span></label>
-                    <input type="text" placeholder="e.g. Allred Heating or Righteous Law" value={form.businessName}
-                      onChange={(e) => set("businessName", e.target.value)}
-                      className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:border-[#1877F2] transition-all" />
-                    <WhyWeAsk>We use your business name to automatically find your Facebook page and personalize your entire report with industry-specific strategies.</WhyWeAsk>
-                  </div>
-                  <div>
                     <label className="block text-sm font-semibold text-gray-900 mb-1.5">Email Address <span className="text-red-400">*</span></label>
                     <div className="relative">
                       <input type="email" placeholder="jane@yourbusiness.com" value={form.email}
@@ -738,6 +730,15 @@ export default function SubmitPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-900 mb-1.5">
+                      Business Name <span className="text-red-400">*</span>
+                    </label>
+                    <input type="text" placeholder="e.g. Allred Heating or Righteous Law" value={form.businessName}
+                      onChange={(e) => set("businessName", e.target.value)}
+                      className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:border-[#1877F2] transition-all" />
+                    <WhyWeAsk>We use your business name to automatically find your Facebook page and personalize your entire audit report.</WhyWeAsk>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-1.5">
                       <Globe className="w-4 h-4 inline mr-1 text-[#1877F2]" />
                       Business Website <span className="text-gray-400 font-normal">(optional)</span>
                     </label>
@@ -748,6 +749,7 @@ export default function SubmitPage() {
                       <span className="text-green-500 text-sm shrink-0">🎁</span>
                       <p className="text-xs text-green-700 font-medium">Add your website and get a <strong>FREE Website SEO Score</strong> included with your audit — limited time bonus!</p>
                     </div>
+                    <WhyWeAsk>We scan your website to automatically find your Facebook page — no copy/pasting needed! We also analyze it for SEO issues and include a free score showing how Google sees your site.</WhyWeAsk>
                   </div>
                 </div>
                 <DidYouKnow index={0} />
@@ -773,7 +775,7 @@ export default function SubmitPage() {
               </div>
             )}
 
-            {/* STEP 3 — City — scrape fires here! */}
+            {/* STEP 3 — City */}
             {step === 3 && (
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-1">What city is your business in?</h1>
@@ -792,7 +794,7 @@ export default function SubmitPage() {
               </div>
             )}
 
-            {/* STEP 4 — Goals */}
+            {/* STEP 4 — Main Goal */}
             {step === 4 && (
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-1">What's your main goal?</h1>
@@ -874,7 +876,7 @@ export default function SubmitPage() {
                 </h1>
                 <p className="text-sm text-gray-400 mb-6">
                   {preloadedFbUrl
-                    ? "We found this from your business info — is it correct?"
+                    ? "We found this automatically — is it correct?"
                     : "Search for your page so we can analyze it. Optional but makes your report much more accurate!"}
                 </p>
                 <FacebookPageFinder
@@ -900,10 +902,17 @@ export default function SubmitPage() {
               <button type="button"
                 disabled={!canNext() || isSubmitting}
                 onClick={() => {
-                  if (step === 1 && !validateEmailField(form.email)) return;
-                  // Fire scrape on Step 3 after city is entered — we now have business name + city + website
-                  if (step === 3 && form.city.trim()) {
-                    fireBackgroundScrape();
+                  if (step === 1) {
+                    if (!validateEmailField(form.email)) return;
+                  }
+                  // Fire scrape on Step 3 — now we have business name + city + website
+                  if (step === 3) {
+                    fireBackgroundScrape(
+                      form.website,
+                      form.businessName,
+                      form.email,
+                      form.city
+                    );
                   }
                   if (step < TOTAL_STEPS) goToStep(step + 1);
                   else handleSubmit();
@@ -920,6 +929,7 @@ export default function SubmitPage() {
     </div>
   );
 }
+
 
 
 
