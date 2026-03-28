@@ -1,16 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, ArrowLeft, Check, Search, Globe } from "lucide-react";
+import { ArrowRight, ArrowLeft, Check, Search, Globe, MapPin, Target, Clock, Video, Lightbulb, HelpCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { storeUtmParams, getStoredUtmParams } from "@/utils/utm";
 import { trackEvent, EVENTS } from "@/utils/tracking";
 
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 6;
 const API_BASE = "https://pageaudit-engine.onrender.com";
 const FB_PHOTO = (username) => `${API_BASE}/api/fb-photo/${encodeURIComponent(username)}`;
 
-const isValidEmail = (email) => {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email?.trim() || "");
-};
+const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email?.trim() || "");
 
 const extractDomain = (input) => {
   if (!input) return "";
@@ -21,25 +19,89 @@ const extractDomain = (input) => {
   return domain;
 };
 
-function StepProgress({ step }) {
+const BUSINESS_TYPES = [
+  { value: "plumbing", label: "🔧 Plumbing", zipzoit: true },
+  { value: "hvac", label: "❄️ HVAC / Heating & Cooling", zipzoit: true },
+  { value: "roofing", label: "🏠 Roofing", zipzoit: true },
+  { value: "electrical", label: "⚡ Electrical", zipzoit: true },
+  { value: "restaurant", label: "🍽️ Restaurant / Food", zipzoit: false },
+  { value: "retail", label: "🛍️ Retail / Shop", zipzoit: false },
+  { value: "health", label: "💊 Health & Wellness", zipzoit: false },
+  { value: "realestate", label: "🏡 Real Estate", zipzoit: true },
+  { value: "attorney", label: "⚖️ Attorney / Legal", zipzoit: true },
+  { value: "dental", label: "🦷 Dental / Medical", zipzoit: true },
+  { value: "auto", label: "🚗 Auto Repair", zipzoit: true },
+  { value: "other", label: "📋 Other", zipzoit: false },
+];
+
+const DID_YOU_KNOW = [
+  "Pages that post 4–5 times per week grow 3x faster than those that post randomly.",
+  "Facebook's algorithm rewards pages that respond to comments within the first 30 minutes of posting.",
+  "Local businesses that mention their city in posts see up to 40% more reach from nearby customers.",
+  "Video posts get 5x more reach than image posts on Facebook — even short 60-second videos.",
+  "Pages with a complete About section rank higher in Facebook search results.",
+  "The best time to post for most businesses is between 1pm–4pm on weekdays.",
+];
+
+function DidYouKnow({ index }) {
   return (
-    <div className="w-full mb-8">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-medium text-gray-400">Step {step} of {TOTAL_STEPS}</span>
-        <span className="text-xs font-medium text-gray-400">{Math.round((step / TOTAL_STEPS) * 100)}%</span>
-      </div>
-      <div className="w-full bg-gray-100 rounded-full h-1">
-        <div className="bg-[#1877F2] h-1 rounded-full transition-all duration-500" style={{ width: `${(step / TOTAL_STEPS) * 100}%` }} />
+    <div className="mt-6 bg-blue-50 border border-blue-100 rounded-2xl px-4 py-3 flex items-start gap-3">
+      <Lightbulb className="w-4 h-4 text-[#1877F2] shrink-0 mt-0.5" />
+      <div>
+        <p className="text-xs font-bold text-[#1877F2] uppercase tracking-wide mb-0.5">Did You Know?</p>
+        <p className="text-xs text-gray-600 leading-relaxed">{DID_YOU_KNOW[index % DID_YOU_KNOW.length]}</p>
       </div>
     </div>
   );
 }
 
-function MultiCard({ selected, onClick, children }) {
+function WhyWeAsk({ children }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="mt-3">
+      <button type="button" onClick={() => setOpen(!open)}
+        className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors">
+        <HelpCircle className="w-3.5 h-3.5" />
+        Why do we ask this?
+        {open ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+      </button>
+      {open && (
+        <div className="mt-2 bg-gray-50 border border-gray-100 rounded-xl px-3 py-2.5">
+          <p className="text-xs text-gray-600 leading-relaxed">{children}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StepProgress({ step }) {
+  const messages = [
+    "Let's get started!",
+    "Great! Keep going...",
+    "You're doing great!",
+    "Almost there...",
+    "One more step!",
+    "Final step!",
+  ];
+  return (
+    <div className="w-full mb-6">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs font-semibold text-[#1877F2]">{messages[step - 1]}</span>
+        <span className="text-xs font-medium text-gray-400">Step {step} of {TOTAL_STEPS}</span>
+      </div>
+      <div className="w-full bg-gray-100 rounded-full h-2">
+        <div className="bg-gradient-to-r from-[#1877F2] to-[#2563eb] h-2 rounded-full transition-all duration-500"
+          style={{ width: `${(step / TOTAL_STEPS) * 100}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function OptionCard({ selected, onClick, children }) {
   return (
     <button type="button" onClick={onClick}
-      className={`w-full text-left px-4 py-4 rounded-2xl border-2 transition-all duration-150 flex items-center gap-3 ${selected ? "border-[#1877F2] bg-blue-50 shadow-sm" : "border-gray-100 bg-white hover:border-gray-200 hover:shadow-sm"}`}>
-      <span className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${selected ? "border-[#1877F2] bg-[#1877F2]" : "border-gray-300 bg-white"}`}>
+      className={`w-full text-left px-4 py-4 rounded-2xl border-2 transition-all duration-150 flex items-center gap-3 ${selected ? "border-[#1877F2] bg-blue-50 shadow-sm" : "border-gray-100 bg-white hover:border-blue-200 hover:shadow-sm"}`}>
+      <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${selected ? "border-[#1877F2] bg-[#1877F2]" : "border-gray-300 bg-white"}`}>
         {selected && <Check className="w-3 h-3 text-white" />}
       </span>
       <span className={`text-sm font-medium ${selected ? "text-[#1877F2]" : "text-gray-700"}`}>{children}</span>
@@ -57,51 +119,26 @@ function generateVariations(name, email = "", website = "") {
   const withUnder = raw.replace(/\s+/g, '_');
   const lowerDots = raw.toLowerCase().replace(/\s+/g, '.');
   const lowerDashes = raw.toLowerCase().replace(/\s+/g, '-');
-  const lowerUnder = raw.toLowerCase().replace(/\s+/g, '_');
-  const withThe = `the${lower}`;
-  const withThe2 = `The${title}`;
-  const withOfficial = `${lower}official`;
-  const withOfficial2 = `${title}Official`;
-  const withPage = `${lower}page`;
-  const withBiz = `${lower}biz`;
-  const withHQ = `${lower}hq`;
-  const withReal = `real${lower}`;
-  const withGet = `get${lower}`;
-  const withMy = `my${lower}`;
-  const withPro = `${lower}pro`;
-  const withUS = `${lower}us`;
-  const withCo = `${lower}co`;
-  const withInc = `${lower}inc`;
-
   const emailDomain = extractDomain(email);
   const websiteDomain = extractDomain(website);
-
-  const smartVariations = [];
-  if (emailDomain && emailDomain !== lower) {
-    smartVariations.push(emailDomain);
-    smartVariations.push(`the${emailDomain}`);
-  }
-  if (websiteDomain && websiteDomain !== lower) {
-    smartVariations.push(websiteDomain);
-    smartVariations.push(`the${websiteDomain}`);
-  }
-
-  const variations = [
-    ...smartVariations,
-    cleaned, lower, title,
+  const smart = [];
+  if (emailDomain && emailDomain !== lower) { smart.push(emailDomain); smart.push(`the${emailDomain}`); }
+  if (websiteDomain && websiteDomain !== lower) { smart.push(websiteDomain); smart.push(`the${websiteDomain}`); }
+  const all = [
+    ...smart, cleaned, lower, title,
     withDots, withDashes, withUnder,
-    lowerDots, lowerDashes, lowerUnder,
-    withThe, withThe2,
-    withOfficial, withOfficial2,
-    withPage, withBiz, withHQ,
-    withReal, withGet, withMy,
-    withPro, withUS, withCo, withInc,
+    lowerDots, lowerDashes,
+    `the${lower}`, `The${title}`,
+    `${lower}official`, `${lower}page`,
+    `${lower}biz`, `${lower}hq`,
+    `real${lower}`, `get${lower}`,
+    `my${lower}`, `${lower}pro`,
+    `${lower}us`, `${lower}co`,
   ].filter(Boolean);
-
-  return [...new Set(variations)].slice(0, 20);
+  return [...new Set(all)].slice(0, 20);
 }
 
-function FacebookPageLookup({ value, onChange, email, website }) {
+function FacebookPageFinder({ value, onChange, email, website, preloadedUrl }) {
   const [pageName, setPageName] = useState("");
   const [confirmed, setConfirmed] = useState(false);
   const [previewUrl, setPreviewUrl] = useState("");
@@ -112,26 +149,35 @@ function FacebookPageLookup({ value, onChange, email, website }) {
   const [showVariations, setShowVariations] = useState(false);
   const [confirmedName, setConfirmedName] = useState("");
   const [pasteUrl, setPasteUrl] = useState("");
-  const [noMoreVariations, setNoMoreVariations] = useState(false);
-  const [allVariations, setAllVariations] = useState([]);
+  const [noMore, setNoMore] = useState(false);
+  const [allVars, setAllVars] = useState([]);
   const [showHelp, setShowHelp] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [uploadLoading, setUploadLoading] = useState(false);
+  const [noFacebook, setNoFacebook] = useState(false);
+
+  // Auto-load preloaded URL from website scrape
+  useEffect(() => {
+    if (preloadedUrl && !confirmed) {
+      const name = preloadedUrl.replace(/https?:\/\/(www\.)?facebook\.com\//i, '').replace(/\/$/, '').split('?')[0];
+      setPreviewUrl(preloadedUrl);
+      setImgSrc(FB_PHOTO(name));
+      setPageName(name);
+      setConfirmedName(name);
+    }
+  }, [preloadedUrl]);
 
   const handleSearch = () => {
     if (!pageName.trim()) return;
     setSearching(true);
     setImgError(false);
     setShowVariations(false);
-    setNoMoreVariations(false);
+    setNoMore(false);
     setVarIndex(0);
-
     const vars = generateVariations(pageName, email, website);
     const cleaned = pageName.trim().replace(/\s+/g, '');
-    const url = `https://www.facebook.com/${cleaned}`;
-
-    setAllVariations(vars);
-    setPreviewUrl(url);
+    setAllVars(vars);
+    setPreviewUrl(`https://www.facebook.com/${cleaned}`);
     setImgSrc(FB_PHOTO(cleaned));
     setConfirmed(false);
     onChange("");
@@ -140,14 +186,14 @@ function FacebookPageLookup({ value, onChange, email, website }) {
 
   const handleConfirm = () => {
     setConfirmed(true);
-    setConfirmedName(showVariations ? allVariations[varIndex] : pageName.trim().replace(/\s+/g, ''));
+    setConfirmedName(showVariations ? allVars[varIndex] : pageName.trim().replace(/\s+/g, ''));
     onChange(previewUrl);
     setShowVariations(false);
   };
 
   const handleNotRight = () => {
     const vars = generateVariations(pageName, email, website);
-    setAllVariations(vars);
+    setAllVars(vars);
     setShowVariations(true);
     setVarIndex(0);
     setImgError(false);
@@ -157,45 +203,36 @@ function FacebookPageLookup({ value, onChange, email, website }) {
     setImgSrc(FB_PHOTO(v));
   };
 
-  const handleNextVariation = () => {
+  const handleNext = () => {
     const next = varIndex + 1;
-    if (next >= allVariations.length) {
-      setNoMoreVariations(true);
+    if (next >= allVars.length) {
+      setNoMore(true);
       setPreviewUrl("");
       setImgSrc("");
     } else {
       setVarIndex(next);
       setImgError(false);
-      const v = allVariations[next];
+      const v = allVars[next];
       setPreviewUrl(`https://www.facebook.com/${v}`);
       setImgSrc(FB_PHOTO(v));
     }
   };
 
   const handleStartOver = () => {
-    setConfirmed(false);
-    setPreviewUrl("");
-    setImgSrc("");
-    setImgError(false);
-    setPageName("");
-    onChange("");
-    setShowVariations(false);
-    setAllVariations([]);
-    setConfirmedName("");
-    setPasteUrl("");
-    setNoMoreVariations(false);
-    setVarIndex(0);
-    setShowHelp(false);
-    setShowUpload(false);
+    setConfirmed(false); setPreviewUrl(""); setImgSrc("");
+    setImgError(false); setPageName(""); onChange("");
+    setShowVariations(false); setAllVars([]); setConfirmedName("");
+    setPasteUrl(""); setNoMore(false); setVarIndex(0);
+    setShowHelp(false); setShowUpload(false); setNoFacebook(false);
   };
 
-  const handlePasteUrl = (e) => {
+  const handlePaste = (e) => {
     const val = e.target.value;
     setPasteUrl(val);
     if (val.includes('facebook.com')) {
+      const name = val.replace(/https?:\/\/(www\.)?facebook\.com\//i, '').replace(/\/$/, '').split('?')[0];
       onChange(val);
       setPreviewUrl(val);
-      const name = val.replace(/https?:\/\/(www\.)?facebook\.com\//i, '').replace(/\/$/, '').split('?')[0];
       setConfirmedName(name);
       setImgSrc(FB_PHOTO(name));
       setConfirmed(true);
@@ -210,18 +247,17 @@ function FacebookPageLookup({ value, onChange, email, website }) {
       const reader = new FileReader();
       reader.onload = async (event) => {
         const base64 = event.target.result.split(',')[1];
-        const mediaType = file.type;
         const response = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             model: 'claude-sonnet-4-20250514',
-            max_tokens: 500,
+            max_tokens: 200,
             messages: [{
               role: 'user',
               content: [
-                { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
-                { type: 'text', text: 'Look at this screenshot of a Facebook page. Extract ONLY the Facebook page URL or username. Return ONLY the URL like "https://www.facebook.com/pagename" or just the username "pagename". Nothing else.' }
+                { type: 'image', source: { type: 'base64', media_type: file.type, data: base64 } },
+                { type: 'text', text: 'Find the Facebook page URL in this screenshot. Return ONLY the URL like "https://www.facebook.com/pagename" or just the username. Nothing else.' }
               ]
             }]
           })
@@ -229,14 +265,8 @@ function FacebookPageLookup({ value, onChange, email, website }) {
         const data = await response.json();
         const extracted = data?.content?.[0]?.text?.trim();
         if (extracted) {
-          let fbUrl = extracted;
-          let fbName = extracted;
-          if (!extracted.includes('facebook.com')) {
-            fbUrl = `https://www.facebook.com/${extracted}`;
-            fbName = extracted;
-          } else {
-            fbName = extracted.replace(/https?:\/\/(www\.)?facebook\.com\//i, '').replace(/\/$/, '').split('?')[0];
-          }
+          let fbUrl = extracted.includes('facebook.com') ? extracted : `https://www.facebook.com/${extracted}`;
+          let fbName = fbUrl.replace(/https?:\/\/(www\.)?facebook\.com\//i, '').replace(/\/$/, '').split('?')[0];
           setPreviewUrl(fbUrl);
           setImgSrc(FB_PHOTO(fbName));
           setConfirmedName(fbName);
@@ -244,78 +274,90 @@ function FacebookPageLookup({ value, onChange, email, website }) {
           setImgError(false);
           onChange("");
           setShowUpload(false);
-          setNoMoreVariations(false);
+          setNoMore(false);
           setShowVariations(false);
         }
         setUploadLoading(false);
       };
       reader.readAsDataURL(file);
     } catch (err) {
-      console.error('Screenshot analysis failed:', err);
       setUploadLoading(false);
     }
   };
 
-  const handleGoogleSearch = () => {
-    const query = encodeURIComponent(`site:facebook.com "${pageName || ""}" Facebook page`);
-    window.open(`https://www.google.com/search?q=${query}`, '_blank');
-  };
+  const currentName = showVariations ? allVars[varIndex] : pageName.trim().replace(/\s+/g, '');
 
-  const currentVariationName = showVariations ? allVariations[varIndex] : pageName.trim().replace(/\s+/g, '');
+  if (noFacebook) {
+    return (
+      <div className="space-y-4">
+        <div className="bg-blue-50 border-2 border-[#1877F2] rounded-2xl p-5 text-center">
+          <p className="text-2xl mb-2">👍</p>
+          <p className="font-bold text-gray-900 mb-1">No problem!</p>
+          <p className="text-sm text-gray-500 mb-4">We'll include a guide on setting up your Facebook page for maximum impact as part of your report.</p>
+          <button type="button" onClick={() => { setNoFacebook(false); onChange("NO_FACEBOOK"); }}
+            className="bg-[#1877F2] text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-[#1457C0] transition-colors">
+            Continue →
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
       {!confirmed ? (
         <>
+          {/* Preloaded from website */}
+          {preloadedUrl && !previewUrl && (
+            <div className="bg-green-50 border-2 border-green-400 rounded-2xl p-4 text-center">
+              <p className="text-xs font-bold text-green-700 mb-1">✨ We found your page from your website!</p>
+              <p className="text-xs text-green-600">Loading your page preview...</p>
+            </div>
+          )}
+
+          {/* Search box */}
           <div>
             <label className="block text-sm font-semibold text-gray-900 mb-1.5">
-              Your Facebook Page Name <span className="text-red-400">*</span>
+              Facebook Page Name <span className="text-gray-400 font-normal text-xs">(optional)</span>
             </label>
             <div className="flex gap-2">
               <input type="text"
-                placeholder="e.g. Righteous Network or AllredHeating"
+                placeholder="e.g. Allred Heating or RighteousNetwork"
                 value={pageName}
                 onChange={(e) => {
                   setPageName(e.target.value);
-                  setPreviewUrl("");
-                  setConfirmed(false);
-                  setImgSrc("");
-                  setShowVariations(false);
-                  setNoMoreVariations(false);
-                  setVarIndex(0);
-                  onChange("");
+                  setPreviewUrl(""); setImgSrc("");
+                  setShowVariations(false); setNoMore(false);
+                  setVarIndex(0); onChange("");
                 }}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                className="flex-1 border-2 border-gray-100 rounded-2xl px-4 py-3.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#1877F2] transition-all"
-              />
+                className="flex-1 border-2 border-gray-100 rounded-2xl px-4 py-3.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#1877F2] transition-all" />
               <button type="button" onClick={handleSearch}
                 disabled={!pageName.trim() || searching}
-                className="inline-flex items-center gap-2 bg-[#1877F2] text-white px-5 py-3.5 text-sm font-bold rounded-2xl hover:bg-[#1457C0] transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0">
+                className="inline-flex items-center gap-2 bg-[#1877F2] text-white px-5 py-3.5 text-sm font-bold rounded-2xl hover:bg-[#1457C0] transition-colors disabled:opacity-40 shrink-0">
                 {searching ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Search className="w-4 h-4" />}
                 Find
               </button>
             </div>
             {(email || website) && (
-              <p className="text-xs text-green-600 mt-2 font-medium">✓ Using your {website ? 'website' : 'email'} domain to find better matches</p>
-            )}
-            {!email && !website && (
-              <p className="text-xs text-gray-400 mt-2">Type your Facebook page name or username</p>
+              <p className="text-xs text-green-600 mt-1.5 font-medium">✓ Using your {website ? 'website + ' : ''}email to find better matches</p>
             )}
           </div>
 
-          {previewUrl && !noMoreVariations && (
+          {/* Preview card */}
+          {previewUrl && !noMore && (
             <div className="bg-blue-50 border-2 border-[#1877F2] rounded-2xl p-5">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-3">
                 <p className="text-xs font-bold text-[#1877F2] uppercase tracking-wide">Is this your page?</p>
                 {showVariations && (
                   <span className="text-xs text-gray-400 bg-white px-2 py-1 rounded-full border border-gray-200">
-                    {varIndex + 1} of {allVariations.length}
+                    {varIndex + 1} of {allVars.length}
                   </span>
                 )}
               </div>
               <div className="bg-white rounded-xl p-4 mb-4 flex items-center gap-4 border border-gray-100 shadow-sm">
                 {!imgError ? (
-                  <img src={imgSrc} alt={currentVariationName} onError={() => setImgError(true)}
+                  <img src={imgSrc} alt={currentName} onError={() => setImgError(true)}
                     className="w-16 h-16 rounded-full object-cover border-2 border-gray-100 shrink-0" />
                 ) : (
                   <div className="w-16 h-16 rounded-full bg-[#1877F2] flex items-center justify-center shrink-0">
@@ -323,10 +365,10 @@ function FacebookPageLookup({ value, onChange, email, website }) {
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-gray-900 text-base truncate">{currentVariationName}</p>
+                  <p className="font-bold text-gray-900 text-base truncate">{currentName}</p>
                   <p className="text-xs text-gray-400 truncate mt-0.5">{previewUrl}</p>
                   <a href={previewUrl} target="_blank" rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs text-[#1877F2] hover:underline font-semibold mt-1">
+                    className="text-xs text-[#1877F2] hover:underline font-semibold mt-1 inline-block">
                     Open on Facebook ↗
                   </a>
                 </div>
@@ -334,45 +376,46 @@ function FacebookPageLookup({ value, onChange, email, website }) {
               <div className="flex gap-3">
                 <button type="button" onClick={handleConfirm}
                   className="flex-1 inline-flex items-center justify-center gap-2 bg-[#1877F2] text-white px-4 py-3 text-sm font-bold rounded-xl hover:bg-[#1457C0] transition-colors">
-                  <Check className="w-4 h-4" /> Yes, that's my page!
+                  <Check className="w-4 h-4" /> Yes, that's it!
                 </button>
-                <button type="button" onClick={showVariations ? handleNextVariation : handleNotRight}
+                <button type="button" onClick={showVariations ? handleNext : handleNotRight}
                   className="flex-1 border-2 border-gray-200 text-gray-600 px-4 py-3 text-sm font-semibold rounded-xl hover:border-gray-400 transition-colors">
-                  {showVariations ? `Next → (${allVariations.length - varIndex - 1} left)` : "Not right, try again"}
+                  {showVariations ? `Next → (${allVars.length - varIndex - 1} left)` : "Not right"}
                 </button>
               </div>
             </div>
           )}
 
-          {noMoreVariations && (
+          {/* No more variations — show all fallbacks */}
+          {noMore && (
             <div className="space-y-3">
               <div className="bg-yellow-50 border-2 border-yellow-300 rounded-2xl p-4 text-center">
-                <p className="text-sm font-bold text-yellow-800 mb-1">😕 Couldn't find your page automatically</p>
-                <p className="text-xs text-yellow-700">We tried {allVariations.length} variations! Try one of the options below.</p>
+                <p className="text-sm font-bold text-yellow-800 mb-1">😕 Having trouble finding your page?</p>
+                <p className="text-xs text-yellow-700">Try one of these options below:</p>
               </div>
 
-              {/* LEVEL 2 — HOW TO FIND YOUR URL */}
+              {/* How to find URL */}
               <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
                 <button type="button" onClick={() => setShowHelp(!showHelp)}
-                  className="w-full px-4 py-3 flex items-center justify-between text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
+                  className="w-full px-4 py-3.5 flex items-center justify-between text-sm font-semibold text-gray-700 hover:bg-gray-50">
                   <span>📖 How to find your Facebook URL</span>
-                  <span>{showHelp ? '▲' : '▼'}</span>
+                  {showHelp ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </button>
                 {showHelp && (
-                  <div className="px-4 pb-4 space-y-3 border-t border-gray-100">
+                  <div className="px-4 pb-4 border-t border-gray-100 space-y-3 pt-3">
                     {[
-                      { step: "1", icon: "📱", title: "Open Facebook", desc: "Go to facebook.com or open the Facebook app" },
-                      { step: "2", icon: "🔍", title: "Find your page", desc: "Click on your business page name" },
-                      { step: "3", icon: "🔗", title: "Copy the URL", desc: "Look at the address bar — copy everything after facebook.com/" },
-                      { step: "4", icon: "📋", title: "Paste it below", desc: "Paste the URL in the box below and we'll confirm it's right" },
-                    ].map(({ step, icon, title, desc }) => (
-                      <div key={step} className="flex items-start gap-3 mt-3">
-                        <div className="w-6 h-6 rounded-full bg-[#1877F2] flex items-center justify-center shrink-0 mt-0.5">
-                          <span className="text-white text-xs font-bold">{step}</span>
+                      { n: "1", icon: "📱", t: "Open Facebook", d: "Go to facebook.com or open the app" },
+                      { n: "2", icon: "🔍", t: "Find your page", d: "Click on your business page name" },
+                      { n: "3", icon: "🔗", t: "Copy the URL", d: "Copy everything in the address bar" },
+                      { n: "4", icon: "📋", t: "Paste it below", d: "Paste in the URL box below" },
+                    ].map(({ n, icon, t, d }) => (
+                      <div key={n} className="flex items-start gap-3">
+                        <div className="w-6 h-6 rounded-full bg-[#1877F2] flex items-center justify-center shrink-0">
+                          <span className="text-white text-xs font-bold">{n}</span>
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-gray-900">{icon} {title}</p>
-                          <p className="text-xs text-gray-500">{desc}</p>
+                          <p className="text-sm font-semibold text-gray-900">{icon} {t}</p>
+                          <p className="text-xs text-gray-500">{d}</p>
                         </div>
                       </div>
                     ))}
@@ -380,25 +423,25 @@ function FacebookPageLookup({ value, onChange, email, website }) {
                 )}
               </div>
 
-              {/* LEVEL 3 — SCREENSHOT UPLOAD */}
+              {/* Screenshot upload */}
               <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
                 <button type="button" onClick={() => setShowUpload(!showUpload)}
-                  className="w-full px-4 py-3 flex items-center justify-between text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
-                  <span>📸 Upload a screenshot — AI finds your URL instantly</span>
-                  <span>{showUpload ? '▲' : '▼'}</span>
+                  className="w-full px-4 py-3.5 flex items-center justify-between text-sm font-semibold text-gray-700 hover:bg-gray-50">
+                  <span>📸 Upload screenshot — AI finds your URL</span>
+                  {showUpload ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </button>
                 {showUpload && (
-                  <div className="px-4 pb-4 border-t border-gray-100">
-                    <p className="text-xs text-gray-500 mb-3 mt-3">Take a screenshot of your Facebook page and upload it — our AI reads it and finds your URL automatically!</p>
+                  <div className="px-4 pb-4 border-t border-gray-100 pt-3">
+                    <p className="text-xs text-gray-500 mb-3">Screenshot your Facebook page — our AI reads it and finds your URL automatically!</p>
                     {uploadLoading ? (
                       <div className="flex items-center justify-center py-6 gap-3">
                         <div className="w-6 h-6 border-2 border-gray-200 border-t-[#1877F2] rounded-full animate-spin" />
-                        <p className="text-sm text-gray-600 font-medium">AI is reading your screenshot...</p>
+                        <p className="text-sm text-gray-600 font-medium">AI reading your screenshot...</p>
                       </div>
                     ) : (
-                      <label className="w-full flex flex-col items-center justify-center border-2 border-dashed border-[#1877F2] rounded-xl py-6 px-4 cursor-pointer hover:bg-blue-50 transition-colors">
+                      <label className="w-full flex flex-col items-center justify-center border-2 border-dashed border-[#1877F2] rounded-xl py-6 cursor-pointer hover:bg-blue-50 transition-colors">
                         <span className="text-3xl mb-2">📷</span>
-                        <span className="text-sm font-bold text-[#1877F2]">Click to upload screenshot</span>
+                        <span className="text-sm font-bold text-[#1877F2]">Tap to upload screenshot</span>
                         <span className="text-xs text-gray-400 mt-1">PNG, JPG, or WEBP</span>
                         <input type="file" accept="image/*" onChange={handleScreenshot} className="hidden" />
                       </label>
@@ -407,42 +450,54 @@ function FacebookPageLookup({ value, onChange, email, website }) {
                 )}
               </div>
 
-              {/* LEVEL 4 — GOOGLE SEARCH */}
-              <button type="button" onClick={handleGoogleSearch}
-                className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 flex items-center gap-3 hover:border-gray-400 transition-colors text-left">
+              {/* Google search */}
+              <button type="button"
+                onClick={() => window.open(`https://www.google.com/search?q=site:facebook.com+"${pageName}"`, '_blank')}
+                className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3.5 flex items-center gap-3 hover:border-gray-400 transition-colors text-left">
                 <span className="text-xl">🔍</span>
-                <div>
+                <div className="flex-1">
                   <p className="text-sm font-semibold text-gray-700">Search Google for your page</p>
-                  <p className="text-xs text-gray-400">Opens a pre-filled Google search to help you find it</p>
+                  <p className="text-xs text-gray-400">Opens a pre-filled search to find it</p>
                 </div>
-                <span className="ml-auto text-xs text-gray-400">↗</span>
+                <span className="text-xs text-gray-400">↗</span>
               </button>
 
-              {/* LEVEL 5 — TRY DIFFERENT NAME */}
-              <button type="button" onClick={() => {
-                setNoMoreVariations(false);
-                setPreviewUrl("");
-                setShowVariations(false);
-                setVarIndex(0);
-              }}
-                className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 flex items-center gap-3 hover:border-gray-400 transition-colors text-left">
+              {/* Try different name */}
+              <button type="button" onClick={() => { setNoMore(false); setPreviewUrl(""); setShowVariations(false); setVarIndex(0); }}
+                className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3.5 flex items-center gap-3 hover:border-gray-400 transition-colors text-left">
                 <span className="text-xl">✏️</span>
                 <div>
-                  <p className="text-sm font-semibold text-gray-700">Try a different page name</p>
-                  <p className="text-xs text-gray-400">Go back and search with a different variation</p>
+                  <p className="text-sm font-semibold text-gray-700">Try a different name</p>
+                  <p className="text-xs text-gray-400">Search with a different variation</p>
+                </div>
+              </button>
+
+              {/* No Facebook page */}
+              <button type="button" onClick={() => setNoFacebook(true)}
+                className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3.5 flex items-center gap-3 hover:border-gray-400 transition-colors text-left">
+                <span className="text-xl">🚫</span>
+                <div>
+                  <p className="text-sm font-semibold text-gray-700">I don't have a Facebook page yet</p>
+                  <p className="text-xs text-gray-400">No problem — we'll help you set one up!</p>
                 </div>
               </button>
             </div>
           )}
 
+          {/* Paste URL */}
           <div className="border-t border-gray-100 pt-4">
             <p className="text-xs text-gray-400 mb-2 font-semibold">Or paste your Facebook URL directly:</p>
-            <input type="url"
-              placeholder="https://www.facebook.com/yourbusiness"
-              value={pasteUrl}
-              onChange={handlePasteUrl}
-              className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#1877F2] transition-all"
-            />
+            <input type="url" placeholder="https://www.facebook.com/yourbusiness"
+              value={pasteUrl} onChange={handlePaste}
+              className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#1877F2] transition-all" />
+          </div>
+
+          {/* Skip option */}
+          <div className="text-center">
+            <button type="button" onClick={() => setNoFacebook(true)}
+              className="text-xs text-gray-400 hover:text-gray-600 underline">
+              I don't have a Facebook page yet
+            </button>
           </div>
         </>
       ) : (
@@ -484,27 +539,26 @@ export default function SubmitPage() {
   const [emailTouched, setEmailTouched] = useState(false);
   const [urlError, setUrlError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [preloadedFbUrl, setPreloadedFbUrl] = useState("");
+  const [seoScore, setSeoScore] = useState(null);
+  const [scrapeLoading, setScrapeLoading] = useState(false);
 
   const [form, setForm] = useState({
     name: "",
     email: "",
     website: "",
+    businessType: "",
+    city: "",
     facebook_url: "",
     mainGoal: [],
-    postingFrequency: [],
-    contentType: [],
+    postingFrequency: "",
+    contentType: "",
   });
 
   useEffect(() => {
     storeUtmParams();
     trackEvent(EVENTS.INTAKE_STARTED);
   }, []);
-
-  const toggle = (key, val) =>
-    setForm((f) => ({
-      ...f,
-      [key]: f[key].includes(val) ? f[key].filter((x) => x !== val) : [...f[key], val],
-    }));
 
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }));
 
@@ -517,10 +571,28 @@ export default function SubmitPage() {
     return true;
   };
 
-  const validateUrl = (url) => {
-    if (!url.trim()) return "Please find and confirm your Facebook page above.";
-    if (!url.toLowerCase().includes("facebook.com")) return "Please enter a valid Facebook URL.";
-    return "";
+  // Fire background scrape when Step 1 is completed
+  const fireBackgroundScrape = async (website, businessName, email) => {
+    if (!website && !businessName) return;
+    setScrapeLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/website/scrape`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          website_url: website,
+          business_name: businessName,
+          email: email,
+        })
+      });
+      const data = await res.json();
+      if (data.facebook_url) setPreloadedFbUrl(data.facebook_url);
+      if (data.seo_score) setSeoScore(data.seo_score);
+    } catch (err) {
+      console.error('Background scrape failed:', err);
+    } finally {
+      setScrapeLoading(false);
+    }
   };
 
   const goToStep = (n) => {
@@ -530,10 +602,11 @@ export default function SubmitPage() {
 
   const canNext = () => {
     if (step === 1) return form.name.trim() && form.email.trim() && !emailError && isValidEmail(form.email);
-    if (step === 2) return !validateUrl(form.facebook_url);
-    if (step === 3) return form.mainGoal.length > 0;
-    if (step === 4) return form.postingFrequency.length > 0;
-    if (step === 5) return form.contentType.length > 0;
+    if (step === 2) return !!form.businessType;
+    if (step === 3) return !!form.city.trim();
+    if (step === 4) return form.mainGoal.length > 0;
+    if (step === 5) return !!form.postingFrequency && !!form.contentType;
+    if (step === 6) return !!form.facebook_url;
     return true;
   };
 
@@ -542,17 +615,18 @@ export default function SubmitPage() {
     setIsSubmitting(true);
     try {
       const utm = getStoredUtmParams() || {};
+      const fbUrl = form.facebook_url === "NO_FACEBOOK" ? "" : form.facebook_url;
       const res = await fetch(`${API_BASE}/api/audits`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           customer_name: form.name,
           email: form.email,
-          facebook_url: form.facebook_url,
-          account_type: "Business",
+          facebook_url: fbUrl,
+          account_type: form.businessType,
           goals: form.mainGoal.join(", "),
-          posting_frequency: form.postingFrequency.join(", "),
-          content_type: form.contentType.join(", "),
+          posting_frequency: form.postingFrequency,
+          content_type: form.contentType,
           utm_source: utm.utm_source || null,
           utm_campaign: utm.utm_campaign || null,
           utm_adset: utm.utm_adset || null,
@@ -562,31 +636,19 @@ export default function SubmitPage() {
       const data = await res.json();
       if (!res.ok || !data?.success || !data?.audit?.id) throw new Error(data?.error || "Audit creation failed");
       const auditId = data.audit.id;
-      try {
-        await fetch(`${API_BASE}/api/funnel/track`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            event_type: "intake_submitted",
-            email: form.email,
-            report_id: auditId,
-            facebook_url: form.facebook_url,
-            utm_source: utm.utm_source || null,
-            utm_campaign: utm.utm_campaign || null,
-            metadata: { name: form.name, mainGoal: form.mainGoal, postingFrequency: form.postingFrequency, contentType: form.contentType, website: form.website },
-          }),
-        });
-      } catch (trackErr) { console.error("Tracking failed:", trackErr); }
 
       localStorage.setItem("pageAuditOrder", JSON.stringify({
         name: form.name,
         email: form.email,
         website: form.website,
-        pageUrl: form.facebook_url,
-        review_type: "Business",
+        pageUrl: fbUrl,
+        businessType: form.businessType,
+        city: form.city,
+        review_type: form.businessType || "Business",
         mainGoal: form.mainGoal,
         postingFrequency: form.postingFrequency,
         contentType: form.contentType,
+        seoScore: seoScore,
         auditId,
       }));
       navigate("/analyzing");
@@ -598,109 +660,205 @@ export default function SubmitPage() {
     }
   };
 
-  const stepTitles = [
-    "Let's Start With Your Contact Info",
-    "Find Your Facebook Business Page",
-    "What's Your Main Goal?",
-    "How Often Do You Post?",
-    "What Content Do You Post Most?",
-  ];
-
-  const stepSubs = [
-    "Enter your contact info so we can send you your audit.",
-    "Search for your page and confirm it's correct — no copy/pasting needed!",
-    "Help us understand what you're trying to achieve.",
-    "This helps us assess your current posting strategy.",
-    "We'll analyze your content performance on this.",
-  ];
-
   return (
     <div className="min-h-screen bg-gray-50 font-sans flex flex-col">
-      <nav className="bg-white border-b border-gray-100">
-        <div className="max-w-5xl mx-auto px-6 py-4">
+      <nav className="bg-white border-b border-gray-100 sticky top-0 z-40">
+        <div className="max-w-lg mx-auto px-6 py-4 flex items-center justify-between">
           <span className="font-bold text-base text-black tracking-tight">PageAudit Pro</span>
+          {scrapeLoading && (
+            <div className="flex items-center gap-2 text-xs text-green-600 font-medium">
+              <div className="w-3 h-3 border-2 border-green-200 border-t-green-600 rounded-full animate-spin" />
+              Finding your page...
+            </div>
+          )}
         </div>
       </nav>
 
-      <div className="flex-1 flex items-start justify-center px-4 py-10">
+      <div className="flex-1 flex items-start justify-center px-4 py-8">
         <div className="w-full max-w-lg">
           <StepProgress step={step} />
 
-          <div className="bg-white border border-gray-100 rounded-3xl shadow-sm px-7 py-8">
-            <h1 className="text-2xl font-bold text-gray-900 mb-1">{stepTitles[step - 1]}</h1>
-            <p className="text-sm text-gray-400 mb-8">{stepSubs[step - 1]}</p>
+          <div className="bg-white border border-gray-100 rounded-3xl shadow-sm px-6 py-7">
 
+            {/* STEP 1 — Name + Email + Website */}
             {step === 1 && (
-              <div className="space-y-5">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-1.5">Full Name <span className="text-red-400">*</span></label>
-                  <input type="text" placeholder="Jane Smith" value={form.name}
-                    onChange={(e) => set("name", e.target.value)}
-                    className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#1877F2] transition-all" />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-1.5">Email Address <span className="text-red-400">*</span></label>
-                  <div className="relative">
-                    <input type="email" placeholder="jane@yourbusiness.com" value={form.email}
-                      onChange={(e) => { set("email", e.target.value); if (emailError) setEmailError(""); }}
-                      onBlur={(e) => validateEmailField(e.target.value)}
-                      className={`w-full border-2 rounded-2xl px-4 py-3.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none transition-all pr-10 ${emailTouched && isValidEmail(form.email) ? "border-green-300 bg-green-50" : emailTouched && emailError ? "border-red-300" : "border-gray-100 focus:border-[#1877F2]"}`} />
-                    {emailTouched && isValidEmail(form.email) && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                    )}
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 mb-1">Let's get started!</h1>
+                <p className="text-sm text-gray-400 mb-6">Tell us about yourself so we can personalize your audit.</p>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-1.5">Your Name <span className="text-red-400">*</span></label>
+                    <input type="text" placeholder="Jane Smith" value={form.name}
+                      onChange={(e) => set("name", e.target.value)}
+                      className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:border-[#1877F2] transition-all" />
                   </div>
-                  {emailTouched && emailError && <p className="text-xs text-red-500 mt-1.5">{emailError}</p>}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-1.5">Email Address <span className="text-red-400">*</span></label>
+                    <div className="relative">
+                      <input type="email" placeholder="jane@yourbusiness.com" value={form.email}
+                        onChange={(e) => { set("email", e.target.value); if (emailError) setEmailError(""); }}
+                        onBlur={(e) => validateEmailField(e.target.value)}
+                        className={`w-full border-2 rounded-2xl px-4 py-3.5 text-sm focus:outline-none transition-all pr-10 ${emailTouched && isValidEmail(form.email) ? "border-green-300 bg-green-50" : emailTouched && emailError ? "border-red-300" : "border-gray-100 focus:border-[#1877F2]"}`} />
+                      {emailTouched && isValidEmail(form.email) && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                          <Check className="w-5 h-5 text-green-500" />
+                        </div>
+                      )}
+                    </div>
+                    {emailTouched && emailError && <p className="text-xs text-red-500 mt-1.5">{emailError}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-1.5">
+                      <Globe className="w-4 h-4 inline mr-1 text-[#1877F2]" />
+                      Business Website <span className="text-gray-400 font-normal">(optional)</span>
+                    </label>
+                    <input type="url" placeholder="https://yourbusiness.com" value={form.website}
+                      onChange={(e) => set("website", e.target.value)}
+                      className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:border-[#1877F2] transition-all" />
+                    <div className="mt-2 bg-green-50 border border-green-200 rounded-xl px-3 py-2 flex items-start gap-2">
+                      <span className="text-green-500 text-sm shrink-0">🎁</span>
+                      <p className="text-xs text-green-700 font-medium">Add your website and get a <strong>FREE Website SEO Score</strong> included with your audit — limited time bonus!</p>
+                    </div>
+                    <WhyWeAsk>We scan your website to automatically find your Facebook page — no copy/pasting needed! We also analyze it for SEO issues and include a free score showing how Google sees your site.</WhyWeAsk>
+                  </div>
                 </div>
+                <DidYouKnow index={0} />
+              </div>
+            )}
+
+            {/* STEP 2 — Business Type */}
+            {step === 2 && (
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 mb-1">What type of business are you?</h1>
+                <p className="text-sm text-gray-400 mb-6">We use this to give you industry-specific strategies.</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {BUSINESS_TYPES.map(({ value, label }) => (
+                    <button key={value} type="button"
+                      onClick={() => set("businessType", value)}
+                      className={`text-left px-3 py-3 rounded-2xl border-2 transition-all text-sm font-medium ${form.businessType === value ? "border-[#1877F2] bg-blue-50 text-[#1877F2]" : "border-gray-100 bg-white hover:border-blue-200 text-gray-700"}`}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <WhyWeAsk>Different business types need completely different Facebook strategies. A restaurant needs daily food photos. A plumber needs trust-building content. We tailor your entire report to your specific industry.</WhyWeAsk>
+                <DidYouKnow index={1} />
+              </div>
+            )}
+
+            {/* STEP 3 — City */}
+            {step === 3 && (
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 mb-1">What city is your business in?</h1>
+                <p className="text-sm text-gray-400 mb-6">We pull local data to make your report more accurate.</p>
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-1.5">
-                    <Globe className="w-4 h-4 inline mr-1 text-[#1877F2]" />
-                    Business Website <span className="text-gray-400 font-normal">(optional)</span>
+                    <MapPin className="w-4 h-4 inline mr-1 text-[#1877F2]" />
+                    City & State
                   </label>
-                  <input type="url" placeholder="https://yourbusiness.com" value={form.website}
-                    onChange={(e) => set("website", e.target.value)}
-                    className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#1877F2] transition-all" />
-                  <p className="text-xs text-green-600 mt-1.5 font-medium">✓ Helps us find your Facebook page + unlocks your free SEO score!</p>
+                  <input type="text" placeholder="e.g. Dallas, TX or Seattle, WA" value={form.city}
+                    onChange={(e) => set("city", e.target.value)}
+                    className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:border-[#1877F2] transition-all" />
                 </div>
+                <WhyWeAsk>We pull real-time data on what's working for {form.businessType || "businesses"} in your area right now. Your report will show you exactly what local competitors are doing and how to beat them. Mentioning your city in posts also increases local reach by up to 40%.</WhyWeAsk>
+                <DidYouKnow index={2} />
               </div>
             )}
 
-            {step === 2 && (
-              <FacebookPageLookup
-                value={form.facebook_url}
-                onChange={(url) => { set("facebook_url", url); setUrlError(""); }}
-                email={form.email}
-                website={form.website}
-              />
-            )}
-
-            {step === 3 && (
-              <div className="space-y-2">
-                {["Grow followers", "Increase engagement", "Generate leads", "Build authority", "Promote a cause"].map((option) => (
-                  <MultiCard key={option} selected={form.mainGoal.includes(option)} onClick={() => toggle("mainGoal", option)}>{option}</MultiCard>
-                ))}
-              </div>
-            )}
-
+            {/* STEP 4 — Main Goal */}
             {step === 4 && (
-              <div className="space-y-2">
-                {["Daily", "A few times a week", "Weekly", "Rarely"].map((option) => (
-                  <MultiCard key={option} selected={form.postingFrequency.includes(option)} onClick={() => toggle("postingFrequency", option)}>{option}</MultiCard>
-                ))}
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 mb-1">What's your main goal?</h1>
+                <p className="text-sm text-gray-400 mb-6">Your entire action plan is built around this.</p>
+                <div className="space-y-2">
+                  {["Grow followers", "Increase engagement", "Generate leads", "Build authority", "Promote a cause"].map((option) => (
+                    <OptionCard key={option}
+                      selected={form.mainGoal.includes(option)}
+                      onClick={() => {
+                        set("mainGoal", form.mainGoal.includes(option)
+                          ? form.mainGoal.filter(x => x !== option)
+                          : [...form.mainGoal, option]);
+                      }}>
+                      {option === "Grow followers" && "👥 "}
+                      {option === "Increase engagement" && "💬 "}
+                      {option === "Generate leads" && "💰 "}
+                      {option === "Build authority" && "⭐ "}
+                      {option === "Promote a cause" && "❤️ "}
+                      {option}
+                    </OptionCard>
+                  ))}
+                </div>
+                <WhyWeAsk>We write your 7-day action plan and 30-day roadmap specifically around this goal. A page trying to get leads needs completely different content than one trying to grow followers.</WhyWeAsk>
+                <DidYouKnow index={3} />
               </div>
             )}
 
+            {/* STEP 5 — Posting + Content */}
             {step === 5 && (
-              <div className="space-y-2">
-                {["Videos", "Images", "Text posts", "Mixed", "Not sure"].map((option) => (
-                  <MultiCard key={option} selected={form.contentType.includes(option)} onClick={() => toggle("contentType", option)}>{option}</MultiCard>
-                ))}
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 mb-1">How are you posting right now?</h1>
+                <p className="text-sm text-gray-400 mb-6">This tells us where your biggest growth opportunity is hiding.</p>
+                <div className="space-y-5">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                      <Clock className="w-4 h-4 inline mr-1 text-[#1877F2]" />
+                      How often do you post?
+                    </label>
+                    <div className="space-y-2">
+                      {["Daily", "A few times a week", "Weekly", "Rarely or never"].map((option) => (
+                        <OptionCard key={option} selected={form.postingFrequency === option} onClick={() => set("postingFrequency", option)}>
+                          {option}
+                        </OptionCard>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                      <Video className="w-4 h-4 inline mr-1 text-[#1877F2]" />
+                      What do you post most?
+                    </label>
+                    <div className="space-y-2">
+                      {["Videos", "Images", "Text posts", "Mixed content", "Not sure yet"].map((option) => (
+                        <OptionCard key={option} selected={form.contentType === option} onClick={() => set("contentType", option)}>
+                          {option}
+                        </OptionCard>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <WhyWeAsk>Knowing your current posting habits lets us identify the exact gaps in your strategy. We'll show you what to change this week for immediate results.</WhyWeAsk>
+                <DidYouKnow index={4} />
               </div>
             )}
 
+            {/* STEP 6 — Facebook Page Finder */}
+            {step === 6 && (
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 mb-1">
+                  {preloadedFbUrl ? "We found your page! 🎉" : "Find Your Facebook Page"}
+                </h1>
+                <p className="text-sm text-gray-400 mb-6">
+                  {preloadedFbUrl
+                    ? "We scanned your website and found this — is it correct?"
+                    : "Search for your page so we can analyze it. This is optional but makes your report much more accurate!"}
+                </p>
+                <FacebookPageFinder
+                  value={form.facebook_url}
+                  onChange={(url) => { set("facebook_url", url); setUrlError(""); }}
+                  email={form.email}
+                  website={form.website}
+                  preloadedUrl={preloadedFbUrl}
+                />
+                {scrapeLoading && (
+                  <div className="mt-4 flex items-center gap-2 text-xs text-blue-600">
+                    <div className="w-3 h-3 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+                    Still searching for your page...
+                  </div>
+                )}
+                <DidYouKnow index={5} />
+              </div>
+            )}
+
+            {/* Navigation */}
             <div className={`mt-8 flex ${step > 1 ? "justify-between" : "justify-end"}`}>
               {step > 1 && (
                 <button type="button" onClick={() => goToStep(step - 1)}
@@ -708,18 +866,21 @@ export default function SubmitPage() {
                   <ArrowLeft className="w-4 h-4" /> Back
                 </button>
               )}
-              <button type="button" disabled={!canNext() || isSubmitting}
+              <button type="button"
+                disabled={!canNext() || isSubmitting}
                 onClick={() => {
-                  if (step === 1 && !validateEmailField(form.email)) return;
-                  if (step === 2) {
-                    const err = validateUrl(form.facebook_url);
-                    if (err) { setUrlError(err); return; }
+                  if (step === 1) {
+                    if (!validateEmailField(form.email)) return;
+                    // Fire background scrape
+                    fireBackgroundScrape(form.website, form.name, form.email);
                   }
                   if (step < TOTAL_STEPS) goToStep(step + 1);
                   else handleSubmit();
                 }}
-                className="inline-flex items-center gap-2 bg-[#1877F2] text-white px-6 py-3 text-sm font-semibold rounded-2xl hover:bg-[#1457C0] transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-md shadow-blue-100">
-                {step === TOTAL_STEPS ? (isSubmitting ? "Submitting..." : "Get My Page Audit") : "Next"} <ArrowRight className="w-4 h-4" />
+                className="inline-flex items-center gap-2 bg-[#1877F2] text-white px-6 py-3.5 text-sm font-bold rounded-2xl hover:bg-[#1457C0] transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-md shadow-blue-100">
+                {step === TOTAL_STEPS
+                  ? (isSubmitting ? "Submitting..." : "Get My Audit →")
+                  : "Next →"}
               </button>
             </div>
           </div>
