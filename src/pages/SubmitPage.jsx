@@ -1,6 +1,7 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, ArrowLeft, Check, Search, Globe, MapPin, Lightbulb, HelpCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, Check, Search, Globe, MapPin, Lightbulb, HelpCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { storeUtmParams, getStoredUtmParams } from "@/utils/utm";
 import { trackEvent, EVENTS } from "@/utils/tracking";
 
@@ -157,13 +158,12 @@ function isValidFbUrl(url) {
   return true;
 }
 
-function FacebookPageFinder({ value, onChange, email, website, preloadedUrl, scrapeLoading }) {
+function FacebookPageFinder({ value, onChange, email, website, preloadedUrl, scrapeLoading, businessName }) {
   const [pageName, setPageName] = useState("");
   const [confirmed, setConfirmed] = useState(false);
   const [previewUrl, setPreviewUrl] = useState("");
   const [imgSrc, setImgSrc] = useState("");
   const [imgError, setImgError] = useState(false);
-  const [searching, setSearching] = useState(false);
   const [varIndex, setVarIndex] = useState(0);
   const [showVariations, setShowVariations] = useState(false);
   const [confirmedName, setConfirmedName] = useState("");
@@ -174,6 +174,7 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl, scr
   const [showUpload, setShowUpload] = useState(false);
   const [uploadLoading, setUploadLoading] = useState(false);
 
+  // If preloaded URL found from scrape — show it immediately
   useEffect(() => {
     if (preloadedUrl && !confirmed && isValidFbUrl(preloadedUrl)) {
       const name = preloadedUrl
@@ -188,9 +189,23 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl, scr
     }
   }, [preloadedUrl]);
 
+  // Auto-search with business name when step 7 loads
+  useEffect(() => {
+    if (businessName && !preloadedUrl && !scrapeLoading && !confirmed && !previewUrl) {
+      const vars = generateVariations(businessName, email, website);
+      const cleaned = businessName.trim().replace(/\s+/g, '');
+      setAllVars(vars);
+      setPageName(businessName);
+      setPreviewUrl(`https://www.facebook.com/${cleaned}`);
+      setImgSrc(FB_PHOTO(cleaned));
+      setShowVariations(false);
+      setVarIndex(0);
+      setNoMore(false);
+    }
+  }, [businessName, scrapeLoading]);
+
   const handleSearch = () => {
     if (!pageName.trim()) return;
-    setSearching(true);
     setImgError(false);
     setShowVariations(false);
     setNoMore(false);
@@ -202,7 +217,6 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl, scr
     setImgSrc(FB_PHOTO(cleaned));
     setConfirmed(false);
     onChange("");
-    setSearching(false);
   };
 
   const handleConfirm = () => {
@@ -214,7 +228,7 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl, scr
   };
 
   const handleNotRight = () => {
-    const vars = generateVariations(pageName, email, website);
+    const vars = allVars.length > 0 ? allVars : generateVariations(pageName, email, website);
     setAllVars(vars);
     setShowVariations(true);
     setVarIndex(0);
@@ -245,7 +259,7 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl, scr
     setPreviewUrl("");
     setImgSrc("");
     setImgError(false);
-    setPageName("");
+    setPageName(businessName || "");
     onChange("");
     setShowVariations(false);
     setAllVars([]);
@@ -328,9 +342,7 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl, scr
     }
   };
 
-  const currentName = showVariations
-    ? allVars[varIndex]
-    : pageName.trim().replace(/\s+/g, '');
+  const currentName = showVariations ? allVars[varIndex] : pageName.trim().replace(/\s+/g, '');
 
   return (
     <div className="space-y-4">
@@ -343,13 +355,14 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl, scr
             </div>
           )}
 
+          {/* Search box */}
           <div>
             <label className="block text-sm font-semibold text-gray-900 mb-1.5">
               Facebook Page Name <span className="text-gray-400 font-normal text-xs">(optional)</span>
             </label>
             <div className="flex gap-2">
               <input type="text"
-                placeholder="e.g. Allred Heating or RighteousNetwork"
+                placeholder="e.g. Allred Heating or Righteous Law"
                 value={pageName}
                 onChange={(e) => {
                   setPageName(e.target.value);
@@ -363,11 +376,9 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl, scr
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                 className="flex-1 border-2 border-gray-100 rounded-2xl px-4 py-3.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#1877F2] transition-all" />
               <button type="button" onClick={handleSearch}
-                disabled={!pageName.trim() || searching}
+                disabled={!pageName.trim()}
                 className="inline-flex items-center gap-2 bg-[#1877F2] text-white px-5 py-3.5 text-sm font-bold rounded-2xl hover:bg-[#1457C0] transition-colors disabled:opacity-40 shrink-0">
-                {searching
-                  ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  : <Search className="w-4 h-4" />}
+                <Search className="w-4 h-4" />
                 Find
               </button>
             </div>
@@ -378,6 +389,7 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl, scr
             )}
           </div>
 
+          {/* Preview card */}
           {previewUrl && !noMore && (
             <div className="bg-blue-50 border-2 border-[#1877F2] rounded-2xl p-5">
               <div className="flex items-center justify-between mb-3">
@@ -413,14 +425,13 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl, scr
                 </button>
                 <button type="button" onClick={showVariations ? handleNext : handleNotRight}
                   className="flex-1 border-2 border-gray-200 text-gray-600 px-4 py-3 text-sm font-semibold rounded-xl hover:border-gray-400 transition-colors">
-                  {showVariations
-                    ? `Next → (${allVars.length - varIndex - 1} left)`
-                    : "Not right"}
+                  {showVariations ? `Next → (${allVars.length - varIndex - 1} left)` : "Not right"}
                 </button>
               </div>
             </div>
           )}
 
+          {/* No more variations — all fallbacks */}
           {noMore && (
             <div className="space-y-3">
               <div className="bg-yellow-50 border-2 border-yellow-300 rounded-2xl p-4 text-center">
@@ -464,9 +475,7 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl, scr
                 </button>
                 {showUpload && (
                   <div className="px-4 pb-4 border-t border-gray-100 pt-3">
-                    <p className="text-xs text-gray-500 mb-3">
-                      Take a screenshot of your Facebook page and upload it — our AI reads it and finds your URL automatically!
-                    </p>
+                    <p className="text-xs text-gray-500 mb-3">Take a screenshot of your Facebook page and upload it — our AI reads it and finds your URL automatically!</p>
                     {uploadLoading ? (
                       <div className="flex items-center justify-center py-6 gap-3">
                         <div className="w-6 h-6 border-2 border-gray-200 border-t-[#1877F2] rounded-full animate-spin" />
@@ -496,7 +505,7 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl, scr
               </button>
 
               <button type="button"
-                onClick={() => { setNoMore(false); setPreviewUrl(""); setShowVariations(false); setVarIndex(0); }}
+                onClick={() => { setNoMore(false); setPreviewUrl(""); setShowVariations(false); setVarIndex(0); setPageName(businessName || ""); }}
                 className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3.5 flex items-center gap-3 hover:border-gray-400 transition-colors text-left">
                 <span className="text-xl">✏️</span>
                 <div>
@@ -507,6 +516,7 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl, scr
             </div>
           )}
 
+          {/* Paste URL — always visible */}
           <div className="border-t border-gray-100 pt-4">
             <p className="text-xs text-gray-400 mb-2 font-semibold">Or paste your Facebook URL directly:</p>
             <input type="url"
@@ -587,19 +597,18 @@ export default function SubmitPage() {
     return true;
   };
 
-  // Fire AFTER city is entered on Step 3 — now we have business name + city + website
-  const fireBackgroundScrape = async (website, businessName, email, city) => {
-    if (!businessName && !website) return;
+  const fireBackgroundScrape = async () => {
+    if (!form.businessName && !form.website) return;
     setScrapeLoading(true);
     try {
       const res = await fetch(`${API_BASE}/api/website/scrape`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          website_url: website || null,
-          business_name: businessName || null,
-          email: email,
-          city: city || null,
+          website_url: form.website || null,
+          business_name: form.businessName || form.name,
+          email: form.email,
+          city: form.city || null,
         })
       });
       const data = await res.json();
@@ -620,7 +629,7 @@ export default function SubmitPage() {
   };
 
   const canNext = () => {
-    if (step === 1) return form.name.trim() && form.email.trim() && !emailError && isValidEmail(form.email);
+    if (step === 1) return form.name.trim() && form.email.trim() && form.businessName.trim() && !emailError && isValidEmail(form.email);
     if (step === 2) return !!form.businessType;
     if (step === 3) return !!form.city.trim();
     if (step === 4) return form.mainGoal.length > 0;
@@ -660,8 +669,8 @@ export default function SubmitPage() {
       localStorage.setItem("pageAuditOrder", JSON.stringify({
         name: form.name,
         email: form.email,
-        businessName: form.businessName,
         website: form.website,
+        businessName: form.businessName,
         pageUrl: fbUrl,
         businessType: form.businessType,
         city: form.city,
@@ -701,7 +710,6 @@ export default function SubmitPage() {
 
           <div className="bg-white border border-gray-100 rounded-3xl shadow-sm px-6 py-7">
 
-            {/* STEP 1 — Contact Info */}
             {step === 1 && (
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-1">Let's get started!</h1>
@@ -729,13 +737,11 @@ export default function SubmitPage() {
                     {emailTouched && emailError && <p className="text-xs text-red-500 mt-1.5">{emailError}</p>}
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-1.5">
-                      Business Name <span className="text-red-400">*</span>
-                    </label>
+                    <label className="block text-sm font-semibold text-gray-900 mb-1.5">Business Name <span className="text-red-400">*</span></label>
                     <input type="text" placeholder="e.g. Allred Heating or Righteous Law" value={form.businessName}
                       onChange={(e) => set("businessName", e.target.value)}
                       className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:border-[#1877F2] transition-all" />
-                    <WhyWeAsk>We use your business name to automatically find your Facebook page and personalize your entire audit report.</WhyWeAsk>
+                    <WhyWeAsk>We use your business name to automatically find your Facebook page and search for local competitors in your area.</WhyWeAsk>
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-900 mb-1.5">
@@ -749,14 +755,13 @@ export default function SubmitPage() {
                       <span className="text-green-500 text-sm shrink-0">🎁</span>
                       <p className="text-xs text-green-700 font-medium">Add your website and get a <strong>FREE Website SEO Score</strong> included with your audit — limited time bonus!</p>
                     </div>
-                    <WhyWeAsk>We scan your website to automatically find your Facebook page — no copy/pasting needed! We also analyze it for SEO issues and include a free score showing how Google sees your site.</WhyWeAsk>
+                    <WhyWeAsk>We scan your website to automatically find your Facebook page and include a free SEO score showing how Google sees your site.</WhyWeAsk>
                   </div>
                 </div>
                 <DidYouKnow index={0} />
               </div>
             )}
 
-            {/* STEP 2 — Business Type */}
             {step === 2 && (
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-1">What type of business are you?</h1>
@@ -775,7 +780,6 @@ export default function SubmitPage() {
               </div>
             )}
 
-            {/* STEP 3 — City */}
             {step === 3 && (
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-1">What city is your business in?</h1>
@@ -789,12 +793,11 @@ export default function SubmitPage() {
                     onChange={(e) => set("city", e.target.value)}
                     className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:border-[#1877F2] transition-all" />
                 </div>
-                <WhyWeAsk>We pull real-time data on what's working for {form.businessType || "businesses"} in your area right now. Your report will show exactly what local competitors are doing and how to beat them.</WhyWeAsk>
+                <WhyWeAsk>We pull real-time data on what's working for {form.businessType || "businesses"} in your area right now.</WhyWeAsk>
                 <DidYouKnow index={2} />
               </div>
             )}
 
-            {/* STEP 4 — Main Goal */}
             {step === 4 && (
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-1">What's your main goal?</h1>
@@ -823,7 +826,6 @@ export default function SubmitPage() {
               </div>
             )}
 
-            {/* STEP 5 — Posting Frequency */}
             {step === 5 && (
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-1">How often do you post?</h1>
@@ -840,12 +842,11 @@ export default function SubmitPage() {
                     </OptionCard>
                   ))}
                 </div>
-                <WhyWeAsk>Posting frequency is one of the biggest factors in Facebook reach. We'll show you exactly what cadence works best for your business type.</WhyWeAsk>
+                <WhyWeAsk>Posting frequency is one of the biggest factors in Facebook reach.</WhyWeAsk>
                 <DidYouKnow index={4} />
               </div>
             )}
 
-            {/* STEP 6 — Content Type */}
             {step === 6 && (
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-1">What do you post most?</h1>
@@ -863,12 +864,11 @@ export default function SubmitPage() {
                     </OptionCard>
                   ))}
                 </div>
-                <WhyWeAsk>Different content types perform very differently on Facebook. We'll show you exactly what content mix will get you the most growth.</WhyWeAsk>
+                <WhyWeAsk>Different content types perform very differently on Facebook.</WhyWeAsk>
                 <DidYouKnow index={5} />
               </div>
             )}
 
-            {/* STEP 7 — Facebook Page Finder */}
             {step === 7 && (
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-1">
@@ -877,7 +877,7 @@ export default function SubmitPage() {
                 <p className="text-sm text-gray-400 mb-6">
                   {preloadedFbUrl
                     ? "We found this automatically — is it correct?"
-                    : "Search for your page so we can analyze it. Optional but makes your report much more accurate!"}
+                    : "We've pre-filled your business name below — click Find or refine the search!"}
                 </p>
                 <FacebookPageFinder
                   value={form.facebook_url}
@@ -886,12 +886,12 @@ export default function SubmitPage() {
                   website={form.website}
                   preloadedUrl={preloadedFbUrl}
                   scrapeLoading={scrapeLoading}
+                  businessName={form.businessName}
                 />
                 <DidYouKnow index={6} />
               </div>
             )}
 
-            {/* Navigation */}
             <div className={`mt-8 flex ${step > 1 ? "justify-between" : "justify-end"}`}>
               {step > 1 && (
                 <button type="button" onClick={() => goToStep(step - 1)}
@@ -902,18 +902,8 @@ export default function SubmitPage() {
               <button type="button"
                 disabled={!canNext() || isSubmitting}
                 onClick={() => {
-                  if (step === 1) {
-                    if (!validateEmailField(form.email)) return;
-                  }
-                  // Fire scrape on Step 3 — now we have business name + city + website
-                  if (step === 3) {
-                    fireBackgroundScrape(
-                      form.website,
-                      form.businessName,
-                      form.email,
-                      form.city
-                    );
-                  }
+                  if (step === 1 && !validateEmailField(form.email)) return;
+                  if (step === 3) fireBackgroundScrape();
                   if (step < TOTAL_STEPS) goToStep(step + 1);
                   else handleSubmit();
                 }}
