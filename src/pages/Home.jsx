@@ -1,276 +1,289 @@
-import { ArrowRight, CheckCircle, TrendingUp, Target, Zap, BarChart2, AlertTriangle, Shield, Clock, Star, Users, Award } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { trackEvent, EVENTS } from "@/utils/tracking";
-import Footer from "@/components/Footer";
+import { ArrowRight, Check, Star, BarChart2, Shield, Zap, Globe, TrendingUp } from "lucide-react";
 
-function SectionLabel({ text, color = "text-[#1877F2]" }) {
-  return (
-    <p className={`text-xs font-bold uppercase tracking-[0.25em] ${color} mb-5`}>{text}</p>
-  );
-}
+export default function Home() {
+  const navigate = useNavigate();
+  const [timeLeft, setTimeLeft] = useState({ hours: 2, minutes: 47, seconds: 33 });
 
-function PrimaryButton({ onClick, children, className = "" }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`inline-flex items-center gap-2.5 bg-gradient-to-b from-[#2563EB] to-[#1d4ed8] text-white font-bold rounded-xl hover:from-[#1d4ed8] hover:to-[#1e40af] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200 shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 ${className}`}
-    >
-      {children}
-    </button>
-  );
-}
-
-function CountdownTimer() {
-  const [time, setTime] = useState({ hours: 23, minutes: 47, seconds: 12 });
   useEffect(() => {
     const timer = setInterval(() => {
-      setTime(prev => {
-        if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 };
-        if (prev.minutes > 0) return { ...prev, minutes: prev.minutes - 1, seconds: 59 };
-        if (prev.hours > 0) return { hours: prev.hours - 1, minutes: 59, seconds: 59 };
+      setTimeLeft(prev => {
+        let { hours, minutes, seconds } = prev;
+        if (seconds > 0) return { hours, minutes, seconds: seconds - 1 };
+        if (minutes > 0) return { hours, minutes: minutes - 1, seconds: 59 };
+        if (hours > 0) return { hours: hours - 1, minutes: 59, seconds: 59 };
         return prev;
       });
     }, 1000);
     return () => clearInterval(timer);
   }, []);
-  return (
-    <div className="flex items-center gap-2 justify-center">
-      {[{ label: 'HRS', value: time.hours }, { label: 'MIN', value: time.minutes }, { label: 'SEC', value: time.seconds }].map(({ label, value }) => (
-        <div key={label} className="flex flex-col items-center">
-          <div className="bg-gray-900 text-white font-bold text-lg w-12 h-12 rounded-lg flex items-center justify-center">
-            {String(value).padStart(2, '0')}
-          </div>
-          <span className="text-xs text-gray-500 mt-1">{label}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
 
-const TESTIMONIALS = [
-  {
-    name: "Sarah M.",
-    business: "Boutique Owner",
-    text: "I was posting every day and getting nowhere. This audit showed me exactly why — and gave me a plan to fix it. My engagement doubled in 2 weeks.",
-    stars: 5,
-  },
-  {
-    name: "James T.",
-    business: "Real Estate Agent",
-    text: "I almost paid $800 to a marketing agency. This gave me the same insights for $39.99. My page went from dead to generating actual leads.",
-    stars: 5,
-  },
-  {
-    name: "Maria L.",
-    business: "Restaurant Owner",
-    text: "Worth every penny. I finally understand what my audience wants to see. Bookings are up 40% since I implemented the strategy.",
-    stars: 5,
-  },
-];
-
-export default function Home() {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    trackEvent(EVENTS.LANDING_VIEWED);
-  }, []);
-
-  const goToAudit = () => navigate("/submit-your-page");
+  const pad = (n) => String(n).padStart(2, '0');
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 font-sans antialiased flex flex-col">
+    <div className="min-h-screen bg-white font-sans">
 
       {/* TOP BAR */}
-      <div className="bg-[#1877F2] text-white text-xs font-semibold py-2 px-4 text-center">
-        🔥 Launch Special — Price goes up to $197 soon. Lock in $39.99 today.
+      <div className="bg-[#1877F2] text-white text-center py-2.5 px-4">
+        <p className="text-xs font-semibold">
+          🎁 Limited Time: Get Your Facebook Audit + <span className="underline font-bold">FREE Website SEO Score</span> — Today Only!
+        </p>
       </div>
 
       {/* NAV */}
-      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-gray-100">
-        <div className="max-w-5xl mx-auto px-6 py-3.5 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#1877F2] flex items-center justify-center">
-              <BarChart2 className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-extrabold text-base tracking-tight text-gray-900">PageAudit <span className="text-[#1877F2]">Pro</span></span>
+      <nav className="bg-white border-b border-gray-100 sticky top-0 z-40">
+        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <BarChart2 className="w-5 h-5 text-[#1877F2]" />
+            <span className="font-bold text-base text-black tracking-tight">PageAudit Pro</span>
           </div>
-          <div className="hidden md:flex items-center gap-6 text-sm text-gray-500">
-            <a href="#how-it-works" className="hover:text-gray-900 transition-colors">How It Works</a>
-            <a href="#pricing" className="hover:text-gray-900 transition-colors">Pricing</a>
-            <a href="#faq" className="hover:text-gray-900 transition-colors">FAQ</a>
-          </div>
-          <button
-            onClick={() => navigate("/login")}
-            className="inline-flex items-center gap-2 bg-gradient-to-b from-[#2563EB] to-[#1d4ed8] text-white font-bold rounded-xl text-sm px-5 py-2.5 hover:from-[#1d4ed8] hover:to-[#1e40af] transition-all shadow-lg shadow-blue-500/25"
-          >
-            Login <ArrowRight className="w-4 h-4" />
+          <button onClick={() => navigate('/submit-your-page')}
+            className="inline-flex items-center gap-2 bg-[#1877F2] text-white px-5 py-2.5 text-sm font-bold rounded-xl hover:bg-[#1457C0] transition-colors shadow-md shadow-blue-100">
+            Get My Free Audit <ArrowRight className="w-4 h-4" />
           </button>
         </div>
       </nav>
 
       {/* HERO */}
-      <section className="px-4 pt-16 pb-20 bg-white">
+      <section className="bg-gradient-to-br from-[#0f2a6b] via-[#1877F2] to-[#2563eb] text-white py-16 md:py-24 px-4">
         <div className="max-w-4xl mx-auto text-center">
-          
-          {/* Social proof bar */}
-          <div className="inline-flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 text-xs font-semibold px-4 py-2 rounded-full mb-8">
-            <span className="flex">{'★★★★★'}</span>
-            <span>Trusted by 500+ Facebook business page owners</span>
+          <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-2 text-xs font-semibold mb-6 backdrop-blur-sm">
+            ⚡ Powered by 4 AI Systems Working Together
           </div>
-
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-gray-900 leading-[1.08] tracking-tight mb-6">
-            Your Facebook Page Is{" "}
-            <span className="text-red-500">Losing You Customers</span>{" "}
-            Every Single Day
+          <h1 className="text-4xl md:text-6xl font-extrabold mb-6 leading-tight">
+            Find Out Why Your Facebook Page<br />
+            <span className="text-yellow-300">Isn't Growing</span> — In Minutes
           </h1>
-          
-          <p className="text-xl md:text-2xl text-gray-500 leading-[1.75] max-w-3xl mx-auto mb-4">
-            We analyze your page using the same tools agencies charge <span className="line-through text-gray-400">$500–$2,000</span> for — and give you a complete growth plan in under 60 minutes.
+          <p className="text-blue-100 text-lg md:text-xl mb-4 max-w-2xl mx-auto leading-relaxed">
+            Get a full Facebook growth audit <strong className="text-white">AND a free website SEO score</strong> — both for just $39.99. Agencies charge $500–$2,000 for the same thing.
           </p>
 
-          <p className="text-lg font-bold text-[#1877F2] mb-10">For just $39.99. One time. No contracts.</p>
+          {/* DUAL VALUE PROP */}
+          <div className="flex flex-wrap justify-center gap-3 mb-8">
+            <div className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 flex items-center gap-2 text-sm font-semibold backdrop-blur-sm">
+              <span>📘</span> Full Facebook Growth Audit
+            </div>
+            <div className="bg-yellow-400/20 border border-yellow-400/40 rounded-xl px-4 py-2 flex items-center gap-2 text-sm font-semibold text-yellow-200">
+              <span>🎁</span> FREE Website SEO Score — Limited Time!
+            </div>
+          </div>
 
-          <div className="flex flex-col items-center gap-4">
-            <PrimaryButton onClick={goToAudit} className="text-lg px-12 py-5">
-              Get My Facebook Audit Now <ArrowRight className="w-5 h-5" />
-            </PrimaryButton>
-            <p className="text-sm text-gray-400">⚡ Report delivered in under 60 minutes · No subscription required</p>
-            
-            {/* Trust badges */}
-            <div className="flex flex-wrap justify-center gap-4 mt-2">
+          {/* COUNTDOWN */}
+          <div className="inline-block bg-white/10 border border-white/20 rounded-2xl px-6 py-4 mb-8 backdrop-blur-sm">
+            <p className="text-xs font-bold uppercase tracking-widest text-blue-200 mb-2">⏰ Limited Time Offer Expires In:</p>
+            <div className="flex items-center gap-3">
               {[
-                { icon: Shield, text: "Secure Payment" },
-                { icon: Clock, text: "60-Min Delivery" },
-                { icon: Award, text: "Data-Backed Analysis" },
-              ].map(({ icon: Icon, text }) => (
-                <span key={text} className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
-                  <Icon className="w-3.5 h-3.5 text-green-500" />{text}
-                </span>
+                { val: pad(timeLeft.hours), label: "HRS" },
+                { val: pad(timeLeft.minutes), label: "MIN" },
+                { val: pad(timeLeft.seconds), label: "SEC" },
+              ].map(({ val, label }, i) => (
+                <div key={label}>
+                  {i > 0 && <span className="text-2xl font-bold text-blue-200 mx-1">:</span>}
+                  <div className="text-center">
+                    <div className="text-3xl font-extrabold text-white">{val}</div>
+                    <div className="text-xs text-blue-200 font-semibold">{label}</div>
+                  </div>
+                </div>
               ))}
             </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <button onClick={() => navigate('/submit-your-page')}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-[#1877F2] px-8 py-4 text-base font-extrabold rounded-2xl hover:bg-blue-50 transition-all shadow-xl">
+              Get My Facebook Audit + Free SEO Score <ArrowRight className="w-5 h-5" />
+            </button>
+          </div>
+          <p className="text-blue-200 text-xs mt-4">🔒 One-time payment · No subscription · Instant access</p>
+        </div>
+      </section>
+
+      {/* WHAT YOU GET */}
+      <section className="py-16 px-4 bg-gray-50">
+        <div className="max-w-4xl mx-auto">
+          <p className="text-xs font-bold uppercase tracking-widest text-[#1877F2] text-center mb-3">What's Included</p>
+          <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 text-center mb-4">Two Reports. One Price.</h2>
+          <p className="text-gray-500 text-center mb-10 max-w-xl mx-auto">Agencies charge $500–$2,000 for just the Facebook audit. We include both for $39.99.</p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Facebook Audit */}
+            <div className="bg-white border-2 border-[#1877F2] rounded-3xl p-7 shadow-lg">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-xl bg-[#1877F2] flex items-center justify-center">
+                  <span className="text-white font-bold text-lg">f</span>
+                </div>
+                <div>
+                  <p className="font-extrabold text-gray-900">Facebook Growth Audit</p>
+                  <p className="text-xs text-gray-400">Full analysis + action plan</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                {[
+                  "Honest page assessment — no fluff",
+                  "Your #1 growth blocker identified",
+                  "7-day action plan you can start today",
+                  "Custom content strategy + 3 post ideas",
+                  "Followers → customers blueprint",
+                  "30-day growth roadmap",
+                ].map(item => (
+                  <div key={item} className="flex items-start gap-2.5">
+                    <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center shrink-0 mt-0.5">
+                      <Check className="w-2.5 h-2.5 text-white" />
+                    </div>
+                    <p className="text-sm text-gray-700">{item}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* SEO Score */}
+            <div className="bg-white border-2 border-yellow-400 rounded-3xl p-7 shadow-lg relative overflow-hidden">
+              <div className="absolute top-4 right-4 bg-yellow-400 text-yellow-900 text-xs font-extrabold px-3 py-1 rounded-full">
+                FREE BONUS
+              </div>
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-xl bg-yellow-400 flex items-center justify-center">
+                  <Globe className="w-5 h-5 text-yellow-900" />
+                </div>
+                <div>
+                  <p className="font-extrabold text-gray-900">Website SEO Score</p>
+                  <p className="text-xs text-gray-400">See how Google sees your site</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                {[
+                  "Overall SEO score out of 100",
+                  "Top 3 issues hurting your ranking",
+                  "The single most important fix",
+                  "What you're already doing well",
+                  "Side-by-side in your dashboard",
+                  "Upgrade to full SEO report anytime",
+                ].map(item => (
+                  <div key={item} className="flex items-start gap-2.5">
+                    <div className="w-4 h-4 rounded-full bg-yellow-400 flex items-center justify-center shrink-0 mt-0.5">
+                      <Check className="w-2.5 h-2.5 text-yellow-900" />
+                    </div>
+                    <p className="text-sm text-gray-700">{item}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-8 text-center">
+            <button onClick={() => navigate('/submit-your-page')}
+              className="inline-flex items-center gap-2 bg-[#1877F2] text-white px-10 py-4 text-base font-extrabold rounded-2xl hover:bg-[#1457C0] transition-all shadow-lg shadow-blue-200">
+              Get Both Reports for $39.99 <ArrowRight className="w-5 h-5" />
+            </button>
+            <p className="text-gray-400 text-xs mt-3">Regular price $197 · You save $157 · Limited time</p>
           </div>
         </div>
       </section>
 
       {/* PAIN POINTS */}
-      <section className="px-4 py-20 bg-gray-900">
+      <section className="py-16 px-4 bg-white">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-extrabold text-white leading-tight mb-4">
-              Does Any of This Sound Familiar?
-            </h2>
-            <p className="text-gray-400 text-lg">If you're nodding your head, your page has fixable problems — and we'll show you exactly what they are.</p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <p className="text-xs font-bold uppercase tracking-widest text-[#1877F2] text-center mb-3">Sound Familiar?</p>
+          <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 text-center mb-10">Every Business Owner Has Been Here</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
-              "You post consistently but your reach keeps dropping",
-              "You're getting likes but no actual customers or leads",
-              "You don't know what content actually works for your audience",
-              "Competitors with worse products have bigger pages than you",
-              "You've tried boosting posts but wasted money with nothing to show",
-              "You know your page could be doing more but don't know where to start",
-            ].map((item) => (
-              <div key={item} className="flex items-start gap-3 bg-gray-800 rounded-xl p-5">
-                <span className="text-red-400 mt-0.5 shrink-0">✗</span>
-                <p className="text-gray-300 text-sm leading-relaxed">{item}</p>
+              { emoji: "😤", text: "\"I post all the time but nobody sees it\"" },
+              { emoji: "🤷", text: "\"I have no idea what to post anymore\"" },
+              { emoji: "💸", text: "\"I tried ads but wasted my money\"" },
+              { emoji: "😩", text: "\"My competitor has way fewer followers but more engagement\"" },
+              { emoji: "🔍", text: "\"My website isn't showing up on Google\"" },
+              { emoji: "⏰", text: "\"I don't have time to figure all this out\"" },
+            ].map(({ emoji, text }) => (
+              <div key={text} className="bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 flex items-center gap-3">
+                <span className="text-2xl shrink-0">{emoji}</span>
+                <p className="text-sm font-semibold text-gray-700">{text}</p>
               </div>
             ))}
           </div>
-          <div className="text-center mt-10">
-            <p className="text-white font-bold text-lg mb-4">These aren't random problems. They have specific causes — and specific fixes.</p>
-            <PrimaryButton onClick={goToAudit} className="text-base px-10 py-4">
-              Show Me What's Wrong With My Page <ArrowRight className="w-5 h-5" />
-            </PrimaryButton>
+          <div className="mt-8 text-center bg-blue-50 border border-blue-100 rounded-2xl p-6">
+            <p className="text-lg font-bold text-gray-900 mb-2">We fix all of this in one report.</p>
+            <p className="text-sm text-gray-500">Our AI analyzes your Facebook page AND your website, then gives you a specific action plan to fix every problem — in plain English.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* VS AGENCY */}
+      <section className="py-16 px-4 bg-gray-50">
+        <div className="max-w-3xl mx-auto">
+          <p className="text-xs font-bold uppercase tracking-widest text-[#1877F2] text-center mb-3">The Comparison</p>
+          <h2 className="text-3xl font-extrabold text-gray-900 text-center mb-10">Why Pay an Agency $2,000?</h2>
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="grid grid-cols-3 bg-gray-50 border-b border-gray-100">
+              <div className="px-4 py-3 text-xs font-bold text-gray-400 uppercase"></div>
+              <div className="px-4 py-3 text-xs font-bold text-gray-700 uppercase text-center">Marketing Agency</div>
+              <div className="px-4 py-3 text-xs font-bold text-[#1877F2] uppercase text-center">PageAudit Pro</div>
+            </div>
+            {[
+              ["Cost", "$500–$2,000", "$39.99"],
+              ["Facebook Audit", "✅", "✅"],
+              ["Website SEO Score", "❌ Extra cost", "✅ FREE included"],
+              ["Turnaround", "1–2 weeks", "Instant"],
+              ["Action Plan", "Generic advice", "Your specific plan"],
+              ["Contract", "3–12 months", "One-time, no contract"],
+            ].map(([label, agency, ours], i) => (
+              <div key={label} className={`grid grid-cols-3 border-b border-gray-50 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
+                <div className="px-4 py-3.5 text-sm font-semibold text-gray-700">{label}</div>
+                <div className="px-4 py-3.5 text-sm text-gray-500 text-center">{agency}</div>
+                <div className="px-4 py-3.5 text-sm font-bold text-[#1877F2] text-center">{ours}</div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* HOW IT WORKS */}
-      <section id="how-it-works" className="px-4 py-20 bg-white">
+      <section className="py-16 px-4 bg-white">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-14">
-            <SectionLabel text="Simple 3-Step Process" />
-            <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 leading-tight">
-              Your Growth Plan in Under 60 Minutes
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <p className="text-xs font-bold uppercase tracking-widest text-[#1877F2] text-center mb-3">How It Works</p>
+          <h2 className="text-3xl font-extrabold text-gray-900 text-center mb-10">3 Simple Steps</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
-              { step: "01", icon: Target, title: "Submit Your Page", desc: "Tell us about your Facebook page, your goals, and what you're struggling with. Takes less than 2 minutes." },
-              { step: "02", icon: BarChart2, title: "We Analyze Everything", desc: "Our AI engine analyzes your page across 5 key growth areas using the same data agencies pay thousands for." },
-              { step: "03", icon: TrendingUp, title: "Get Your Growth Plan", desc: "Receive a personalized, actionable report with a 7-day plan you can start implementing immediately." },
-            ].map(({ step, icon: Icon, title, desc }) => (
-              <div key={step} className="relative text-center">
-                <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-4">
-                  <Icon className="w-7 h-7 text-[#1877F2]" />
+              { step: "1", icon: "📋", title: "Answer 7 Quick Questions", desc: "Tell us about your business and Facebook page. Takes less than 3 minutes on your phone." },
+              { step: "2", icon: "🤖", title: "4 AIs Analyze Everything", desc: "Our AI systems analyze your Facebook page and website simultaneously to find every growth opportunity." },
+              { step: "3", icon: "📈", title: "Get Your Action Plan", desc: "Receive your Facebook audit AND free SEO score with specific steps to start growing today." },
+            ].map(({ step, icon, title, desc }) => (
+              <div key={step} className="text-center">
+                <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-4">
+                  <span className="text-2xl">{icon}</span>
                 </div>
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2">
-                  <span className="text-xs font-bold text-[#1877F2] bg-blue-50 px-2 py-0.5 rounded-full">{step}</span>
+                <div className="w-6 h-6 rounded-full bg-[#1877F2] text-white text-xs font-bold flex items-center justify-center mx-auto mb-3">
+                  {step}
                 </div>
-                <h3 className="font-bold text-gray-900 text-lg mb-2">{title}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
+                <h3 className="font-bold text-gray-900 mb-2">{title}</h3>
+                <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* WHAT YOU GET */}
-      <section className="px-4 py-20 bg-[#fafafa] border-y border-gray-100">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-14">
-            <SectionLabel text="What's Inside Your Report" />
-            <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 leading-tight mb-4">
-              Everything You Need to Turn Your Page Into a <span className="text-[#1877F2]">Lead Machine</span>
-            </h2>
-            <p className="text-gray-500 text-lg">Agencies charge $500–$2,000 for this. You're getting it for $39.99.</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl mx-auto">
-            {[
-              { icon: "📊", title: "Full Page Score", desc: "Scored across 5 key areas: Visibility, Content, Consistency, Engagement, and Growth Potential" },
-              { icon: "🎯", title: "Your #1 Growth Blocker", desc: "The single biggest thing killing your reach — and the exact fix to implement this week" },
-              { icon: "📅", title: "7-Day Action Plan", desc: "Day-by-day tasks you can start immediately. No guesswork, just clear steps." },
-              { icon: "📝", title: "Weekly Content Strategy", desc: "Exactly what to post, when to post it, and what CTAs to use for your specific audience" },
-              { icon: "💡", title: "5 High-Converting Post Ideas", desc: "Ready-to-use content ideas tailored to your business and goals" },
-              { icon: "🚀", title: "30-Day Growth Roadmap", desc: "A clear path from where you are now to where you want to be — with milestones" },
-            ].map(({ icon, title, desc }) => (
-              <div key={title} className="flex items-start gap-4 bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
-                <span className="text-2xl shrink-0">{icon}</span>
-                <div>
-                  <p className="font-bold text-gray-900 mb-1">{title}</p>
-                  <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="text-center mt-10">
-            <PrimaryButton onClick={goToAudit} className="text-base px-10 py-4">
-              Get My Full Report — $39.99 <ArrowRight className="w-5 h-5" />
-            </PrimaryButton>
           </div>
         </div>
       </section>
 
       {/* TESTIMONIALS */}
-      <section className="px-4 py-20 bg-white">
+      <section className="py-16 px-4 bg-gray-50">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-14">
-            <SectionLabel text="Real Results" />
-            <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 leading-tight">
-              Business Owners Who Stopped Guessing
-            </h2>
-          </div>
+          <p className="text-xs font-bold uppercase tracking-widest text-[#1877F2] text-center mb-3">Real Results</p>
+          <h2 className="text-3xl font-extrabold text-gray-900 text-center mb-10">What Business Owners Are Saying</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {TESTIMONIALS.map(({ name, business, text, stars }) => (
-              <div key={name} className="bg-[#fafafa] border border-gray-100 rounded-2xl p-6">
-                <div className="flex text-yellow-400 mb-3">
-                  {'★★★★★'}
+            {[
+              { name: "Sarah M.", biz: "Boutique Owner", stars: 5, text: "I had no idea my posting times were killing my reach. The 7-day action plan was so specific — I followed it and doubled my engagement in 2 weeks." },
+              { name: "Mike T.", biz: "HVAC Company", stars: 5, text: "Got the Facebook audit AND found out my website had 3 major SEO issues. Fixed them in a weekend. Worth every penny." },
+              { name: "Jessica R.", biz: "Restaurant Owner", stars: 5, text: "My competitor had half my followers but 10x the engagement. Now I know exactly why and what to do. Game changer." },
+            ].map(({ name, biz, stars, text }) => (
+              <div key={name} className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+                <div className="flex gap-0.5 mb-3">
+                  {Array(stars).fill(0).map((_, i) => (
+                    <Star key={i} className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                  ))}
                 </div>
-                <p className="text-gray-700 text-sm leading-relaxed mb-4">"{text}"</p>
+                <p className="text-sm text-gray-700 mb-4 leading-relaxed">"{text}"</p>
                 <div>
-                  <p className="font-bold text-gray-900 text-sm">{name}</p>
-                  <p className="text-xs text-gray-500">{business}</p>
+                  <p className="text-sm font-bold text-gray-900">{name}</p>
+                  <p className="text-xs text-gray-400">{biz}</p>
                 </div>
               </div>
             ))}
@@ -278,112 +291,60 @@ export default function Home() {
         </div>
       </section>
 
-      {/* AGENCY COMPARISON */}
-      <section className="px-4 py-20 bg-gradient-to-br from-[#1565D3] via-[#1877F2] to-[#2563eb]">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-extrabold text-white leading-tight mb-6">
-            Why Pay an Agency $500–$2,000<br />When You Can Get More for $39.99?
-          </h2>
-          <div className="grid grid-cols-2 gap-4 max-w-xl mx-auto mb-10">
-            <div className="bg-white/10 rounded-2xl p-5 text-left">
-              <p className="text-blue-200 text-xs font-bold uppercase tracking-wide mb-3">Marketing Agency</p>
-              {["$500–$2,000 cost", "1–2 week wait", "Generic recommendations", "One-time report", "No follow-up plan"].map(item => (
-                <div key={item} className="flex items-center gap-2 mb-2">
-                  <span className="text-red-400 text-sm">✗</span>
-                  <span className="text-white text-sm">{item}</span>
-                </div>
-              ))}
-            </div>
-            <div className="bg-white rounded-2xl p-5 text-left">
-              <p className="text-[#1877F2] text-xs font-bold uppercase tracking-wide mb-3">PageAudit Pro</p>
-              {["Just $39.99", "Under 60 minutes", "100% personalized", "Actionable plan included", "7-day + 30-day roadmap"].map(item => (
-                <div key={item} className="flex items-center gap-2 mb-2">
-                  <span className="text-green-500 text-sm">✓</span>
-                  <span className="text-gray-900 text-sm font-medium">{item}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <PrimaryButton onClick={goToAudit} className="bg-white text-[#1877F2] hover:bg-blue-50 text-base px-10 py-4">
-            Get My Audit for $39.99 <ArrowRight className="w-5 h-5" />
-          </PrimaryButton>
-        </div>
-      </section>
-
       {/* PRICING */}
-      <section id="pricing" className="px-4 py-20 bg-[#fafafa]">
-        <div className="max-w-md mx-auto">
-          <div className="text-center mb-10">
-            <SectionLabel text="Simple Pricing" />
-            <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight leading-tight">One Payment. Real Results.</h2>
-            <p className="text-gray-500 mt-3">No subscriptions. No hidden fees. Just a clear plan.</p>
-          </div>
-
-          <div className="relative bg-white border-2 border-[#1877F2] rounded-3xl px-8 pt-12 pb-8 shadow-2xl shadow-blue-100 text-center overflow-hidden">
-            <div className="absolute top-0 inset-x-0 flex justify-center">
-              <span className="bg-[#1877F2] text-white text-xs font-bold px-6 py-1.5 rounded-b-xl tracking-wide">
-                🔥 LIMITED LAUNCH PRICING
-              </span>
+      <section className="py-16 px-4 bg-white">
+        <div className="max-w-lg mx-auto text-center">
+          <p className="text-xs font-bold uppercase tracking-widest text-[#1877F2] mb-3">Simple Pricing</p>
+          <h2 className="text-3xl font-extrabold text-gray-900 mb-10">One Price. Everything Included.</h2>
+          <div className="bg-white border-2 border-[#1877F2] rounded-3xl p-8 shadow-xl">
+            <p className="text-sm text-gray-400 mb-1">What agencies charge: <span className="line-through font-bold">$500–$2,000</span></p>
+            <p className="text-sm text-gray-400 mb-1">Our regular price: <span className="line-through font-bold text-gray-500">$197</span></p>
+            <p className="text-green-600 font-bold text-sm mb-3">Today only — 80% off</p>
+            <div className="flex items-baseline justify-center gap-1 mb-2">
+              <span className="text-6xl font-extrabold text-gray-900">$39</span>
+              <span className="text-3xl font-bold text-gray-400">.99</span>
             </div>
+            <p className="text-green-600 font-semibold text-sm mb-6">You save $157</p>
 
-            <div className="mb-6">
-              <p className="text-gray-400 text-sm mb-1">What agencies charge: <span className="line-through font-bold">$500–$2,000</span></p>
-              <p className="text-gray-400 text-sm mb-3">Our regular price: <span className="line-through font-bold">$197</span></p>
-              <div className="flex items-end justify-center gap-1">
-                <span className="text-7xl font-extrabold text-gray-900 leading-none">$39</span>
-                <span className="text-3xl font-bold text-gray-400 mb-2">.99</span>
-              </div>
-              <p className="text-green-600 font-bold text-sm mt-2">You save $157 today</p>
-            </div>
-
-            <div className="mb-6">
-              <p className="text-xs text-gray-500 font-semibold mb-3">Price goes up when the timer hits zero:</p>
-              <CountdownTimer />
-            </div>
-
-            <ul className="space-y-3 text-left mb-8 border-t border-gray-100 pt-6">
+            <div className="space-y-2 mb-6 text-left">
               {[
-                "Full page audit & scoring across 5 areas",
-                "Personalized 7-day action plan",
-                "Weekly content strategy for your niche",
-                "5 high-converting post ideas",
-                "30-day growth roadmap",
-                "Instant access — report in under 60 min",
-              ].map((item) => (
-                <li key={item} className="flex items-center gap-3 text-sm text-gray-700">
-                  <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-                  <span className="font-medium">{item}</span>
-                </li>
+                "✅ Full Facebook Growth Audit",
+                "✅ 7-Day Action Plan",
+                "✅ 30-Day Roadmap",
+                "🎁 FREE Website SEO Score",
+                "🎁 FREE SEO Issues Report",
+                "⚡ Instant delivery",
+                "🔒 One-time payment, no subscription",
+              ].map(item => (
+                <p key={item} className="text-sm text-gray-700 font-medium">{item}</p>
               ))}
-            </ul>
+            </div>
 
-            <PrimaryButton onClick={goToAudit} className="w-full justify-center text-base py-4">
-              Yes! Get My Audit for $39.99 <ArrowRight className="w-5 h-5" />
-            </PrimaryButton>
-            <p className="text-xs text-gray-400 mt-4">🔒 Secure payment · One-time charge · No contracts</p>
+            <button onClick={() => navigate('/submit-your-page')}
+              className="w-full inline-flex items-center justify-center gap-2 bg-[#1877F2] text-white px-8 py-4 font-extrabold text-base rounded-xl hover:bg-[#1457C0] transition-all shadow-lg shadow-blue-200">
+              Get My Audit + Free SEO Score <ArrowRight className="w-5 h-5" />
+            </button>
+            <p className="text-xs text-gray-400 mt-3">🔒 Secure payment · No contracts · No hidden fees</p>
           </div>
         </div>
       </section>
 
       {/* FAQ */}
-      <section id="faq" className="px-4 py-20 bg-white">
+      <section className="py-16 px-4 bg-gray-50">
         <div className="max-w-2xl mx-auto">
-          <div className="text-center mb-12">
-            <SectionLabel text="Common Questions" />
-            <h2 className="text-3xl font-extrabold text-gray-900">Everything You Need to Know</h2>
-          </div>
+          <p className="text-xs font-bold uppercase tracking-widest text-[#1877F2] text-center mb-3">FAQ</p>
+          <h2 className="text-3xl font-extrabold text-gray-900 text-center mb-10">Common Questions</h2>
           <div className="space-y-4">
             {[
-              { q: "How long does it take to get my report?", a: "Most reports are delivered in under 60 minutes. We analyze your page immediately after you submit." },
-              { q: "Do I need to give you access to my Facebook page?", a: "No. You just tell us your Facebook page URL and answer a few quick questions about your goals. That's it." },
-              { q: "What if my page is brand new?", a: "The audit works for pages at any stage. For newer pages, we focus more on setup optimization and content strategy to help you grow faster from the start." },
-              { q: "How is this different from what a marketing agency does?", a: "Agencies charge $500–$2,000 and take weeks. We deliver the same data-backed analysis in under 60 minutes for $39.99 — personalized to your specific page and goals." },
-              { q: "What if I'm not happy with my report?", a: "We stand behind our work. If your report doesn't give you clear, actionable insights, contact us at support@pageauditpros.com and we'll make it right." },
-              { q: "Can I get audited again in the future?", a: "Yes! Many customers come back every 30–60 days to track their progress. We also offer a monthly Growth Plan for ongoing rescans and strategy updates." },
+              { q: "Do I need a Facebook page to get the audit?", a: "No! If you don't have a Facebook page yet, we'll include a complete guide on setting one up for maximum impact from day one." },
+              { q: "What if I don't have a website?", a: "No problem — the website SEO score is a bonus. You'll still get the full Facebook growth audit even without a website." },
+              { q: "How is this different from free tools?", a: "Free tools give generic scores. We give you a specific action plan written for YOUR business type, YOUR goals, and YOUR city. Completely personalized." },
+              { q: "How long does it take?", a: "Our AI generates your report in minutes. You'll have your full audit and SEO score ready before you finish your coffee." },
+              { q: "What if I'm not happy with the report?", a: "We stand behind our work. If your report doesn't provide actionable insights, contact us at support@pageauditpros.com." },
             ].map(({ q, a }) => (
-              <div key={q} className="bg-[#fafafa] border border-gray-100 rounded-2xl p-6">
-                <p className="font-bold text-gray-900 mb-2">{q}</p>
-                <p className="text-gray-500 text-sm leading-relaxed">{a}</p>
+              <div key={q} className="bg-white border border-gray-100 rounded-2xl p-5">
+                <p className="font-bold text-gray-900 mb-2 text-sm">Q: {q}</p>
+                <p className="text-sm text-gray-600 leading-relaxed">{a}</p>
               </div>
             ))}
           </div>
@@ -391,22 +352,34 @@ export default function Home() {
       </section>
 
       {/* FINAL CTA */}
-      <section className="px-4 py-20 bg-gray-900">
+      <section className="py-16 px-4 bg-gradient-to-br from-[#0f2a6b] via-[#1877F2] to-[#2563eb] text-white">
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-extrabold text-white leading-tight mb-4">
-            Your Competitors Are Getting Smarter.<br />Are You?
-          </h2>
-          <p className="text-gray-400 text-lg mb-8 leading-relaxed">
-            Every day you wait is another day your page is losing potential customers. Get your audit today and start growing tomorrow.
-          </p>
-          <PrimaryButton onClick={goToAudit} className="text-lg px-12 py-5">
-            Get My Facebook Audit — $39.99 <ArrowRight className="w-5 h-5" />
-          </PrimaryButton>
-          <p className="text-gray-500 text-sm mt-4">⚡ Report in under 60 minutes · One-time payment · No contracts</p>
+          <h2 className="text-3xl md:text-4xl font-extrabold mb-4">Stop Guessing. Start Growing.</h2>
+          <p className="text-blue-100 mb-8 text-lg">Get your Facebook audit AND free website SEO score for just $39.99. The same insights agencies charge thousands for.</p>
+          <button onClick={() => navigate('/submit-your-page')}
+            className="inline-flex items-center gap-2 bg-white text-[#1877F2] px-10 py-4 text-base font-extrabold rounded-2xl hover:bg-blue-50 transition-all shadow-xl">
+            Get My Audit + Free SEO Score <ArrowRight className="w-5 h-5" />
+          </button>
+          <p className="text-blue-200 text-xs mt-4">🔒 One-time · No subscription · Instant access · $39.99</p>
         </div>
       </section>
 
-      <Footer />
+      {/* FOOTER */}
+      <footer className="bg-gray-900 text-gray-400 py-8 px-4">
+        <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <BarChart2 className="w-4 h-4 text-[#1877F2]" />
+            <span className="font-bold text-white text-sm">PageAudit Pro</span>
+          </div>
+          <div className="flex items-center gap-6 text-xs">
+            <a href="/terms" className="hover:text-white transition-colors">Terms & Conditions</a>
+            <a href="/privacy" className="hover:text-white transition-colors">Privacy Policy</a>
+            <a href="mailto:support@pageauditpros.com" className="hover:text-white transition-colors">support@pageauditpros.com</a>
+          </div>
+          <p className="text-xs">© 2026 PageAudit Pro. All rights reserved.</p>
+        </div>
+      </footer>
+
     </div>
   );
 }
