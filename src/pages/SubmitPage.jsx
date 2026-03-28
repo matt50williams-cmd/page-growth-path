@@ -149,36 +149,10 @@ function isValidFbUrl(url) {
   if (username.length <= 3) return false;
 
   const blocked = [
-    "sharer",
-    "share",
-    "dialog",
-    "login",
-    "plugins",
-    "pages",
-    "groups",
-    "events",
-    "marketplace",
-    "watch",
-    "gaming",
-    "ads",
-    "business",
-    "help",
-    "policies",
-    "legal",
-    "photo",
-    "photos",
-    "video",
-    "videos",
-    "home",
-    "about",
-    "posts",
-    "reels",
-    "reviews",
-    "notifications",
-    "messages",
-    "search",
-    "hashtag",
-    "stories",
+    "sharer", "share", "dialog", "login", "plugins", "pages", "groups", "events",
+    "marketplace", "watch", "gaming", "ads", "business", "help", "policies", "legal",
+    "photo", "photos", "video", "videos", "home", "about", "posts", "reels", "reviews",
+    "notifications", "messages", "search", "hashtag", "stories",
   ];
 
   return !blocked.includes(username.toLowerCase());
@@ -216,37 +190,36 @@ function getPhotoKey(url) {
     .split("/")[0];
 }
 
-function getWebsiteIcon(website) {
-  if (!website) return "";
-  let domain = String(website).trim();
-  domain = domain.replace(/^https?:\/\//i, "").replace(/^www\./i, "").split("/")[0];
-  if (!domain) return "";
-  return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128`;
+async function getWebsiteData({ website, businessName, email, city }) {
+  if (!website) return {};
+
+  try {
+    const scrapeRes = await fetch(`${API_BASE}/api/website/scrape`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        website_url: website || null,
+        business_name: businessName || null,
+        email: email || null,
+        city: city || null,
+      }),
+    });
+
+    return await scrapeRes.json();
+  } catch (err) {
+    console.error("Website scrape lookup failed:", err);
+    return {};
+  }
 }
 
 async function findFacebookCandidates({ pageName, businessName, website, email, city }) {
   const candidates = [];
+  let websiteData = {};
 
-  if (website) {
-    try {
-      const scrapeRes = await fetch(`${API_BASE}/api/website/scrape`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          website_url: website || null,
-          business_name: businessName || pageName || null,
-          email: email || null,
-          city: city || null,
-        }),
-      });
+  websiteData = await getWebsiteData({ website, businessName: businessName || pageName, email, city });
 
-      const scrapeData = await scrapeRes.json();
-      if (scrapeData?.facebook_url && isValidFbUrl(scrapeData.facebook_url)) {
-        candidates.push(scrapeData.facebook_url);
-      }
-    } catch (err) {
-      console.error("Website scrape lookup failed:", err);
-    }
+  if (websiteData?.facebook_url && isValidFbUrl(websiteData.facebook_url)) {
+    candidates.push(websiteData.facebook_url);
   }
 
   try {
@@ -275,19 +248,18 @@ async function findFacebookCandidates({ pageName, businessName, website, email, 
     console.error("Facebook finder lookup failed:", err);
   }
 
-  return candidates;
+  return { candidates, websiteData };
 }
 
-function AvatarImage({ fbUrl, website, name, size = "large" }) {
+function AvatarImage({ fbUrl, websiteLogoUrl, name, size = "large" }) {
   const [sourceIndex, setSourceIndex] = useState(0);
 
   const sources = [];
   if (fbUrl) {
     sources.push(FB_PHOTO(getPhotoKey(fbUrl)));
   }
-  if (website) {
-    const websiteIcon = getWebsiteIcon(website);
-    if (websiteIcon) sources.push(websiteIcon);
+  if (websiteLogoUrl) {
+    sources.push(websiteLogoUrl);
   }
 
   const dimensionClass =
@@ -320,6 +292,7 @@ function FacebookPageFinder({
   website,
   city,
   businessName,
+  websiteLogoUrl,
   preloadedCandidates,
   scrapeLoading,
 }) {
@@ -351,7 +324,7 @@ function FacebookPageFinder({
     setSearching(true);
 
     try {
-      const found = await findFacebookCandidates({
+      const result = await findFacebookCandidates({
         pageName: pageName.trim(),
         businessName,
         website,
@@ -359,6 +332,7 @@ function FacebookPageFinder({
         city,
       });
 
+      const found = result.candidates || [];
       setCandidates(found);
       setCandidateIndex(0);
       onChange("");
@@ -480,7 +454,7 @@ function FacebookPageFinder({
               </div>
 
               <div className="bg-white rounded-xl p-4 mb-4 flex items-center gap-4 border border-gray-100 shadow-sm">
-                <AvatarImage fbUrl={previewUrl} website={website} name={currentName} size="large" />
+                <AvatarImage fbUrl={previewUrl} websiteLogoUrl={websiteLogoUrl} name={currentName} size="large" />
 
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-gray-900 text-base truncate">{currentName}</p>
@@ -579,7 +553,7 @@ function FacebookPageFinder({
       ) : (
         <div className="bg-green-50 border-2 border-green-400 rounded-2xl p-5">
           <div className="flex items-center gap-4 mb-3">
-            <AvatarImage fbUrl={previewUrl || value} website={website} name={currentName} size="small" />
+            <AvatarImage fbUrl={previewUrl || value} websiteLogoUrl={websiteLogoUrl} name={currentName} size="small" />
 
             <div>
               <div className="flex items-center gap-2 mb-1">
@@ -614,6 +588,7 @@ export default function SubmitPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [preloadedCandidates, setPreloadedCandidates] = useState([]);
   const [seoScore, setSeoScore] = useState(null);
+  const [websiteLogoUrl, setWebsiteLogoUrl] = useState("");
   const [scrapeLoading, setScrapeLoading] = useState(false);
 
   const [form, setForm] = useState({
@@ -660,7 +635,7 @@ export default function SubmitPage() {
     setScrapeLoading(true);
 
     try {
-      const found = await findFacebookCandidates({
+      const result = await findFacebookCandidates({
         pageName: form.businessName || form.name,
         businessName: form.businessName || form.name,
         website: form.website || null,
@@ -668,26 +643,20 @@ export default function SubmitPage() {
         city: form.city || null,
       });
 
-      if (found.length) {
-        setPreloadedCandidates(found);
+      if (result.candidates?.length) {
+        setPreloadedCandidates(result.candidates);
       } else {
         setPreloadedCandidates([]);
       }
 
-      if (form.website) {
-        const scrapeRes = await fetch(`${API_BASE}/api/website/scrape`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            website_url: form.website || null,
-            business_name: form.businessName || form.name,
-            email: form.email,
-            city: form.city || null,
-          }),
-        });
+      if (result.websiteData?.seo_score) {
+        setSeoScore(result.websiteData.seo_score);
+      }
 
-        const scrapeData = await scrapeRes.json();
-        if (scrapeData?.seo_score) setSeoScore(scrapeData.seo_score);
+      if (result.websiteData?.logo_url) {
+        setWebsiteLogoUrl(result.websiteData.logo_url);
+      } else {
+        setWebsiteLogoUrl("");
       }
     } catch (err) {
       console.error("Background scrape failed:", err);
@@ -1057,6 +1026,7 @@ export default function SubmitPage() {
                   website={form.website}
                   city={form.city}
                   businessName={form.businessName}
+                  websiteLogoUrl={websiteLogoUrl}
                   preloadedCandidates={preloadedCandidates}
                   scrapeLoading={scrapeLoading}
                 />
@@ -1096,7 +1066,6 @@ export default function SubmitPage() {
     </div>
   );
 }
-
 
 
 
