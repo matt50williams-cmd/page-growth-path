@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, ArrowLeft, Check, Search, Globe, MapPin, Target, Clock, Video, Lightbulb, HelpCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowRight, ArrowLeft, Check, Search, Globe, MapPin, Clock, Video, Lightbulb, HelpCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { storeUtmParams, getStoredUtmParams } from "@/utils/utm";
 import { trackEvent, EVENTS } from "@/utils/tracking";
 
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 7;
 const API_BASE = "https://pageaudit-engine.onrender.com";
 const FB_PHOTO = (username) => `${API_BASE}/api/fb-photo/${encodeURIComponent(username)}`;
 
@@ -36,11 +36,12 @@ const BUSINESS_TYPES = [
 
 const DID_YOU_KNOW = [
   "Pages that post 4–5 times per week grow 3x faster than those that post randomly.",
-  "Facebook's algorithm rewards pages that respond to comments within the first 30 minutes of posting.",
+  "Facebook's algorithm rewards pages that respond to comments within the first 30 minutes.",
   "Local businesses that mention their city in posts see up to 40% more reach from nearby customers.",
-  "Video posts get 5x more reach than image posts on Facebook — even short 60-second videos.",
   "Pages with a complete About section rank higher in Facebook search results.",
+  "Video posts get 5x more reach than image posts on Facebook — even short 60-second videos.",
   "The best time to post for most businesses is between 1pm–4pm on weekdays.",
+  "Businesses that respond to reviews get 35% more engagement on their posts.",
 ];
 
 function DidYouKnow({ index }) {
@@ -76,10 +77,11 @@ function WhyWeAsk({ children }) {
 
 function StepProgress({ step }) {
   const messages = [
-    "Let's get started!",
+    "Let's get started! 🚀",
     "Great! Keep going...",
     "You're doing great!",
     "Almost there...",
+    "Two more steps!",
     "One more step!",
     "Final step!",
   ];
@@ -156,7 +158,6 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl }) {
   const [uploadLoading, setUploadLoading] = useState(false);
   const [noFacebook, setNoFacebook] = useState(false);
 
-  // Auto-load preloaded URL from website scrape
   useEffect(() => {
     if (preloadedUrl && !confirmed) {
       const name = preloadedUrl.replace(/https?:\/\/(www\.)?facebook\.com\//i, '').replace(/\/$/, '').split('?')[0];
@@ -289,16 +290,14 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl }) {
 
   if (noFacebook) {
     return (
-      <div className="space-y-4">
-        <div className="bg-blue-50 border-2 border-[#1877F2] rounded-2xl p-5 text-center">
-          <p className="text-2xl mb-2">👍</p>
-          <p className="font-bold text-gray-900 mb-1">No problem!</p>
-          <p className="text-sm text-gray-500 mb-4">We'll include a guide on setting up your Facebook page for maximum impact as part of your report.</p>
-          <button type="button" onClick={() => { setNoFacebook(false); onChange("NO_FACEBOOK"); }}
-            className="bg-[#1877F2] text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-[#1457C0] transition-colors">
-            Continue →
-          </button>
-        </div>
+      <div className="bg-blue-50 border-2 border-[#1877F2] rounded-2xl p-5 text-center">
+        <p className="text-2xl mb-2">👍</p>
+        <p className="font-bold text-gray-900 mb-1">No problem!</p>
+        <p className="text-sm text-gray-500 mb-4">We'll include a guide on setting up your Facebook page for maximum impact as part of your report.</p>
+        <button type="button" onClick={() => { setNoFacebook(false); onChange("NO_FACEBOOK"); }}
+          className="bg-[#1877F2] text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-[#1457C0] transition-colors">
+          Continue →
+        </button>
       </div>
     );
   }
@@ -307,15 +306,6 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl }) {
     <div className="space-y-4">
       {!confirmed ? (
         <>
-          {/* Preloaded from website */}
-          {preloadedUrl && !previewUrl && (
-            <div className="bg-green-50 border-2 border-green-400 rounded-2xl p-4 text-center">
-              <p className="text-xs font-bold text-green-700 mb-1">✨ We found your page from your website!</p>
-              <p className="text-xs text-green-600">Loading your page preview...</p>
-            </div>
-          )}
-
-          {/* Search box */}
           <div>
             <label className="block text-sm font-semibold text-gray-900 mb-1.5">
               Facebook Page Name <span className="text-gray-400 font-normal text-xs">(optional)</span>
@@ -344,7 +334,6 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl }) {
             )}
           </div>
 
-          {/* Preview card */}
           {previewUrl && !noMore && (
             <div className="bg-blue-50 border-2 border-[#1877F2] rounded-2xl p-5">
               <div className="flex items-center justify-between mb-3">
@@ -386,7 +375,6 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl }) {
             </div>
           )}
 
-          {/* No more variations — show all fallbacks */}
           {noMore && (
             <div className="space-y-3">
               <div className="bg-yellow-50 border-2 border-yellow-300 rounded-2xl p-4 text-center">
@@ -394,7 +382,6 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl }) {
                 <p className="text-xs text-yellow-700">Try one of these options below:</p>
               </div>
 
-              {/* How to find URL */}
               <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
                 <button type="button" onClick={() => setShowHelp(!showHelp)}
                   className="w-full px-4 py-3.5 flex items-center justify-between text-sm font-semibold text-gray-700 hover:bg-gray-50">
@@ -423,7 +410,6 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl }) {
                 )}
               </div>
 
-              {/* Screenshot upload */}
               <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
                 <button type="button" onClick={() => setShowUpload(!showUpload)}
                   className="w-full px-4 py-3.5 flex items-center justify-between text-sm font-semibold text-gray-700 hover:bg-gray-50">
@@ -432,7 +418,7 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl }) {
                 </button>
                 {showUpload && (
                   <div className="px-4 pb-4 border-t border-gray-100 pt-3">
-                    <p className="text-xs text-gray-500 mb-3">Screenshot your Facebook page — our AI reads it and finds your URL automatically!</p>
+                    <p className="text-xs text-gray-500 mb-3">Screenshot your Facebook page and upload it — our AI reads it automatically!</p>
                     {uploadLoading ? (
                       <div className="flex items-center justify-center py-6 gap-3">
                         <div className="w-6 h-6 border-2 border-gray-200 border-t-[#1877F2] rounded-full animate-spin" />
@@ -450,7 +436,6 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl }) {
                 )}
               </div>
 
-              {/* Google search */}
               <button type="button"
                 onClick={() => window.open(`https://www.google.com/search?q=site:facebook.com+"${pageName}"`, '_blank')}
                 className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3.5 flex items-center gap-3 hover:border-gray-400 transition-colors text-left">
@@ -462,7 +447,6 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl }) {
                 <span className="text-xs text-gray-400">↗</span>
               </button>
 
-              {/* Try different name */}
               <button type="button" onClick={() => { setNoMore(false); setPreviewUrl(""); setShowVariations(false); setVarIndex(0); }}
                 className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3.5 flex items-center gap-3 hover:border-gray-400 transition-colors text-left">
                 <span className="text-xl">✏️</span>
@@ -472,7 +456,6 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl }) {
                 </div>
               </button>
 
-              {/* No Facebook page */}
               <button type="button" onClick={() => setNoFacebook(true)}
                 className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3.5 flex items-center gap-3 hover:border-gray-400 transition-colors text-left">
                 <span className="text-xl">🚫</span>
@@ -484,7 +467,6 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl }) {
             </div>
           )}
 
-          {/* Paste URL */}
           <div className="border-t border-gray-100 pt-4">
             <p className="text-xs text-gray-400 mb-2 font-semibold">Or paste your Facebook URL directly:</p>
             <input type="url" placeholder="https://www.facebook.com/yourbusiness"
@@ -492,7 +474,6 @@ function FacebookPageFinder({ value, onChange, email, website, preloadedUrl }) {
               className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#1877F2] transition-all" />
           </div>
 
-          {/* Skip option */}
           <div className="text-center">
             <button type="button" onClick={() => setNoFacebook(true)}
               className="text-xs text-gray-400 hover:text-gray-600 underline">
@@ -537,7 +518,6 @@ export default function SubmitPage() {
   const [step, setStep] = useState(1);
   const [emailError, setEmailError] = useState("");
   const [emailTouched, setEmailTouched] = useState(false);
-  const [urlError, setUrlError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [preloadedFbUrl, setPreloadedFbUrl] = useState("");
   const [seoScore, setSeoScore] = useState(null);
@@ -571,9 +551,8 @@ export default function SubmitPage() {
     return true;
   };
 
-  // Fire background scrape when Step 1 is completed
   const fireBackgroundScrape = async (website, businessName, email) => {
-    if (!website && !businessName) return;
+    if (!website) return;
     setScrapeLoading(true);
     try {
       const res = await fetch(`${API_BASE}/api/website/scrape`, {
@@ -605,8 +584,9 @@ export default function SubmitPage() {
     if (step === 2) return !!form.businessType;
     if (step === 3) return !!form.city.trim();
     if (step === 4) return form.mainGoal.length > 0;
-    if (step === 5) return !!form.postingFrequency && !!form.contentType;
-    if (step === 6) return !!form.facebook_url;
+    if (step === 5) return !!form.postingFrequency;
+    if (step === 6) return !!form.contentType;
+    if (step === 7) return !!form.facebook_url;
     return true;
   };
 
@@ -680,7 +660,7 @@ export default function SubmitPage() {
 
           <div className="bg-white border border-gray-100 rounded-3xl shadow-sm px-6 py-7">
 
-            {/* STEP 1 — Name + Email + Website */}
+            {/* STEP 1 */}
             {step === 1 && (
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-1">Let's get started!</h1>
@@ -726,7 +706,7 @@ export default function SubmitPage() {
               </div>
             )}
 
-            {/* STEP 2 — Business Type */}
+            {/* STEP 2 */}
             {step === 2 && (
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-1">What type of business are you?</h1>
@@ -745,7 +725,7 @@ export default function SubmitPage() {
               </div>
             )}
 
-            {/* STEP 3 — City */}
+            {/* STEP 3 */}
             {step === 3 && (
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-1">What city is your business in?</h1>
@@ -759,31 +739,32 @@ export default function SubmitPage() {
                     onChange={(e) => set("city", e.target.value)}
                     className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:border-[#1877F2] transition-all" />
                 </div>
-                <WhyWeAsk>We pull real-time data on what's working for {form.businessType || "businesses"} in your area right now. Your report will show you exactly what local competitors are doing and how to beat them. Mentioning your city in posts also increases local reach by up to 40%.</WhyWeAsk>
+                <WhyWeAsk>We pull real-time data on what's working for {form.businessType || "businesses"} in your area right now. Your report will show exactly what local competitors are doing and how to beat them.</WhyWeAsk>
                 <DidYouKnow index={2} />
               </div>
             )}
 
-            {/* STEP 4 — Main Goal */}
+            {/* STEP 4 */}
             {step === 4 && (
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-1">What's your main goal?</h1>
                 <p className="text-sm text-gray-400 mb-6">Your entire action plan is built around this.</p>
                 <div className="space-y-2">
-                  {["Grow followers", "Increase engagement", "Generate leads", "Build authority", "Promote a cause"].map((option) => (
-                    <OptionCard key={option}
-                      selected={form.mainGoal.includes(option)}
+                  {[
+                    { val: "Grow followers", icon: "👥" },
+                    { val: "Increase engagement", icon: "💬" },
+                    { val: "Generate leads", icon: "💰" },
+                    { val: "Build authority", icon: "⭐" },
+                    { val: "Promote a cause", icon: "❤️" },
+                  ].map(({ val, icon }) => (
+                    <OptionCard key={val}
+                      selected={form.mainGoal.includes(val)}
                       onClick={() => {
-                        set("mainGoal", form.mainGoal.includes(option)
-                          ? form.mainGoal.filter(x => x !== option)
-                          : [...form.mainGoal, option]);
+                        set("mainGoal", form.mainGoal.includes(val)
+                          ? form.mainGoal.filter(x => x !== val)
+                          : [...form.mainGoal, val]);
                       }}>
-                      {option === "Grow followers" && "👥 "}
-                      {option === "Increase engagement" && "💬 "}
-                      {option === "Generate leads" && "💰 "}
-                      {option === "Build authority" && "⭐ "}
-                      {option === "Promote a cause" && "❤️ "}
-                      {option}
+                      {icon} {val}
                     </OptionCard>
                   ))}
                 </div>
@@ -792,46 +773,53 @@ export default function SubmitPage() {
               </div>
             )}
 
-            {/* STEP 5 — Posting + Content */}
+            {/* STEP 5 — Posting Frequency */}
             {step === 5 && (
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-1">How are you posting right now?</h1>
-                <p className="text-sm text-gray-400 mb-6">This tells us where your biggest growth opportunity is hiding.</p>
-                <div className="space-y-5">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">
-                      <Clock className="w-4 h-4 inline mr-1 text-[#1877F2]" />
-                      How often do you post?
-                    </label>
-                    <div className="space-y-2">
-                      {["Daily", "A few times a week", "Weekly", "Rarely or never"].map((option) => (
-                        <OptionCard key={option} selected={form.postingFrequency === option} onClick={() => set("postingFrequency", option)}>
-                          {option}
-                        </OptionCard>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">
-                      <Video className="w-4 h-4 inline mr-1 text-[#1877F2]" />
-                      What do you post most?
-                    </label>
-                    <div className="space-y-2">
-                      {["Videos", "Images", "Text posts", "Mixed content", "Not sure yet"].map((option) => (
-                        <OptionCard key={option} selected={form.contentType === option} onClick={() => set("contentType", option)}>
-                          {option}
-                        </OptionCard>
-                      ))}
-                    </div>
-                  </div>
+                <h1 className="text-2xl font-bold text-gray-900 mb-1">How often do you post?</h1>
+                <p className="text-sm text-gray-400 mb-6">This helps us assess your current posting strategy.</p>
+                <div className="space-y-2">
+                  {[
+                    { val: "Daily", icon: "🔥" },
+                    { val: "A few times a week", icon: "📅" },
+                    { val: "Weekly", icon: "📆" },
+                    { val: "Rarely or never", icon: "😴" },
+                  ].map(({ val, icon }) => (
+                    <OptionCard key={val} selected={form.postingFrequency === val} onClick={() => set("postingFrequency", val)}>
+                      {icon} {val}
+                    </OptionCard>
+                  ))}
                 </div>
-                <WhyWeAsk>Knowing your current posting habits lets us identify the exact gaps in your strategy. We'll show you what to change this week for immediate results.</WhyWeAsk>
+                <WhyWeAsk>Posting frequency is one of the biggest factors in Facebook reach. Whether you post daily or rarely, we'll show you exactly what cadence works best for your business type.</WhyWeAsk>
                 <DidYouKnow index={4} />
               </div>
             )}
 
-            {/* STEP 6 — Facebook Page Finder */}
+            {/* STEP 6 — Content Type */}
             {step === 6 && (
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 mb-1">What do you post most?</h1>
+                <p className="text-sm text-gray-400 mb-6">We'll analyze your content performance on this.</p>
+                <div className="space-y-2">
+                  {[
+                    { val: "Videos", icon: "🎥" },
+                    { val: "Images", icon: "📸" },
+                    { val: "Text posts", icon: "✍️" },
+                    { val: "Mixed content", icon: "🎨" },
+                    { val: "Not sure yet", icon: "🤔" },
+                  ].map(({ val, icon }) => (
+                    <OptionCard key={val} selected={form.contentType === val} onClick={() => set("contentType", val)}>
+                      {icon} {val}
+                    </OptionCard>
+                  ))}
+                </div>
+                <WhyWeAsk>Different content types perform very differently on Facebook. Videos get 5x more reach than images. We'll show you exactly what content mix will get you the most growth.</WhyWeAsk>
+                <DidYouKnow index={5} />
+              </div>
+            )}
+
+            {/* STEP 7 — Facebook Page Finder */}
+            {step === 7 && (
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-1">
                   {preloadedFbUrl ? "We found your page! 🎉" : "Find Your Facebook Page"}
@@ -839,11 +827,11 @@ export default function SubmitPage() {
                 <p className="text-sm text-gray-400 mb-6">
                   {preloadedFbUrl
                     ? "We scanned your website and found this — is it correct?"
-                    : "Search for your page so we can analyze it. This is optional but makes your report much more accurate!"}
+                    : "Search for your page so we can analyze it. Optional but makes your report much more accurate!"}
                 </p>
                 <FacebookPageFinder
                   value={form.facebook_url}
-                  onChange={(url) => { set("facebook_url", url); setUrlError(""); }}
+                  onChange={(url) => set("facebook_url", url)}
                   email={form.email}
                   website={form.website}
                   preloadedUrl={preloadedFbUrl}
@@ -854,7 +842,7 @@ export default function SubmitPage() {
                     Still searching for your page...
                   </div>
                 )}
-                <DidYouKnow index={5} />
+                <DidYouKnow index={6} />
               </div>
             )}
 
@@ -871,7 +859,6 @@ export default function SubmitPage() {
                 onClick={() => {
                   if (step === 1) {
                     if (!validateEmailField(form.email)) return;
-                    // Fire background scrape
                     fireBackgroundScrape(form.website, form.name, form.email);
                   }
                   if (step < TOTAL_STEPS) goToStep(step + 1);
@@ -889,6 +876,13 @@ export default function SubmitPage() {
     </div>
   );
 }
+
+
+
+
+
+
+
 
 
 
