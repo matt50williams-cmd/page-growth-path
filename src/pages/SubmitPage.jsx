@@ -216,11 +216,68 @@ function getPhotoKey(url) {
     .split("/")[0];
 }
 
+async function findFacebookCandidates({ pageName, businessName, website, email, city }) {
+  const candidates = [];
+
+  // 1) Website scrape first
+  if (website) {
+    try {
+      const scrapeRes = await fetch(`${API_BASE}/api/website/scrape`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          website_url: website || null,
+          business_name: businessName || pageName || null,
+          email: email || null,
+          city: city || null,
+        }),
+      });
+
+      const scrapeData = await scrapeRes.json();
+      if (scrapeData?.facebook_url && isValidFbUrl(scrapeData.facebook_url)) {
+        candidates.push(scrapeData.facebook_url);
+      }
+    } catch (err) {
+      console.error("Website scrape lookup failed:", err);
+    }
+  }
+
+  // 2) Fallback to finder route
+  try {
+    const fbRes = await fetch(`${API_BASE}/api/find-facebook-page`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        business_name: pageName || businessName || null,
+        city: city || null,
+        website_url: website || null,
+        email: email || null,
+      }),
+    });
+
+    const fbData = await fbRes.json();
+    const found = Array.isArray(fbData?.candidates)
+      ? fbData.candidates.filter((u) => isValidFbUrl(u))
+      : [];
+
+    for (const url of found) {
+      if (!candidates.includes(url)) {
+        candidates.push(url);
+      }
+    }
+  } catch (err) {
+    console.error("Facebook finder lookup failed:", err);
+  }
+
+  return candidates;
+}
+
 function FacebookPageFinder({
   value,
   onChange,
   email,
   website,
+  city,
   businessName,
   preloadedCandidates,
   scrapeLoading,
@@ -234,6 +291,7 @@ function FacebookPageFinder({
   const [candidateIndex, setCandidateIndex] = useState(0);
   const [pasteUrl, setPasteUrl] = useState("");
   const [showHelp, setShowHelp] = useState(false);
+  const [searching, setSearching] = useState(false);
 
   useEffect(() => {
     if (preloadedCandidates?.length) {
@@ -255,24 +313,18 @@ function FacebookPageFinder({
   };
 
   const handleSearch = async () => {
-    if (!pageName.trim()) return;
+    if (!pageName.trim() && !website) return;
+
+    setSearching(true);
 
     try {
-      const res = await fetch(`${API_BASE}/api/find-facebook-page`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          business_name: pageName.trim(),
-          website_url: website || null,
-          city: null,
-          email: email || null,
-        }),
+      const found = await findFacebookCandidates({
+        pageName: pageName.trim(),
+        businessName,
+        website,
+        email,
+        city,
       });
-
-      const data = await res.json();
-      const found = Array.isArray(data?.candidates)
-        ? data.candidates.filter((u) => isValidFbUrl(u))
-        : [];
 
       setCandidates(found);
       setCandidateIndex(0);
@@ -286,10 +338,12 @@ function FacebookPageFinder({
         setImgSrc("");
       }
     } catch (err) {
-      console.error("Facebook finder search failed:", err);
+      console.error("Facebook search failed:", err);
       setCandidates([]);
       setPreviewUrl("");
       setImgSrc("");
+    } finally {
+      setSearching(false);
     }
   };
 
@@ -343,7 +397,7 @@ function FacebookPageFinder({
     <div className="space-y-4">
       {!confirmed ? (
         <>
-          {scrapeLoading && (
+          {(scrapeLoading || searching) && (
             <div className="bg-blue-50 border border-blue-200 rounded-2xl px-4 py-3 flex items-center gap-3">
               <div className="w-4 h-4 border-2 border-blue-200 border-t-[#1877F2] rounded-full animate-spin shrink-0" />
               <p className="text-xs text-blue-700 font-medium">🔍 Searching for your Facebook page automatically...</p>
@@ -374,7 +428,7 @@ function FacebookPageFinder({
               <button
                 type="button"
                 onClick={handleSearch}
-                disabled={!pageName.trim()}
+                disabled={(!pageName.trim() && !website) || searching}
                 className="inline-flex items-center gap-2 bg-[#1877F2] text-white px-5 py-3.5 text-sm font-bold rounded-2xl hover:bg-[#1457C0] transition-colors disabled:opacity-40 shrink-0"
               >
                 <Search className="w-4 h-4" /> Find
@@ -450,11 +504,13 @@ function FacebookPageFinder({
             </div>
           )}
 
-          {!previewUrl && !scrapeLoading && (
+          {!previewUrl && !scrapeLoading && !searching && (
             <div className="space-y-3">
               <div className="bg-yellow-50 border-2 border-yellow-300 rounded-2xl p-4 text-center">
                 <p className="text-sm font-bold text-yellow-800 mb-1">😕 We haven’t found your page yet</p>
-                <p className="text-xs text-yellow-700">Try searching by page name or paste your Facebook URL directly below.</p>
+                <p className="text-xs text-yellow-700">
+                  If we are having trouble finding your page, your customers may be too. That is exactly the kind of visibility problem PageAudit Pro helps fix.
+                </p>
               </div>
 
               <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
@@ -599,6 +655,20 @@ export default function SubmitPage() {
     setScrapeLoading(true);
 
     try {
+      const found = await findFacebookCandidates({
+        pageName: form.businessName || form.name,
+        businessName: form.businessName || form.name,
+        website: form.website || null,
+        email: form.email || null,
+        city: form.city || null,
+      });
+
+      if (found.length) {
+        setPreloadedCandidates(found);
+      } else {
+        setPreloadedCandidates([]);
+      }
+
       if (form.website) {
         const scrapeRes = await fetch(`${API_BASE}/api/website/scrape`, {
           method: "POST",
@@ -614,23 +684,6 @@ export default function SubmitPage() {
         const scrapeData = await scrapeRes.json();
         if (scrapeData?.seo_score) setSeoScore(scrapeData.seo_score);
       }
-
-      const fbRes = await fetch(`${API_BASE}/api/find-facebook-page`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          business_name: form.businessName || form.name,
-          city: form.city || null,
-          website_url: form.website || null,
-        }),
-      });
-
-      const fbData = await fbRes.json();
-      const candidates = Array.isArray(fbData?.candidates)
-        ? fbData.candidates.filter((u) => isValidFbUrl(u))
-        : [];
-
-      setPreloadedCandidates(candidates);
     } catch (err) {
       console.error("Background scrape failed:", err);
     } finally {
@@ -997,6 +1050,7 @@ export default function SubmitPage() {
                   onChange={(url) => set("facebook_url", url)}
                   email={form.email}
                   website={form.website}
+                  city={form.city}
                   businessName={form.businessName}
                   preloadedCandidates={preloadedCandidates}
                   scrapeLoading={scrapeLoading}
@@ -1037,7 +1091,6 @@ export default function SubmitPage() {
     </div>
   );
 }
-
 
 
 
