@@ -1,3 +1,7 @@
+
+
+
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, ArrowLeft, Check, Search } from "lucide-react";
@@ -583,9 +587,6 @@ export default function SubmitPage() {
     </div>
   );
 }
-
-
-
 
 
 
