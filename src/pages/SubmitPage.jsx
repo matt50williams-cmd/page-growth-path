@@ -216,10 +216,17 @@ function getPhotoKey(url) {
     .split("/")[0];
 }
 
+function getWebsiteIcon(website) {
+  if (!website) return "";
+  let domain = String(website).trim();
+  domain = domain.replace(/^https?:\/\//i, "").replace(/^www\./i, "").split("/")[0];
+  if (!domain) return "";
+  return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128`;
+}
+
 async function findFacebookCandidates({ pageName, businessName, website, email, city }) {
   const candidates = [];
 
-  // 1) Website scrape first
   if (website) {
     try {
       const scrapeRes = await fetch(`${API_BASE}/api/website/scrape`, {
@@ -242,7 +249,6 @@ async function findFacebookCandidates({ pageName, businessName, website, email, 
     }
   }
 
-  // 2) Fallback to finder route
   try {
     const fbRes = await fetch(`${API_BASE}/api/find-facebook-page`, {
       method: "POST",
@@ -272,6 +278,41 @@ async function findFacebookCandidates({ pageName, businessName, website, email, 
   return candidates;
 }
 
+function AvatarImage({ fbUrl, website, name, size = "large" }) {
+  const [sourceIndex, setSourceIndex] = useState(0);
+
+  const sources = [];
+  if (fbUrl) {
+    sources.push(FB_PHOTO(getPhotoKey(fbUrl)));
+  }
+  if (website) {
+    const websiteIcon = getWebsiteIcon(website);
+    if (websiteIcon) sources.push(websiteIcon);
+  }
+
+  const dimensionClass =
+    size === "large"
+      ? "w-16 h-16 text-2xl"
+      : "w-14 h-14 text-xl";
+
+  if (!sources.length || sourceIndex >= sources.length) {
+    return (
+      <div className={`${dimensionClass} rounded-full bg-[#1877F2] flex items-center justify-center shrink-0`}>
+        <span className="text-white font-bold">f</span>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={sources[sourceIndex]}
+      alt={name}
+      onError={() => setSourceIndex((i) => i + 1)}
+      className={`${dimensionClass} rounded-full object-cover border-2 border-gray-100 shrink-0 bg-white`}
+    />
+  );
+}
+
 function FacebookPageFinder({
   value,
   onChange,
@@ -285,31 +326,23 @@ function FacebookPageFinder({
   const [pageName, setPageName] = useState(businessName || "");
   const [confirmed, setConfirmed] = useState(false);
   const [previewUrl, setPreviewUrl] = useState("");
-  const [imgSrc, setImgSrc] = useState("");
-  const [imgError, setImgError] = useState(false);
+  const [searching, setSearching] = useState(false);
   const [candidates, setCandidates] = useState(preloadedCandidates || []);
   const [candidateIndex, setCandidateIndex] = useState(0);
   const [pasteUrl, setPasteUrl] = useState("");
   const [showHelp, setShowHelp] = useState(false);
-  const [searching, setSearching] = useState(false);
 
   useEffect(() => {
     if (preloadedCandidates?.length) {
       setCandidates(preloadedCandidates);
       setCandidateIndex(0);
-
-      const first = preloadedCandidates[0];
-      setPreviewUrl(first);
-      setImgSrc(FB_PHOTO(getPhotoKey(first)));
-      setImgError(false);
+      setPreviewUrl(preloadedCandidates[0]);
     }
   }, [preloadedCandidates]);
 
   const applyCandidate = (url) => {
     if (!url || !isValidFbUrl(url)) return;
     setPreviewUrl(url);
-    setImgSrc(FB_PHOTO(getPhotoKey(url)));
-    setImgError(false);
   };
 
   const handleSearch = async () => {
@@ -335,13 +368,11 @@ function FacebookPageFinder({
         applyCandidate(found[0]);
       } else {
         setPreviewUrl("");
-        setImgSrc("");
       }
     } catch (err) {
       console.error("Facebook search failed:", err);
       setCandidates([]);
       setPreviewUrl("");
-      setImgSrc("");
     } finally {
       setSearching(false);
     }
@@ -372,8 +403,6 @@ function FacebookPageFinder({
       setCandidates([val]);
       setCandidateIndex(0);
       setPreviewUrl(val);
-      setImgSrc(FB_PHOTO(getPhotoKey(val)));
-      setImgError(false);
       setConfirmed(true);
       onChange(val);
     }
@@ -382,8 +411,6 @@ function FacebookPageFinder({
   const handleStartOver = () => {
     setConfirmed(false);
     setPreviewUrl("");
-    setImgSrc("");
-    setImgError(false);
     setCandidates([]);
     setCandidateIndex(0);
     setPasteUrl("");
@@ -417,7 +444,6 @@ function FacebookPageFinder({
                 onChange={(e) => {
                   setPageName(e.target.value);
                   setPreviewUrl("");
-                  setImgSrc("");
                   setCandidates([]);
                   setCandidateIndex(0);
                   onChange("");
@@ -454,18 +480,7 @@ function FacebookPageFinder({
               </div>
 
               <div className="bg-white rounded-xl p-4 mb-4 flex items-center gap-4 border border-gray-100 shadow-sm">
-                {!imgError ? (
-                  <img
-                    src={imgSrc}
-                    alt={currentName}
-                    onError={() => setImgError(true)}
-                    className="w-16 h-16 rounded-full object-cover border-2 border-gray-100 shrink-0"
-                  />
-                ) : (
-                  <div className="w-16 h-16 rounded-full bg-[#1877F2] flex items-center justify-center shrink-0">
-                    <span className="text-white font-bold text-2xl">f</span>
-                  </div>
-                )}
+                <AvatarImage fbUrl={previewUrl} website={website} name={currentName} size="large" />
 
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-gray-900 text-base truncate">{currentName}</p>
@@ -564,17 +579,7 @@ function FacebookPageFinder({
       ) : (
         <div className="bg-green-50 border-2 border-green-400 rounded-2xl p-5">
           <div className="flex items-center gap-4 mb-3">
-            {imgSrc && !imgError ? (
-              <img
-                src={imgSrc}
-                alt={currentName}
-                className="w-14 h-14 rounded-full object-cover border-2 border-green-200 shrink-0"
-              />
-            ) : (
-              <div className="w-14 h-14 rounded-full bg-[#1877F2] flex items-center justify-center shrink-0">
-                <span className="text-white font-bold text-xl">f</span>
-              </div>
-            )}
+            <AvatarImage fbUrl={previewUrl || value} website={website} name={currentName} size="small" />
 
             <div>
               <div className="flex items-center gap-2 mb-1">
