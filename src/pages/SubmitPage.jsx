@@ -332,7 +332,7 @@ function FacebookPageFinder({ value, onChange, businessName, website, city, emai
                 <button type="button" onClick={() => handleConfirm(url)} className="flex-1 bg-green-500 text-white text-xs font-bold py-2.5 rounded-xl hover:bg-green-600 transition-colors">
                   Yes, That's Mine!
                 </button>
-                <button type="button" onClick={() => handleReject(url)} className="bg-gray-100 text-gray-500 text-xs font-bold px-3 py-2.5 rounded-xl hover:bg-gray-200 transition-colors">
+                <button type="button" onClick={() => handleReject(url)} className="flex-1 bg-gray-100 text-gray-500 text-xs font-bold py-2.5 rounded-xl hover:bg-gray-200 transition-colors">
                   No
                 </button>
               </div>
@@ -618,3 +618,4 @@ export default function SubmitPage() {
     </div>
   );
 }
+
