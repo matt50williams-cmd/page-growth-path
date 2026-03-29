@@ -503,6 +503,9 @@ export default function SubmitPage() {
           email: form.email,
           facebook_url: fbUrl,
           account_type: "Business",
+          website: form.website || null,
+          city: form.city || null,
+          business_name: form.businessName || null,
           goals: form.mainGoal.join(", "),
           posting_frequency: form.postingFrequency,
           content_type: form.contentType,
@@ -833,4 +836,5 @@ export default function SubmitPage() {
     </div>
   );
 }
+
 
