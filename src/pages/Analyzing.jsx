@@ -16,7 +16,7 @@ export default function Analyzing() {
 
   useEffect(() => {
     // Check if order exists
-    // allow analyzing page to run even without localStorage
+    const order = localStorage.getItem("pageAuditOrder"); if (!order) { navigate("/submit-your-page"); return; }
 
     // Rotate messages every 1 second
     const messageInterval = setInterval(() => {
@@ -115,4 +115,5 @@ export default function Analyzing() {
     </div>
   );
 }
+
 
