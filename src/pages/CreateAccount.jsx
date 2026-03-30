@@ -170,7 +170,7 @@ export default function CreateAccount() {
         }
       }
       localStorage.removeItem("pageAuditOrder");
-      navigate("/dashboard");
+      navigate("/analyzing");
     } catch (err) {
       if (err.message?.includes("already exists")) {
         navigate("/login");
@@ -350,3 +350,4 @@ export default function CreateAccount() {
     </div>
   );
 }
+
