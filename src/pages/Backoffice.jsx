@@ -1,4 +1,3 @@
-$code = @'
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
@@ -224,5 +223,4 @@ export default function Backoffice() {
     </div>
   );
 }
-'@
-Set-Content "C:\Users\matt5\Downloads\page-growth-path\src\pages\Backoffice.jsx" $code
+
