@@ -450,7 +450,7 @@ export default function SubmitPage() {
         mainGoal: form.mainGoal, postingFrequency: form.postingFrequency, contentType: form.contentType,
         seoScore: seoScore, auditId: data.audit.id,
       }));
-      navigate("/analyzing");
+      navigate("/audit-preview");
     } catch (err) {
       console.error("[AUDIT ERROR]:", err);
       alert("Error creating audit. Please try again.");
@@ -618,4 +618,5 @@ export default function SubmitPage() {
     </div>
   );
 }
+
 
