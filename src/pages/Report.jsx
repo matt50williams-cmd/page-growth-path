@@ -6,6 +6,7 @@ import { CheckCircle, Download, Share2, Copy, ClipboardCheck } from "lucide-reac
 import ReactMarkdown from "react-markdown";
 
 const API_BASE = "https://pageaudit-engine.onrender.com";
+const isPrint = new URLSearchParams(window.location.search).get("print") === "true";
 
 function cleanMarkdown(text) {
   if (!text) return text;
@@ -197,9 +198,7 @@ export default function Report() {
       } catch (e) {
         setError(true);
       }
-      setLoading(false);
-    };
-    loadReport();
+      setLoading(false); if (isPrint) { setTimeout(() => window.print(), 1000); } }; loadReport();
   }, [id, isLoadingAuth]);
 
   useEffect(() => {
@@ -341,3 +340,4 @@ export default function Report() {
     </div>
   );
 }
+
