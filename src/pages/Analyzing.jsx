@@ -16,7 +16,7 @@ export default function Analyzing() {
 
   useEffect(() => {
     // Check if order exists
-    const order = localStorage.getItem("pageAuditOrder"); if (!order) { navigate("/submit-your-page"); return; }
+    const order = localStorage.getItem("pageAuditOrder"); const urlParams = new URLSearchParams(window.location.search); if (!order && !urlParams.get("audit_id")) { navigate("/submit-your-page"); return; }
 
     // Rotate messages every 1 second
     const messageInterval = setInterval(() => {
@@ -115,5 +115,6 @@ export default function Analyzing() {
     </div>
   );
 }
+
 
 
