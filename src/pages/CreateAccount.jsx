@@ -9,7 +9,7 @@ const FACEBOOK_TIPS = [
   {
     emoji: "⏰",
     title: "Best Time to Post",
-    tip: "Facebook pages get 3x more reach when posted between 1pm–4pm on weekdays. Wednesday at 3pm is consistently the highest engagement window for business pages."
+    tip: "Facebook pages get 3x more reach when posted between 1pm-4pm on weekdays. Wednesday at 3pm is consistently the highest engagement window for business pages."
   },
   {
     emoji: "🎥",
@@ -24,12 +24,12 @@ const FACEBOOK_TIPS = [
   {
     emoji: "🪝",
     title: "The Hook Is 90% of Your Post",
-    tip: "Only the first 2 lines show before 'See More.' If those lines don't stop the scroll, nobody reads the rest. Start every post with a bold statement, a question, or a surprising fact."
+    tip: "Only the first 2 lines show before See More. If those lines don't stop the scroll, nobody reads the rest. Start every post with a bold statement, a question, or a surprising fact."
   },
   {
     emoji: "📊",
     title: "Consistency Beats Perfection",
-    tip: "Pages that post 4-5 times per week grow 3x faster than pages that post sporadically — even if the content is simpler. The algorithm rewards consistency above all else."
+    tip: "Pages that post 4-5 times per week grow 3x faster than pages that post sporadically - even if the content is simpler. The algorithm rewards consistency above all else."
   },
   {
     emoji: "🤝",
@@ -39,12 +39,12 @@ const FACEBOOK_TIPS = [
   {
     emoji: "📱",
     title: "Stories Are Underused Gold",
-    tip: "Less than 20% of business pages use Facebook Stories consistently — yet Stories show at the TOP of every feed. Posting one Story per day puts you ahead of 80% of your competitors instantly."
+    tip: "Less than 20% of business pages use Facebook Stories consistently - yet Stories show at the TOP of every feed. Posting one Story per day puts you ahead of 80% of your competitors instantly."
   },
   {
     emoji: "🎯",
     title: "One CTA Per Post",
-    tip: "Posts with a single clear call-to-action (comment, share, click, DM) outperform posts with multiple asks by 300%. Pick one action and ask for it directly."
+    tip: "Posts with a single clear call-to-action outperform posts with multiple asks by 300%. Pick one action and ask for it directly."
   },
   {
     emoji: "🔁",
@@ -71,7 +71,7 @@ const FACEBOOK_TIPS = [
 export default function CreateAccount() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { signup } = useAuth();
+  const { signup, login } = useAuth();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -96,12 +96,10 @@ export default function CreateAccount() {
   useEffect(() => {
     if (!loading) return;
 
-    // Rotate tips every 8 seconds
     const tipTimer = setInterval(() => {
       setTipIndex(prev => (prev + 1) % FACEBOOK_TIPS.length);
     }, 8000);
 
-    // Progress bar over 75 seconds
     const progressTimer = setInterval(() => {
       setProgress(prev => {
         if (prev >= 95) return 95;
@@ -109,7 +107,6 @@ export default function CreateAccount() {
       });
     }, 1000);
 
-    // Complete steps one by one
     steps.forEach((_, i) => {
       setTimeout(() => {
         setCompletedSteps(prev => [...prev, i]);
@@ -124,28 +121,34 @@ export default function CreateAccount() {
 
   useEffect(() => {
     const savedOrder = localStorage.getItem("pageAuditOrder");
-    const sessionId = searchParams.get("session_id");
-    const auditId = searchParams.get("audit_id");
-    if (!savedOrder && !sessionId) { navigate("/submit-your-page"); return; }
+    const stripeSessionId = searchParams.get("session_id");
+    const stripeAuditId = searchParams.get("audit_id");
+
+    if (!savedOrder && !stripeSessionId) {
+      navigate("/submit-your-page");
+      return;
+    }
+
     if (savedOrder) {
       const orderData = JSON.parse(savedOrder);
       setOrder(orderData);
-    } else if (sessionId && auditId) {
-      fetch(`https://pageaudit-engine.onrender.com/api/stripe/verify/${sessionId}`)
+    } else if (stripeSessionId && stripeAuditId) {
+      fetch(`${API_BASE}/api/stripe/verify/${stripeSessionId}`)
         .then(r => r.json())
         .then(result => {
           if (result.email) {
-            setOrder({ email: result.email, auditId, name: "" });
+            setOrder({ email: result.email, auditId: stripeAuditId, name: "" });
+            if (result.paid) localStorage.setItem("pageAuditPaid", "true");
           } else {
             navigate("/submit-your-page");
           }
         })
         .catch(() => navigate("/submit-your-page"));
+      return;
     }
 
-    const sessionId = searchParams.get("session_id");
-    if (sessionId) {
-      fetch(`${API_BASE}/api/stripe/verify/${sessionId}`)
+    if (stripeSessionId) {
+      fetch(`${API_BASE}/api/stripe/verify/${stripeSessionId}`)
         .then(r => r.json())
         .then(result => {
           if (result.paid) localStorage.setItem("pageAuditPaid", "true");
@@ -184,11 +187,30 @@ export default function CreateAccount() {
           console.error("Audit run failed:", err);
         }
       }
+      localStorage.removeItem("pageAuditOrder");
       navigate("/analyzing");
-      setTimeout(() => { localStorage.removeItem("pageAuditOrder"); }, 2000);
     } catch (err) {
       if (err.message?.includes("already exists")) {
-        navigate("/login");
+        // Try to log them in automatically with the password they just entered
+        try {
+          await login(order.email, password);
+          const auditId = order.auditId || searchParams.get("audit_id");
+          if (auditId) {
+            try {
+              await fetch(`${API_BASE}/api/audits/${auditId}/run`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+              });
+            } catch (runErr) {
+              console.error("Audit run failed:", runErr);
+            }
+          }
+          localStorage.removeItem("pageAuditOrder");
+          navigate("/analyzing");
+        } catch (loginErr) {
+          setError("An account with this email already exists. Please log in with your existing password.");
+          setLoading(false);
+        }
       } else {
         setError(err.message || "Something went wrong. Please try again.");
         setLoading(false);
@@ -217,7 +239,6 @@ export default function CreateAccount() {
         <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
           <div className="w-full max-w-2xl space-y-6">
 
-            {/* Header */}
             <div className="text-center">
               <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-4">
                 <div className="w-10 h-10 border-4 border-white/30 border-t-white rounded-full animate-spin" />
@@ -226,24 +247,15 @@ export default function CreateAccount() {
               <p className="text-blue-200">Our AI is analyzing your Facebook page right now. This takes about 60 seconds.</p>
             </div>
 
-            {/* Progress Bar */}
             <div className="bg-white/10 rounded-full h-3 overflow-hidden">
-              <div
-                className="h-full bg-white rounded-full transition-all duration-1000"
-                style={{ width: `${progress}%` }}
-              />
+              <div className="h-full bg-white rounded-full transition-all duration-1000" style={{ width: `${progress}%` }} />
             </div>
 
-            {/* Steps */}
             <div className="bg-white/10 rounded-2xl p-5 space-y-3">
               {steps.map((step, i) => (
                 <div key={i} className="flex items-center gap-3">
                   <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 transition-all ${
-                    completedSteps.includes(i)
-                      ? 'bg-green-400'
-                      : i === currentStep
-                      ? 'bg-white/30 border-2 border-white animate-pulse'
-                      : 'bg-white/10'
+                    completedSteps.includes(i) ? 'bg-green-400' : i === currentStep ? 'bg-white/30 border-2 border-white animate-pulse' : 'bg-white/10'
                   }`}>
                     {completedSteps.includes(i) && <CheckCircle className="w-3 h-3 text-white" />}
                   </div>
@@ -254,14 +266,11 @@ export default function CreateAccount() {
               ))}
             </div>
 
-            {/* Rotating Tip */}
             <div className="bg-white rounded-2xl p-6 shadow-xl">
               <div className="flex items-start gap-4">
                 <span className="text-3xl shrink-0">{currentTip.emoji}</span>
                 <div>
-                  <p className="text-xs font-bold text-[#1877F2] uppercase tracking-wide mb-1">
-                    💡 Facebook Pro Tip
-                  </p>
+                  <p className="text-xs font-bold text-[#1877F2] uppercase tracking-wide mb-1">Facebook Pro Tip</p>
                   <h3 className="font-bold text-gray-900 mb-2">{currentTip.title}</h3>
                   <p className="text-gray-600 text-sm leading-relaxed">{currentTip.tip}</p>
                 </div>
@@ -274,7 +283,7 @@ export default function CreateAccount() {
             </div>
 
             <p className="text-center text-blue-200 text-sm">
-              Don't close this page — you'll be redirected automatically when your report is ready.
+              Don't close this page - you'll be redirected automatically when your report is ready.
             </p>
           </div>
         </div>
@@ -308,6 +317,15 @@ export default function CreateAccount() {
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
                 <p className="text-sm text-red-700">{error}</p>
+                {error.includes("already exists") && (
+                  <button
+                    type="button"
+                    onClick={() => navigate("/login")}
+                    className="mt-2 text-xs text-[#1877F2] font-semibold hover:underline"
+                  >
+                    Click here to log in instead
+                  </button>
+                )}
               </div>
             )}
 
