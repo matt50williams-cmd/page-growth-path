@@ -175,7 +175,7 @@ export default function Dashboard() {
               </div>
             </div>
             <button
-              onClick={() => window.location.href = 'mailto:support@pageauditpros.com?subject=Full SEO Audit Request'}
+              onClick={() => navigate('/seo-audit')}
               className="shrink-0 bg-green-600 text-white text-sm font-bold px-5 py-3 rounded-xl hover:bg-green-700 transition-colors whitespace-nowrap">
               Get Full SEO Audit →
             </button>
@@ -248,5 +248,6 @@ export default function Dashboard() {
     </div>
   );
 }
+
 
 
