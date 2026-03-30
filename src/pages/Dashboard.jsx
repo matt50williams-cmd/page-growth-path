@@ -20,6 +20,18 @@ function StatusBadge({ status }) {
   );
 }
 
+function ScoreCard({ label, value }) {
+  const num = value != null ? Math.round(value) : null;
+  const color = num == null ? "text-gray-400" : num >= 80 ? "text-green-600" : num >= 60 ? "text-yellow-500" : "text-red-500";
+  const bg = num == null ? "bg-gray-50" : num >= 80 ? "bg-green-50" : num >= 60 ? "bg-yellow-50" : "bg-red-50";
+  return (
+    <div className={`${bg} rounded-lg p-4`}>
+      <p className="text-xs text-gray-500 uppercase font-semibold mb-1">{label}</p>
+      <p className={`text-xl font-bold ${color}`}>{num != null ? num : "—"}</p>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user, logout, isLoadingAuth } = useAuth();
@@ -31,7 +43,6 @@ export default function Dashboard() {
   useEffect(() => {
     if (isLoadingAuth) return;
     if (!user) { navigate("/login"); return; }
-
     const loadData = async () => {
       try {
         const data = await auditsApi.list();
@@ -62,6 +73,8 @@ export default function Dashboard() {
   }
 
   const latestAudit = audits[0];
+  const seoScore = latestAudit?.seo_score;
+  const seoNum = seoScore != null ? Math.round(typeof seoScore === 'object' ? seoScore.score : seoScore) : null;
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-gray-900 flex flex-col">
@@ -87,16 +100,18 @@ export default function Dashboard() {
 
       <div className="flex-1 max-w-5xl mx-auto w-full px-4 md:px-6 py-10 md:py-14">
         <div className="mb-12">
-          <h1 className="text-4xl font-extrabold text-gray-900 mb-2">Welcome back, {user?.full_name || user?.email}</h1>
+          <h1 className="text-4xl font-extrabold text-gray-900 mb-2">
+            Welcome back, {latestAudit?.business_name || user?.full_name || user?.email?.split('@')[0]}
+          </h1>
           <p className="text-gray-500">Manage your Facebook page audits and strategy reports below.</p>
         </div>
 
         {latestAudit && (
-          <div className="bg-white border-2 border-[#1877F2] rounded-2xl p-8 mb-12 shadow-lg">
+          <div className="bg-white border-2 border-[#1877F2] rounded-2xl p-8 mb-6 shadow-lg">
             <div className="flex items-start justify-between mb-6">
               <div>
                 <p className="text-xs font-bold uppercase tracking-widest text-[#1877F2] mb-2">Latest Audit</p>
-                <h2 className="text-2xl font-bold text-gray-900">{latestAudit.customer_name || "Your Audit"}</h2>
+                <h2 className="text-2xl font-bold text-gray-900">{latestAudit.business_name || latestAudit.customer_name || "Your Audit"}</h2>
                 <p className="text-sm text-gray-500 mt-1">{latestAudit.facebook_url}</p>
               </div>
               <StatusBadge status={latestAudit.status} />
@@ -110,10 +125,7 @@ export default function Dashboard() {
                 { label: "Engagement", value: latestAudit.engagement_score },
                 { label: "Growth", value: latestAudit.growth_score },
               ].map(({ label, value }) => (
-                <div key={label} className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-xs text-gray-500 uppercase font-semibold mb-1">{label}</p>
-                  <p className="text-xl font-bold text-[#1877F2]">{value != null ? Math.round(value) : "—"}</p>
-                </div>
+                <ScoreCard key={label} label={label} value={value} />
               ))}
             </div>
 
@@ -136,6 +148,39 @@ export default function Dashboard() {
             </div>
           </div>
         )}
+
+        {/* SEO Upsell Card */}
+        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6 mb-8">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-2xl">🌐</span>
+                <h3 className="text-base font-bold text-gray-900">Website SEO Score</h3>
+                <span className="bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded-full">FREE BONUS</span>
+              </div>
+              <p className="text-sm text-gray-600 mb-3">See how Google ranks your website — fix what's hurting your search rankings.</p>
+              <div className="flex items-center gap-4">
+                <div className="bg-white border border-green-200 rounded-lg px-4 py-2 text-center">
+                  <p className="text-xs text-gray-500 font-medium">Your SEO Score</p>
+                  <p className={`text-2xl font-bold ${seoNum == null ? 'text-gray-400' : seoNum >= 80 ? 'text-green-600' : seoNum >= 60 ? 'text-yellow-500' : 'text-red-500'}`}>
+                    {seoNum != null ? `${seoNum}/100` : "—"}
+                  </p>
+                </div>
+                <p className="text-xs text-gray-500">
+                  {seoNum == null && "Add your website URL when submitting an audit to get your free SEO score."}
+                  {seoNum != null && seoNum < 60 && <span className="text-red-600 font-semibold">⚠️ Your site has SEO issues hurting your Google ranking</span>}
+                  {seoNum != null && seoNum >= 60 && seoNum < 80 && <span className="text-yellow-600 font-semibold">📈 Good start — but there's room to rank higher on Google</span>}
+                  {seoNum != null && seoNum >= 80 && <span className="text-green-600 font-semibold">✅ Strong SEO foundation! Keep it up.</span>}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => window.location.href = 'mailto:support@pageauditpros.com?subject=Full SEO Audit Request'}
+              className="shrink-0 bg-green-600 text-white text-sm font-bold px-5 py-3 rounded-xl hover:bg-green-700 transition-colors whitespace-nowrap">
+              Get Full SEO Audit →
+            </button>
+          </div>
+        </div>
 
         <div>
           <h3 className="text-lg font-bold text-gray-900 mb-4">All Audits</h3>
@@ -163,10 +208,14 @@ export default function Dashboard() {
                   {audits.map((audit) => (
                     <tr key={audit.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4">
-                        <p className="font-medium text-gray-900">{audit.customer_name || "—"}</p>
+                        <p className="font-medium text-gray-900">{audit.business_name || audit.customer_name || "—"}</p>
                         <p className="text-xs text-gray-500">{audit.facebook_url || "—"}</p>
                       </td>
-                      <td className="px-6 py-4 font-bold text-[#1877F2]">{audit.overall_score != null ? Math.round(audit.overall_score) : "—"}</td>
+                      <td className="px-6 py-4">
+                        <span className={`font-bold ${audit.overall_score >= 80 ? 'text-green-600' : audit.overall_score >= 60 ? 'text-yellow-500' : 'text-red-500'}`}>
+                          {audit.overall_score != null ? Math.round(audit.overall_score) : "—"}
+                        </span>
+                      </td>
                       <td className="px-6 py-4"><StatusBadge status={audit.status} /></td>
                       <td className="px-6 py-4 text-xs text-gray-500">{audit.created_at ? new Date(audit.created_at).toLocaleDateString() : "—"}</td>
                       <td className="px-6 py-4 text-right">
@@ -189,7 +238,7 @@ export default function Dashboard() {
               <button onClick={() => setHelpOpen(false)} className="text-gray-400 hover:text-black"><X className="w-5 h-5" /></button>
             </div>
             <p className="text-sm text-gray-600 mb-6">Need help with your audit or account? Contact support.</p>
-            <a href="mailto:support@pageauditpro.com"
+            <a href="mailto:support@pageauditpros.com"
               className="inline-flex items-center justify-center w-full bg-[#1877F2] text-white px-6 py-3 font-semibold rounded-lg hover:bg-[#1457C0] transition-colors">
               Email Support
             </a>
