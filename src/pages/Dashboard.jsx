@@ -101,7 +101,7 @@ export default function Dashboard() {
       <div className="flex-1 max-w-5xl mx-auto w-full px-4 md:px-6 py-10 md:py-14">
         <div className="mb-12">
           <h1 className="text-4xl font-extrabold text-gray-900 mb-2">
-            Welcome back, {latestAudit?.business_name || user?.full_name || user?.email?.split('@')[0]}
+            Welcome back, {latestAudit?.business_name || latestAudit?.customer_name || user?.full_name || user?.email?.split("@")[0]}
           </h1>
           <p className="text-gray-500">Manage your Facebook page audits and strategy reports below.</p>
         </div>
@@ -167,7 +167,7 @@ export default function Dashboard() {
                   </p>
                 </div>
                 <p className="text-xs text-gray-500">
-                  {seoNum == null && "Add your website URL when submitting an audit to get your free SEO score."}
+                  {seoNum == null && "Submit your next audit with a website URL to unlock your SEO score."}
                   {seoNum != null && seoNum < 60 && <span className="text-red-600 font-semibold">⚠️ Your site has SEO issues hurting your Google ranking</span>}
                   {seoNum != null && seoNum >= 60 && seoNum < 80 && <span className="text-yellow-600 font-semibold">📈 Good start — but there's room to rank higher on Google</span>}
                   {seoNum != null && seoNum >= 80 && <span className="text-green-600 font-semibold">✅ Strong SEO foundation! Keep it up.</span>}
@@ -248,3 +248,5 @@ export default function Dashboard() {
     </div>
   );
 }
+
+

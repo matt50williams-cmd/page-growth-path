@@ -258,6 +258,7 @@ export default function Report() {
       <nav className={`sticky top-0 z-50 bg-white border-b border-gray-100 transition-shadow ${scrolled ? "shadow-sm" : ""}`}>
         <div className="max-w-4xl mx-auto px-4 md:px-6 py-3 flex items-center justify-between gap-4">
           <span className="font-bold text-sm tracking-tight shrink-0">PageAudit Pro</span>
+          <a href="/dashboard" className="inline-flex items-center gap-2 text-sm font-semibold text-[#1877F2] hover:underline">? Back to Dashboard</a>
         </div>
       </nav>
 
@@ -341,6 +342,7 @@ export default function Report() {
     </div>
   );
 }
+
 
 
 
