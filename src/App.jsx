@@ -95,6 +95,16 @@ function App() {
 }
 
 export default App;
+```
+
+Commit, then in terminal:
+```
+git pull
+npm run build
+git add -A
+git add dist -f
+git commit -m "fix duplicate imports and App function"
+git push
 
 
 
