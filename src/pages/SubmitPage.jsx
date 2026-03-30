@@ -450,7 +450,7 @@ export default function SubmitPage() {
         mainGoal: form.mainGoal, postingFrequency: form.postingFrequency, contentType: form.contentType,
         seoScore: seoScore, auditId: data.audit.id,
       }));
-      navigate("/audit-preview");
+      fetch(`${API_BASE}/api/audits/${data.audit.id}/seo-score`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ score: seoScore }) }).catch(() => {}); navigate("/audit-preview");
     } catch (err) {
       console.error("[AUDIT ERROR]:", err);
       alert("Error creating audit. Please try again.");
@@ -618,5 +618,6 @@ export default function SubmitPage() {
     </div>
   );
 }
+
 
 
