@@ -1,6 +1,6 @@
 const API_BASE = import.meta.env.VITE_API_URL || 'https://pageaudit-engine.onrender.com';
 
-function getToken() { return localStorage.getItem('pageaudit_token'); }
+function getToken() { const match = document.cookie.match(/pageaudit_token=([^;]+)/); return match ? match[1] : localStorage.getItem('pageaudit_token'); }
 function setToken(token) { localStorage.setItem('pageaudit_token', token); }
 function clearToken() { localStorage.removeItem('pageaudit_token'); }
 

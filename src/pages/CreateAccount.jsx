@@ -190,7 +190,7 @@ export default function CreateAccount() {
         }
       }
       localStorage.removeItem("pageAuditOrder");
-      navigate("/analyzing");
+      setTimeout(() => navigate("/analyzing"), 500);
     } catch (err) {
       if (err.message?.includes("already exists")) {
         // Try to log them in automatically with the password they just entered
@@ -208,7 +208,7 @@ export default function CreateAccount() {
             }
           }
           localStorage.removeItem("pageAuditOrder");
-          navigate("/analyzing");
+          setTimeout(() => navigate("/analyzing"), 500);
         } catch (loginErr) {
           setError("An account with this email already exists. Please log in with your existing password.");
           setLoading(false);
@@ -385,6 +385,7 @@ export default function CreateAccount() {
     </div>
   );
 }
+
 
 
 
