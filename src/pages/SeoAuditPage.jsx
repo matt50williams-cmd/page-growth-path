@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { CheckCircle, Globe, Zap, Search, BarChart2, ArrowRight, Loader2 } from "lucide-react";
+import { audits as auditsApi } from "@/api/apiClient";
 
 const API_BASE = "https://pageaudit-engine.onrender.com";
 
@@ -19,10 +20,21 @@ export default function SeoAuditPage() {
   const { user, isLoadingAuth } = useAuth();
   const [loading, setLoading] = useState(false);
   const [website, setWebsite] = useState("");
+  const [confirmed, setConfirmed] = useState(false);
 
   useEffect(() => {
     if (isLoadingAuth) return;
     if (!user) { navigate("/login"); return; }
+    const loadWebsite = async () => {
+      try {
+        const data = await auditsApi.list();
+        if (data && data.length > 0) {
+          const latest = data.find(a => a.website) || data[0];
+          if (latest?.website) setWebsite(latest.website);
+        }
+      } catch (e) {}
+    };
+    loadWebsite();
   }, [user, isLoadingAuth, navigate]);
 
   const handleCheckout = async () => {
@@ -56,8 +68,8 @@ export default function SeoAuditPage() {
       <nav className="bg-white border-b border-gray-100 sticky top-0 z-40">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <span className="font-bold text-sm tracking-tight">PageAudit Pro</span>
-          <button onClick={() => navigate("/dashboard")} className="text-sm text-[#1877F2] font-semibold hover:underline">
-            ← Back to Dashboard
+          <button onClick={() => navigate("/dashboard")} className="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold px-4 py-2 rounded-lg transition-colors">
+            &larr; Back to Dashboard
           </button>
         </div>
       </nav>
@@ -70,10 +82,10 @@ export default function SeoAuditPage() {
             <span className="text-[#1877F2]">Fix What's Hiding You on Google</span>
           </h1>
           <p className="text-lg text-gray-500 max-w-2xl mx-auto mb-6">
-            Most small business websites have 10–20 fixable SEO issues costing them customers every day. Our AI finds every one of them and tells you exactly how to fix them.
+            Most small business websites have 10-20 fixable SEO issues costing them customers every day. Our AI finds every one of them and tells you exactly how to fix them.
           </p>
           <div className="inline-flex items-center gap-2 bg-yellow-50 border border-yellow-200 rounded-2xl px-5 py-3 text-sm font-medium text-yellow-800">
-            ⏱ Report delivered in under 60 seconds
+            Report delivered in under 60 seconds
           </div>
         </div>
 
@@ -91,46 +103,70 @@ export default function SeoAuditPage() {
           ))}
         </div>
 
-        <div className="bg-white border-2 border-[#1877F2] rounded-3xl p-8 shadow-lg text-center max-w-lg mx-auto">
-          <p className="text-xs font-bold uppercase tracking-widest text-[#1877F2] mb-2">Get Your Full SEO Audit</p>
-          <div className="mb-2">
+        <div className="bg-white border-2 border-[#1877F2] rounded-3xl p-8 shadow-lg max-w-lg mx-auto">
+          <p className="text-xs font-bold uppercase tracking-widest text-[#1877F2] mb-2 text-center">Get Your Full SEO Audit</p>
+          <div className="mb-2 text-center">
             <span className="text-5xl font-extrabold text-gray-900">$29</span>
             <span className="text-2xl font-bold text-gray-900">.99</span>
           </div>
-          <p className="text-sm text-gray-500 mb-6">One-time payment — full report delivered instantly</p>
+          <p className="text-sm text-gray-500 mb-6 text-center">One-time payment — full report delivered instantly</p>
 
-          <div className="mb-4 text-left">
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Your Website URL</label>
+          <div className="mb-4">
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Website to Audit</label>
             <input
               type="url"
               placeholder="https://yourbusiness.com"
               value={website}
-              onChange={(e) => setWebsite(e.target.value)}
-              className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-[#1877F2] transition-all mb-1"
+              onChange={(e) => { setWebsite(e.target.value); setConfirmed(false); }}
+              className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-[#1877F2] transition-all"
             />
-            <p className="text-xs text-gray-400">We'll audit this website and deliver your full report</p>
+            {website && !confirmed && (
+              <div className="mt-3 bg-blue-50 border border-blue-200 rounded-xl p-3">
+                <p className="text-sm font-semibold text-blue-900 mb-2">Is this the correct website?</p>
+                <p className="text-sm text-blue-700 mb-3 break-all">{website}</p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setConfirmed(true)}
+                    className="flex-1 bg-green-500 text-white text-sm font-bold py-2 rounded-xl hover:bg-green-600 transition-colors"
+                  >
+                    Yes, that's my site
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setWebsite(""); setConfirmed(false); }}
+                    className="flex-1 bg-gray-100 text-gray-600 text-sm font-bold py-2 rounded-xl hover:bg-gray-200 transition-colors"
+                  >
+                    Change it
+                  </button>
+                </div>
+              </div>
+            )}
+            {confirmed && (
+              <p className="text-xs text-green-600 mt-2 font-semibold">✓ Website confirmed</p>
+            )}
           </div>
 
           <button
             onClick={handleCheckout}
-            disabled={loading || !website.trim()}
+            disabled={loading || !website.trim() || !confirmed}
             className="w-full bg-[#1877F2] text-white text-base font-bold py-4 rounded-2xl hover:bg-[#1457C0] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-blue-100"
           >
             {loading ? <><Loader2 className="w-5 h-5 animate-spin" /> Processing...</> : <>Get My SEO Audit <ArrowRight className="w-5 h-5" /></>}
           </button>
 
           <div className="mt-4 flex items-center justify-center gap-4 text-xs text-gray-400">
-            <span>🔒 Secure payment</span>
+            <span>Secure payment</span>
             <span>•</span>
-            <span>💳 All cards accepted</span>
+            <span>All cards accepted</span>
             <span>•</span>
-            <span>✅ Instant delivery</span>
+            <span>Instant delivery</span>
           </div>
         </div>
 
         <div className="text-center mt-8">
           <p className="text-sm text-gray-500">
-            💯 <strong>100% Satisfaction Guarantee</strong> — If you're not happy with your report, email us and we'll make it right.
+            100% Satisfaction Guarantee — If you're not happy with your report, email us and we'll make it right.
           </p>
         </div>
       </div>
