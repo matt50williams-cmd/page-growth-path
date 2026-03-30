@@ -35,7 +35,7 @@ export default function Analyzing() {
       setProgress(100);
       
       setTimeout(() => {
-        navigate("/audit-preview");
+        navigate("/dashboard");
       }, 300);
     }, 10000);
 
@@ -115,3 +115,4 @@ export default function Analyzing() {
     </div>
   );
 }
+
