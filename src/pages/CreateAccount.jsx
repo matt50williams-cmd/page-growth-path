@@ -124,9 +124,24 @@ export default function CreateAccount() {
 
   useEffect(() => {
     const savedOrder = localStorage.getItem("pageAuditOrder");
-    if (!savedOrder) { navigate("/submit-your-page"); return; }
-    const orderData = JSON.parse(savedOrder);
-    setOrder(orderData);
+    const sessionId = searchParams.get("session_id");
+    const auditId = searchParams.get("audit_id");
+    if (!savedOrder && !sessionId) { navigate("/submit-your-page"); return; }
+    if (savedOrder) {
+      const orderData = JSON.parse(savedOrder);
+      setOrder(orderData);
+    } else if (sessionId && auditId) {
+      fetch(`https://pageaudit-engine.onrender.com/api/stripe/verify/${sessionId}`)
+        .then(r => r.json())
+        .then(result => {
+          if (result.email) {
+            setOrder({ email: result.email, auditId, name: "" });
+          } else {
+            navigate("/submit-your-page");
+          }
+        })
+        .catch(() => navigate("/submit-your-page"));
+    }
 
     const sessionId = searchParams.get("session_id");
     if (sessionId) {
@@ -350,5 +365,6 @@ export default function CreateAccount() {
     </div>
   );
 }
+
 
 
