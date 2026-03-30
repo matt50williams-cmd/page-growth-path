@@ -20,6 +20,8 @@ import ReportProcessing from './pages/ReportProcessing';
 import Backoffice from './pages/Backoffice';
 import MyAudits from './pages/MyAudits';
 import Login from './pages/Login';
+import SeoAuditPage from './pages/SeoAuditPage';
+import SeoAuditPage from './pages/SeoAuditPage';
 
 function StripeRedirectHandler() {
   const navigate = useNavigate();
@@ -71,6 +73,8 @@ function AuthenticatedApp() {
         <Route path="/my-audits" element={<MyAudits />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
+        <Route path="/seo-audit" element={<SeoAuditPage />} />
+        <Route path="/seo-audit" element={<SeoAuditPage />} />
         <Route path="*" element={<PageNotFound />} />
       </Routes>
     </>
@@ -91,3 +95,6 @@ function App() {
 }
 
 export default App;
+
+
+
