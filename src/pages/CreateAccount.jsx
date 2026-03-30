@@ -124,21 +124,30 @@ export default function CreateAccount() {
     const stripeSessionId = searchParams.get("session_id");
     const stripeAuditId = searchParams.get("audit_id");
 
-    if (!savedOrder && !stripeSessionId) {
-      navigate("/submit-your-page");
-      return;
-    }
-
     if (savedOrder) {
       const orderData = JSON.parse(savedOrder);
       setOrder(orderData);
-    } else if (stripeSessionId && stripeAuditId) {
-      fetch(`${API_BASE}/api/stripe/verify/${stripeSessionId}`)
+      if (stripeSessionId) {
+        fetch(`${API_BASE}/api/stripe/verify/${stripeSessionId}`)
+          .then(r => r.json())
+          .then(result => { if (result.paid) localStorage.setItem("pageAuditPaid", "true"); })
+          .catch(() => {});
+      }
+      return;
+    }
+
+    if (stripeAuditId) {
+      fetch(`${API_BASE}/api/audits/${stripeAuditId}`)
         .then(r => r.json())
-        .then(result => {
-          if (result.email) {
-            setOrder({ email: result.email, auditId: stripeAuditId, name: "" });
-            if (result.paid) localStorage.setItem("pageAuditPaid", "true");
+        .then(audit => {
+          if (audit && audit.email) {
+            setOrder({ email: audit.email, auditId: stripeAuditId, name: audit.customer_name || "" });
+            if (stripeSessionId) {
+              fetch(`${API_BASE}/api/stripe/verify/${stripeSessionId}`)
+                .then(r => r.json())
+                .then(result => { if (result.paid) localStorage.setItem("pageAuditPaid", "true"); })
+                .catch(() => {});
+            }
           } else {
             navigate("/submit-your-page");
           }
@@ -147,14 +156,7 @@ export default function CreateAccount() {
       return;
     }
 
-    if (stripeSessionId) {
-      fetch(`${API_BASE}/api/stripe/verify/${stripeSessionId}`)
-        .then(r => r.json())
-        .then(result => {
-          if (result.paid) localStorage.setItem("pageAuditPaid", "true");
-        })
-        .catch(err => console.error("Payment verification failed:", err));
-    }
+    navigate("/submit-your-page");
   }, [navigate, searchParams]);
 
   const validatePasswords = () => {
