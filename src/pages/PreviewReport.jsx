@@ -65,9 +65,7 @@ export default function PreviewReport() {
         email: orderData.email,
         facebookUrl: orderData.pageUrl,
       });
-      setLoading(false);
-    };
-    init();
+      setLoading(false); setTimeout(() => handleUnlock(), 3000); }; init();
   }, []);
 
   const handleUnlock = async () => {
