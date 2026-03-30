@@ -21,7 +21,6 @@ import Backoffice from './pages/Backoffice';
 import MyAudits from './pages/MyAudits';
 import Login from './pages/Login';
 import SeoAuditPage from './pages/SeoAuditPage';
-import SeoAuditPage from './pages/SeoAuditPage';
 
 function StripeRedirectHandler() {
   const navigate = useNavigate();
@@ -95,6 +94,7 @@ function App() {
 }
 
 export default App;
+
 
 
 
