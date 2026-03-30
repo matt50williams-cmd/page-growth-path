@@ -6,7 +6,7 @@ import { CheckCircle, Download, Share2, Copy, ClipboardCheck } from "lucide-reac
 import ReactMarkdown from "react-markdown";
 
 const API_BASE = "https://pageaudit-engine.onrender.com";
-const isPrint = new URLSearchParams(window.location.search).get("print") === "true";
+
 
 function cleanMarkdown(text) {
   if (!text) return text;
@@ -138,6 +138,7 @@ export default function Report() {
   const [reportCopied, setReportCopied] = useState(false);
   const [error, setError] = useState(false);
   const [reportId, setReportId] = useState(null);
+  const isPrint = new URLSearchParams(window.location.search).get("print") === "true";
   const [loading, setLoading] = useState(true);
 
   const loadReportFromData = (data) => {
@@ -340,4 +341,6 @@ export default function Report() {
     </div>
   );
 }
+
+
 
