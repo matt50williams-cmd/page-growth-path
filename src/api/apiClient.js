@@ -1,9 +1,7 @@
 const API_BASE = import.meta.env.VITE_API_URL || 'https://pageaudit-engine.onrender.com';
-
-function getToken() { return localStorage.getItem('pageaudit_token'); }
-function setToken(token) { localStorage.setItem('pageaudit_token', token); }
-function clearToken() { localStorage.removeItem('pageaudit_token'); }
-
+function getToken() { const match = document.cookie.match(/pageaudit_token=([^;]+)/); return match ? decodeURIComponent(match[1]) : localStorage.getItem('pageaudit_token'); }
+function setToken(token) { localStorage.setItem('pageaudit_token', token); document.cookie = `pageaudit_token=${encodeURIComponent(token)};path=/;max-age=604800;SameSite=Lax`; }
+function clearToken() { localStorage.removeItem('pageaudit_token'); document.cookie = 'pageaudit_token=;path=/;max-age=0'; }
 async function apiFetch(path, options = {}) {
   const token = getToken();
   const headers = {
@@ -24,7 +22,6 @@ async function apiFetch(path, options = {}) {
   if (!response.ok) throw new Error(data.error || data.message || `API error: ${response.status}`);
   return data;
 }
-
 export const auth = {
   async signup(email, password, fullName) {
     const data = await apiFetch('/api/auth/signup', { method: 'POST', body: JSON.stringify({ email, password, full_name: fullName }) });
@@ -44,7 +41,6 @@ export const auth = {
     window.location.href = '/login';
   },
 };
-
 export const audits = {
   async create(auditData) { return await apiFetch('/api/audits', { method: 'POST', body: JSON.stringify(auditData) }); },
   async run(auditId) { return await apiFetch(`/api/audits/${auditId}/run`, { method: 'POST' }); },
@@ -55,7 +51,6 @@ export const audits = {
     return await apiFetch('/api/audits');
   },
 };
-
 export const payments = {
   async createCheckout(auditId, email, customerName) {
     return await apiFetch('/api/stripe/checkout', { method: 'POST', body: JSON.stringify({ audit_id: auditId, email, customer_name: customerName }) });
@@ -65,7 +60,6 @@ export const payments = {
   },
   async verifyPayment(sessionId) { return await apiFetch(`/api/stripe/verify/${sessionId}`); },
 };
-
 export const funnel = {
   async track(eventType, data = {}) {
     try {
@@ -73,13 +67,11 @@ export const funnel = {
     } catch (err) { console.error(`Failed to track ${eventType}:`, err); }
   },
 };
-
 export const admin = {
   async getAudits(filters = {}) { const params = new URLSearchParams(filters).toString(); return await apiFetch(`/api/admin/audits?${params}`); },
   async getFunnel(days = 30) { return await apiFetch(`/api/admin/funnel?days=${days}`); },
   async getRevenue(days = 30) { return await apiFetch(`/api/admin/revenue?days=${days}`); },
   async getOverview() { return await apiFetch('/api/admin/overview'); },
 };
-
 const api = { auth, audits, payments, funnel, admin };
 export default api;
