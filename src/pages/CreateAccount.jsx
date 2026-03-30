@@ -169,8 +169,8 @@ export default function CreateAccount() {
           console.error("Audit run failed:", err);
         }
       }
-      localStorage.removeItem("pageAuditOrder");
       navigate("/analyzing");
+      setTimeout(() => { localStorage.removeItem("pageAuditOrder"); }, 2000);
     } catch (err) {
       if (err.message?.includes("already exists")) {
         navigate("/login");
@@ -350,4 +350,5 @@ export default function CreateAccount() {
     </div>
   );
 }
+
 
