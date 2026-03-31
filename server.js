@@ -7,10 +7,8 @@ import fs from 'fs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-if (!fs.existsSync(path.join(__dirname, 'dist'))) {
-  console.log('Building app...');
-  execSync('npm run build', { stdio: 'inherit' });
-}
+console.log('Building app...');
+execSync('npm run build', { stdio: 'inherit' });
 
 const app = express();
 app.use(express.static(path.join(__dirname, 'dist')));
