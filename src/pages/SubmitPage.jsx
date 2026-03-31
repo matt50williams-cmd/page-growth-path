@@ -152,11 +152,14 @@ function FacebookPageFinder({ value, onChange, businessName, website, city, emai
     onChange(url);
   };
 
+  // Normalize candidate to object format (handles both string and object)
+  const getUrl = (c) => typeof c === 'string' ? c : c.url;
+
   const handleNotMine = () => {
-    const url = visibleCandidates[cardIndex];
+    const url = getUrl(visibleCandidates[cardIndex]);
     const newRejected = [...rejectedUrls, url];
     setRejectedUrls(newRejected);
-    const remaining = candidates.filter(c => !newRejected.includes(c));
+    const remaining = candidates.filter(c => !newRejected.includes(getUrl(c)));
     if (remaining.length === 0) {
       setShowHelper(true);
     } else {
@@ -177,8 +180,9 @@ function FacebookPageFinder({ value, onChange, businessName, website, city, emai
     onChange("");
   };
 
-  const visibleCandidates = candidates.filter(c => !rejectedUrls.includes(c));
-  const currentUrl = visibleCandidates[cardIndex];
+  const visibleCandidates = candidates.filter(c => !rejectedUrls.includes(getUrl(c)));
+  const currentCandidate = visibleCandidates[cardIndex];
+  const currentUrl = currentCandidate ? getUrl(currentCandidate) : null;
 
   if (confirmed) {
     return (
@@ -223,12 +227,18 @@ function FacebookPageFinder({ value, onChange, businessName, website, city, emai
 
           <div className="border-2 border-blue-100 bg-blue-50 rounded-2xl p-5">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-[#1877F2] flex items-center justify-center shrink-0">
-                <span className="text-white text-lg font-bold">{(searchName || businessName || "?").charAt(0).toUpperCase()}</span>
+              {currentCandidate?.image ? (
+                <img src={currentCandidate.image} alt="" className="w-12 h-12 rounded-full object-cover shrink-0 bg-gray-200" onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
+              ) : null}
+              <div className={`w-12 h-12 rounded-full bg-[#1877F2] items-center justify-center shrink-0 ${currentCandidate?.image ? 'hidden' : 'flex'}`}>
+                <span className="text-white text-lg font-bold">{(currentCandidate?.name || searchName || businessName || "?").charAt(0).toUpperCase()}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-base font-bold text-gray-900 truncate">{searchName || businessName}</p>
-                <p className="text-xs text-gray-500 truncate">{currentUrl}</p>
+                <p className="text-base font-bold text-gray-900 truncate">{currentCandidate?.name || searchName || businessName}</p>
+                {currentCandidate?.followers && (
+                  <p className="text-xs text-gray-600 font-medium">{currentCandidate.followers} followers</p>
+                )}
+                <p className="text-xs text-gray-400 truncate">{currentUrl}</p>
               </div>
             </div>
 
