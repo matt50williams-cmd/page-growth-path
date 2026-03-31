@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { audits as auditsApi } from "@/api/apiClient";
 import { Eye, Download, Share2, CheckCircle, Clock, AlertCircle, Loader2, HelpCircle, X } from "lucide-react";
@@ -34,11 +34,14 @@ function ScoreCard({ label, value }) {
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, logout, isLoadingAuth } = useAuth();
   const [audits, setAudits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(null);
   const [helpOpen, setHelpOpen] = useState(false);
+
+  const API_BASE = "https://pageaudit-engine.onrender.com";
 
   useEffect(() => {
     if (isLoadingAuth) return;
@@ -47,6 +50,17 @@ export default function Dashboard() {
       try {
         const data = await auditsApi.list();
         setAudits(data || []);
+
+        const seoSuccess = searchParams.get("seo_success");
+        const seoAuditId = searchParams.get("audit_id");
+        if (seoSuccess === "true" && seoAuditId) {
+          const seoAudit = data?.find(a => String(a.id) === seoAuditId);
+          if (seoAudit && seoAudit.status === "pending") {
+            fetch(`${API_BASE}/api/audits/${seoAuditId}/run-seo`, { method: "POST" }).catch((err) =>
+              console.error("SEO report trigger failed:", err)
+            );
+          }
+        }
       } catch (err) {
         console.error("Failed to load audits:", err);
       } finally {
@@ -54,7 +68,7 @@ export default function Dashboard() {
       }
     };
     loadData();
-  }, [user, isLoadingAuth, navigate]);
+  }, [user, isLoadingAuth, navigate, searchParams]);
 
   const handleViewReport = (auditId) => navigate(`/report/${auditId}`);
   const handleDownloadPDF = (auditId) => window.open(`/report/${auditId}?print=true`, "_blank");
