@@ -318,9 +318,22 @@ export default function SubmitPage() {
     try {
       const result = await findFacebookCandidates({ pageName: form.businessName || form.name, businessName: form.businessName || form.name, website: form.website || null, email: form.email || null, city: form.city || null });
       setPreloadedCandidates(result.candidates?.length ? result.candidates : []);
-      if (result.websiteData?.seo_score) setSeoScore(result.websiteData.seo_score);
-      if (result.websiteData?.logo_url) setWebsiteLogoUrl(result.websiteData.logo_url);
-      else setWebsiteLogoUrl("");
+
+      if (form.website) {
+        try {
+          const scrapeRes = await fetch(`${API_BASE}/api/website/scrape`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ website_url: form.website, business_name: form.businessName || null, city: form.city || null }),
+          });
+          const scrapeData = await scrapeRes.json();
+          if (scrapeData.seo_score) setSeoScore(scrapeData.seo_score);
+          if (scrapeData.logo_url) setWebsiteLogoUrl(scrapeData.logo_url);
+          else setWebsiteLogoUrl("");
+        } catch (err) {
+          console.error("Website scrape failed:", err);
+        }
+      }
     } catch (err) {
       console.error("Background scrape failed:", err);
     } finally {
