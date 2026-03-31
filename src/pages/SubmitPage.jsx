@@ -354,7 +354,7 @@ export default function SubmitPage() {
         mainGoal: form.mainGoal, postingFrequency: form.postingFrequency, contentType: form.contentType,
         seoScore: seoScore, facebookNotFound: facebookNotFound, auditId: data.audit.id,
       }));
-      fetch(`${API_BASE}/api/audits/${data.audit.id}/seo-score`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ score: seoScore }) }).catch(() => {}); navigate("/audit-preview");
+      fetch(`${API_BASE}/api/audits/${data.audit.id}/seo-score`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ score: seoScore?.score ?? seoScore }) }).catch((err) => console.error("[SEO SCORE SAVE ERROR]:", err)); navigate("/audit-preview");
     } catch (err) {
       console.error("[AUDIT ERROR]:", err);
       alert("Error creating audit. Please try again.");
