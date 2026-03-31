@@ -92,8 +92,8 @@ function HelpFindPage({ businessName, city, onUrlFound, onSkip }) {
         </button>
       )}
 
-      <button type="button" onClick={onSkip} className="mt-4 text-sm text-gray-400 hover:text-gray-600">
-        Skip — I don't have a Facebook page yet
+      <button type="button" onClick={onSkip} className="mt-4 text-sm text-[#1877F2] font-semibold hover:underline">
+        Skip for now — include this fix in my report
       </button>
     </div>
   );
@@ -231,10 +231,6 @@ function FacebookPageFinder({ value, onChange, businessName, website, city, emai
                 <p className="text-xs text-gray-500 truncate">{currentUrl}</p>
               </div>
             </div>
-
-            <a href={currentUrl} target="_blank" rel="noopener noreferrer" className="w-full bg-[#1877F2] text-white text-sm font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-[#1457C0] transition-colors mb-3">
-              Preview This Page <ExternalLink className="w-4 h-4" />
-            </a>
 
             <button type="button" onClick={() => handleConfirm(currentUrl)} className="w-full bg-green-500 text-white text-base font-bold py-4 rounded-xl hover:bg-green-600 transition-colors">
               Yes, That's Mine!
@@ -493,7 +489,7 @@ export default function SubmitPage() {
                   {preloadedCandidates.length ? "We found some possible matches!" : "Find Your Facebook Page"}
                 </h1>
                 <p className="text-sm text-gray-400 mb-4">
-                  {preloadedCandidates.length ? "Tap preview and confirm which one is yours." : "We'll search using your business name and website to help find the right Facebook page."}
+                  {preloadedCandidates.length ? "Confirm which one is yours." : "We'll search using your business name and website to help find the right Facebook page."}
                 </p>
                 <FacebookPageFinder
                   value={form.facebook_url}
