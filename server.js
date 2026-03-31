@@ -13,21 +13,7 @@ if (!fs.existsSync(path.join(__dirname, 'dist'))) {
 }
 
 const app = express();
-express.static.mime.define({
-  'application/javascript': ['js', 'mjs'],
-  'text/css': ['css'],
-  'image/svg+xml': ['svg'],
-  'application/json': ['json'],
-});
-app.use(express.static(path.join(__dirname, 'dist'), {
-  setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.js') || filePath.endsWith('.mjs')) {
-      res.setHeader('Content-Type', 'application/javascript');
-    } else if (filePath.endsWith('.css')) {
-      res.setHeader('Content-Type', 'text/css');
-    }
-  },
-}));
+app.use(express.static(path.join(__dirname, 'dist')));
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
