@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, Loader2, CheckCircle, Shield } from "lucide-react";
 import { trackEvent, EVENTS } from "@/utils/tracking";
@@ -41,6 +41,8 @@ export default function PreviewReport() {
   const [error, setError] = useState(null);
   const [unlocking, setUnlocking] = useState(false);
   const [msgIndex, setMsgIndex] = useState(0);
+  const [autoUnlock, setAutoUnlock] = useState(false);
+  const orderRef = useRef(null);
   const { display: timerDisplay, expired: timerExpired } = useCountdown(10);
 
   useEffect(() => {
@@ -60,18 +62,24 @@ export default function PreviewReport() {
         return;
       }
       const orderData = JSON.parse(savedOrder);
+      orderRef.current = orderData;
       setOrder(orderData);
       await trackEvent(EVENTS.PREVIEW_VIEWED, {
         email: orderData.email,
         facebookUrl: orderData.pageUrl,
       });
-      setLoading(false); setTimeout(() => handleUnlock(), 3000); }; init();
+      setLoading(false);
+      setTimeout(() => setAutoUnlock(true), 3000);
+    };
+    init();
   }, []);
 
-  const handleUnlock = async () => {
+  const handleUnlock = useCallback(async () => {
+    const currentOrder = orderRef.current;
+    if (!currentOrder) return;
     await trackEvent(EVENTS.UNLOCK_CLICKED, {
-      email: order?.email,
-      facebookUrl: order?.pageUrl,
+      email: currentOrder.email,
+      facebookUrl: currentOrder.pageUrl,
     });
     setUnlocking(true);
     try {
@@ -79,9 +87,9 @@ export default function PreviewReport() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          audit_id: order.auditId,
-          email: order.email,
-          customer_name: order.name,
+          audit_id: currentOrder.auditId,
+          email: currentOrder.email,
+          customer_name: currentOrder.name,
         }),
       });
       const data = await res.json();
@@ -95,7 +103,11 @@ export default function PreviewReport() {
       alert("Something went wrong. Please try again.");
       setUnlocking(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (autoUnlock && orderRef.current) handleUnlock();
+  }, [autoUnlock, handleUnlock]);
 
   if (error) {
     return (
