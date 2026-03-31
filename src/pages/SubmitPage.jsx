@@ -232,6 +232,10 @@ function FacebookPageFinder({ value, onChange, businessName, website, city, emai
               </div>
             </div>
 
+            <a href={currentUrl} target="_blank" rel="noopener noreferrer" className="w-full bg-[#1877F2] text-white text-sm font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-[#1457C0] transition-colors mb-3">
+              Open This Page <ExternalLink className="w-4 h-4" />
+            </a>
+
             <button type="button" onClick={() => handleConfirm(currentUrl)} className="w-full bg-green-500 text-white text-base font-bold py-4 rounded-xl hover:bg-green-600 transition-colors">
               Yes, That's Mine!
             </button>
