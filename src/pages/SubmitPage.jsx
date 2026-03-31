@@ -72,131 +72,29 @@ function OptionCard({ selected, onClick, children }) {
 
 function HelpFindPage({ businessName, city, onUrlFound, onSkip }) {
   const [pasteUrl, setPasteUrl] = useState("");
-  const [uploadLoading, setUploadLoading] = useState(false);
-  const [uploadError, setUploadError] = useState("");
-  const googleSearchUrl = `https://www.google.com/search?q=site:facebook.com+"${encodeURIComponent(businessName || '')}"${city ? `+"${encodeURIComponent(city)}"` : ''}`;
-
-  const handleScreenshot = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setUploadLoading(true);
-    setUploadError("");
-    try {
-      const reader = new FileReader();
-      reader.onload = async (ev) => {
-        const base64 = ev.target.result.split(",")[1];
-        const res = await fetch(`${API_BASE}/api/extract-facebook-url`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ image: base64, businessName }),
-        });
-        const data = await res.json();
-        if (data.facebook_url) {
-          onUrlFound(data.facebook_url);
-        } else {
-          setUploadError("We couldn't read a Facebook URL from that screenshot. Try pasting it manually below.");
-        }
-      };
-      reader.readAsDataURL(file);
-    } catch (err) {
-      setUploadError("Something went wrong. Try pasting the URL manually.");
-    } finally {
-      setUploadLoading(false);
-    }
-  };
 
   return (
-    <div className="space-y-4">
-      <div className="bg-[#1877F2] rounded-2xl p-5 text-white text-center">
-        <div className="text-4xl mb-2">🎯</div>
-        <h2 className="text-lg font-bold mb-2">Good News — We Just Found Your First Problem!</h2>
-        <p className="text-sm text-blue-100 leading-relaxed">Your Facebook page wasn't easy for us to find — and if WE had trouble, your customers definitely do. <strong className="text-white">That's exactly what PageAudit Pro fixes.</strong></p>
-      </div>
+    <div className="flex flex-col items-center text-center">
+      <div className="text-6xl mb-4">🔍</div>
+      <h2 className="text-xl font-bold text-gray-900 mb-2">We already found your #1 problem!</h2>
+      <p className="text-sm text-gray-500 leading-relaxed mb-1">If we can't find your Facebook page, neither can your customers.</p>
+      <p className="text-sm text-gray-500 leading-relaxed mb-6">Your audit will include a step-by-step visibility fix.</p>
 
-      <div className="bg-orange-50 border border-orange-200 rounded-2xl px-4 py-3 text-center">
-        <p className="text-xs text-orange-700 font-medium">📉 Every day your page is hard to find = customers calling your competitor. Your audit shows you exactly how to fix this.</p>
-      </div>
+      <a href="https://www.facebook.com" target="_blank" rel="noopener noreferrer" className="w-full bg-[#1877F2] text-white text-base font-bold py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-[#1457C0] transition-colors mb-4">
+        Open Facebook <ExternalLink className="w-4 h-4" />
+      </a>
 
-      <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-        <div className="bg-gray-50 px-4 py-3 border-b border-gray-100">
-          <p className="text-sm font-bold text-gray-900 text-center">Super easy — here's how to grab it:</p>
-        </div>
-
-        <div className="p-4 border-b border-gray-100">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 rounded-full bg-[#1877F2] flex items-center justify-center shrink-0">
-              <span className="text-white text-sm font-bold">1</span>
-            </div>
-            <div>
-              <p className="text-sm font-bold text-gray-900">Open Facebook</p>
-              <p className="text-xs text-gray-500 leading-relaxed">Tap the blue button below to open Facebook. Once it opens, find your business page — look for your business name and profile photo. When you see your page, look at the very top of your screen where it shows the website address starting with <strong>facebook.com</strong>. Press and hold that address, tap Select All, then tap Copy. Then come back here and paste it in the box below.</p>
-            </div>
-          </div>
-          <a href="https://www.facebook.com" target="_blank" rel="noopener noreferrer" className="w-full bg-[#1877F2] text-white text-sm font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-[#1457C0] transition-colors">
-            📘 Open Facebook — Get My URL
-          </a>
-          <div className="mt-2 bg-yellow-50 border border-yellow-100 rounded-xl px-3 py-2">
-            <p className="text-xs text-yellow-700">💡 <strong>Tip:</strong> You'll know it's your page when you see your business name, your profile photo, and your posts.</p>
-          </div>
-        </div>
-
-        <div className="p-4 border-b border-gray-100">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 rounded-full bg-[#1877F2] flex items-center justify-center shrink-0">
-              <span className="text-white text-sm font-bold">2</span>
-            </div>
-            <div>
-              <p className="text-sm font-bold text-gray-900">Search Google for my page</p>
-              <p className="text-xs text-gray-500">We pre-fill the search — just tap the result and copy the URL</p>
-            </div>
-          </div>
-          <a href={googleSearchUrl} target="_blank" rel="noopener noreferrer" className="w-full bg-white border-2 border-gray-200 text-gray-700 text-sm font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:border-[#1877F2] transition-colors">
-            🔍 Search Google for My Page
-          </a>
-        </div>
-
-        <div className="p-4 border-b border-gray-100">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 rounded-full bg-[#1877F2] flex items-center justify-center shrink-0">
-              <span className="text-white text-sm font-bold">3</span>
-            </div>
-            <div>
-              <p className="text-sm font-bold text-gray-900">Upload a screenshot</p>
-              <p className="text-xs text-gray-500">Screenshot your Facebook page — our AI reads the URL automatically</p>
-            </div>
-          </div>
-          <label className="w-full bg-white border-2 border-dashed border-gray-200 text-gray-700 text-sm font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:border-[#1877F2] transition-colors cursor-pointer">
-            {uploadLoading ? <><div className="w-4 h-4 border-2 border-gray-200 border-t-blue-500 rounded-full animate-spin" /> Reading screenshot...</> : <><span>📸</span> Upload Screenshot</>}
-            <input type="file" accept="image/*" className="hidden" onChange={handleScreenshot} />
-          </label>
-          {uploadError && <p className="text-xs text-red-500 mt-2 text-center">{uploadError}</p>}
-        </div>
-
-        <div className="p-4">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 rounded-full bg-[#1877F2] flex items-center justify-center shrink-0">
-              <span className="text-white text-sm font-bold">4</span>
-            </div>
-            <div>
-              <p className="text-sm font-bold text-gray-900">Paste your Facebook URL</p>
-              <p className="text-xs text-gray-500">Works with any format — even profile.php?id=... links</p>
-            </div>
-          </div>
-          <input type="url" placeholder="https://www.facebook.com/yourbusiness" value={pasteUrl} onChange={(e) => setPasteUrl(e.target.value)} className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#1877F2] transition-all" />
-          {pasteUrl && pasteUrl.includes("facebook.com") && (
-            <button type="button" onClick={() => onUrlFound(pasteUrl)} className="mt-2 w-full bg-green-500 text-white text-sm font-bold py-3 rounded-xl hover:bg-green-600 transition-colors">
-              Use This URL
-            </button>
-          )}
-        </div>
-      </div>
-
-      <div className="text-center py-2">
-        <p className="text-xs text-gray-400 mb-1">No Facebook page yet? No problem.</p>
-        <button type="button" onClick={onSkip} className="text-sm text-[#1877F2] font-semibold hover:underline">
-          Skip — show me how to set one up in my audit
+      <p className="text-xs text-gray-400 mb-2">Find your page, copy the URL, and paste it here:</p>
+      <input type="url" placeholder="https://www.facebook.com/yourbusiness" value={pasteUrl} onChange={(e) => setPasteUrl(e.target.value)} className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3.5 text-sm text-center focus:outline-none focus:border-[#1877F2] transition-all" />
+      {pasteUrl && pasteUrl.includes("facebook.com") && (
+        <button type="button" onClick={() => onUrlFound(pasteUrl)} className="mt-3 w-full bg-green-500 text-white text-sm font-bold py-3.5 rounded-2xl hover:bg-green-600 transition-colors">
+          Use This URL
         </button>
-      </div>
+      )}
+
+      <button type="button" onClick={onSkip} className="mt-4 text-sm text-gray-400 hover:text-gray-600">
+        Skip — I don't have a Facebook page yet
+      </button>
     </div>
   );
 }
@@ -212,6 +110,7 @@ function FacebookPageFinder({ value, onChange, businessName, website, city, emai
   const [rejectedUrls, setRejectedUrls] = useState([]);
   const [showHelper, setShowHelper] = useState(false);
   const [pasteUrl, setPasteUrl] = useState("");
+  const [cardIndex, setCardIndex] = useState(0);
 
   useEffect(() => {
     if (preloadedCandidates?.length && !searched) {
@@ -229,6 +128,7 @@ function FacebookPageFinder({ value, onChange, businessName, website, city, emai
     setCandidates([]);
     setRejectedUrls([]);
     setShowHelper(false);
+    setCardIndex(0);
     try {
       const result = await findFacebookCandidates({ pageName: searchName, businessName: searchName, website: website || null, email: email || null, city: city || null });
       if (result.candidates?.length) {
@@ -252,11 +152,16 @@ function FacebookPageFinder({ value, onChange, businessName, website, city, emai
     onChange(url);
   };
 
-  const handleReject = (url) => {
+  const handleNotMine = () => {
+    const url = visibleCandidates[cardIndex];
     const newRejected = [...rejectedUrls, url];
     setRejectedUrls(newRejected);
     const remaining = candidates.filter(c => !newRejected.includes(c));
-    if (remaining.length === 0) setShowHelper(true);
+    if (remaining.length === 0) {
+      setShowHelper(true);
+    } else {
+      setCardIndex(Math.min(cardIndex, remaining.length - 1));
+    }
   };
 
   const handleStartOver = () => {
@@ -268,10 +173,12 @@ function FacebookPageFinder({ value, onChange, businessName, website, city, emai
     setRejectedUrls([]);
     setShowHelper(false);
     setPasteUrl("");
+    setCardIndex(0);
     onChange("");
   };
 
   const visibleCandidates = candidates.filter(c => !rejectedUrls.includes(c));
+  const currentUrl = visibleCandidates[cardIndex];
 
   if (confirmed) {
     return (
@@ -293,7 +200,7 @@ function FacebookPageFinder({ value, onChange, businessName, website, city, emai
   }
 
   if (showHelper) {
-    return <HelpFindPage businessName={businessName} city={city} onUrlFound={handleConfirm} onSkip={() => onChange("skip")} />;
+    return <HelpFindPage businessName={businessName} city={city} onUrlFound={handleConfirm} onSkip={() => { onChange("skip"); }} />;
   }
 
   return (
@@ -306,54 +213,53 @@ function FacebookPageFinder({ value, onChange, businessName, website, city, emai
             {searching || scrapeLoading ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Finding...</> : <><span>🔍</span> Find</>}
           </button>
         </div>
-        {businessName && <p className="text-xs text-green-600 mt-1.5 font-medium">Using your business name to find better matches</p>}
       </div>
 
-      {searched && visibleCandidates.length > 0 && (
-        <div className="space-y-3">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">
-            {visibleCandidates.length === 1 ? "Is this your page?" : `We found ${visibleCandidates.length} possible matches — tap to preview:`}
-          </p>
-          {visibleCandidates.map((url) => (
-            <div key={url} className="border-2 border-blue-100 bg-blue-50 rounded-2xl p-4">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-full bg-[#1877F2] flex items-center justify-center shrink-0">
-                  <span className="text-white text-sm font-bold">{(searchName || businessName || "?").charAt(0).toUpperCase()}</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-gray-900 truncate">{searchName || businessName}</p>
-                  <p className="text-xs text-gray-500 truncate">{url}</p>
-                </div>
+      {searched && visibleCandidates.length > 0 && currentUrl && (
+        <div>
+          {visibleCandidates.length > 1 && (
+            <p className="text-xs text-gray-400 text-center mb-3">{cardIndex + 1} of {visibleCandidates.length} possible matches</p>
+          )}
+
+          <div className="border-2 border-blue-100 bg-blue-50 rounded-2xl p-5">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-[#1877F2] flex items-center justify-center shrink-0">
+                <span className="text-white text-lg font-bold">{(searchName || businessName || "?").charAt(0).toUpperCase()}</span>
               </div>
-              <div className="flex gap-2">
-                <a href={url} target="_blank" rel="noopener noreferrer" className="flex-1 bg-[#1877F2] text-white text-xs font-bold py-2.5 rounded-xl flex items-center justify-center gap-1 hover:bg-[#1457C0] transition-colors">
-                  👁 Preview This Page
-                </a>
-                <button type="button" onClick={() => handleConfirm(url)} className="flex-1 bg-green-500 text-white text-xs font-bold py-2.5 rounded-xl hover:bg-green-600 transition-colors">
-                  Yes, That's Mine!
-                </button>
-                <button type="button" onClick={() => handleReject(url)} className="flex-1 bg-gray-100 text-gray-500 text-xs font-bold py-2.5 rounded-xl hover:bg-gray-200 transition-colors">
-                  No
-                </button>
+              <div className="flex-1 min-w-0">
+                <p className="text-base font-bold text-gray-900 truncate">{searchName || businessName}</p>
+                <p className="text-xs text-gray-500 truncate">{currentUrl}</p>
               </div>
             </div>
-          ))}
+
+            <a href={currentUrl} target="_blank" rel="noopener noreferrer" className="w-full bg-[#1877F2] text-white text-sm font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-[#1457C0] transition-colors mb-3">
+              Preview This Page <ExternalLink className="w-4 h-4" />
+            </a>
+
+            <button type="button" onClick={() => handleConfirm(currentUrl)} className="w-full bg-green-500 text-white text-base font-bold py-4 rounded-xl hover:bg-green-600 transition-colors">
+              Yes, That's Mine!
+            </button>
+
+            <button type="button" onClick={handleNotMine} className="w-full text-sm text-gray-400 hover:text-gray-600 py-3">
+              Not mine{visibleCandidates.length > 1 && cardIndex < visibleCandidates.length - 1 ? " — show next" : ""}
+            </button>
+          </div>
+
+          {visibleCandidates.length > 1 && (
+            <div className="flex justify-center gap-3 mt-3">
+              <button type="button" disabled={cardIndex === 0} onClick={() => setCardIndex(cardIndex - 1)} className="text-sm text-[#1877F2] font-semibold disabled:text-gray-300 disabled:cursor-not-allowed">
+                <ArrowLeft className="w-4 h-4 inline mr-1" />Previous
+              </button>
+              <button type="button" disabled={cardIndex >= visibleCandidates.length - 1} onClick={() => setCardIndex(cardIndex + 1)} className="text-sm text-[#1877F2] font-semibold disabled:text-gray-300 disabled:cursor-not-allowed">
+                Next<ArrowLeft className="w-4 h-4 inline ml-1 rotate-180" />
+              </button>
+            </div>
+          )}
         </div>
       )}
 
-      <div className="bg-blue-50 border border-blue-100 rounded-2xl px-4 py-3 flex items-center justify-between gap-3">
-        <div>
-          <p className="text-xs font-bold text-blue-800 mb-0.5">Already logged into Facebook?</p>
-          <p className="text-xs text-blue-600">Open it, find your page, copy the URL and paste it below.</p>
-        </div>
-        <a href="https://www.facebook.com" target="_blank" rel="noopener noreferrer" className="shrink-0 bg-[#1877F2] text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center gap-1 hover:bg-[#1457C0] transition-colors">
-          Open FB <ExternalLink className="w-3 h-3" />
-        </a>
-      </div>
-
       <div className="border-t border-gray-100 pt-4">
-        <p className="text-xs text-gray-500 mb-1 font-semibold">Or paste your Facebook URL directly:</p>
-        <p className="text-xs text-gray-400 mb-2">Works with any format including profile.php?id=... links!</p>
+        <p className="text-xs text-gray-500 mb-2 font-semibold">Or paste your Facebook URL directly:</p>
         <input type="url" placeholder="https://www.facebook.com/yourbusiness" value={pasteUrl} onChange={(e) => { setPasteUrl(e.target.value); if (e.target.value.includes("facebook.com")) onChange(e.target.value); }} className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#1877F2] transition-all" />
         {pasteUrl && pasteUrl.includes("facebook.com") && (
           <button type="button" onClick={() => handleConfirm(pasteUrl)} className="mt-2 w-full bg-green-500 text-white text-sm font-bold py-3 rounded-2xl hover:bg-green-600 transition-colors">Use This URL</button>
@@ -362,7 +268,7 @@ function FacebookPageFinder({ value, onChange, businessName, website, city, emai
 
       <p className="text-center text-xs text-gray-400">
         Can't find it?{" "}
-        <button type="button" onClick={() => setShowHelper(true)} className="text-[#1877F2] font-semibold hover:underline">Get help finding your page</button>
+        <button type="button" onClick={() => setShowHelper(true)} className="text-[#1877F2] font-semibold hover:underline">Get help</button>
       </p>
     </div>
   );
@@ -430,11 +336,13 @@ export default function SubmitPage() {
     try {
       const utm = getStoredUtmParams() || {};
       const fbUrl = form.facebook_url === "skip" ? "" : form.facebook_url || "";
+      const facebookNotFound = !fbUrl || form.facebook_url === "skip";
       const res = await fetch(`${API_BASE}/api/audits`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           customer_name: form.name, email: form.email, facebook_url: fbUrl,
+          facebook_not_found: facebookNotFound,
           account_type: "Business", goals: form.mainGoal.join(", "),
           posting_frequency: form.postingFrequency, content_type: form.contentType,
           website: form.website || null, city: form.city || null, business_name: form.businessName || null,
@@ -448,7 +356,7 @@ export default function SubmitPage() {
         name: form.name, email: form.email, website: form.website, businessName: form.businessName,
         pageUrl: fbUrl, businessType: "Business", city: form.city, review_type: "Business",
         mainGoal: form.mainGoal, postingFrequency: form.postingFrequency, contentType: form.contentType,
-        seoScore: seoScore, auditId: data.audit.id,
+        seoScore: seoScore, facebookNotFound: facebookNotFound, auditId: data.audit.id,
       }));
       fetch(`${API_BASE}/api/audits/${data.audit.id}/seo-score`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ score: seoScore }) }).catch(() => {}); navigate("/audit-preview");
     } catch (err) {
@@ -582,10 +490,10 @@ export default function SubmitPage() {
             {step === 6 && (
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-1">
-                  {preloadedCandidates.length ? "We found your page!" : "Find Your Facebook Page"}
+                  {preloadedCandidates.length ? "We found some possible matches!" : "Find Your Facebook Page"}
                 </h1>
                 <p className="text-sm text-gray-400 mb-4">
-                  {preloadedCandidates.length ? "We found this automatically - is it correct?" : "We'll search using your business name and website to help find the right Facebook page."}
+                  {preloadedCandidates.length ? "Tap preview and confirm which one is yours." : "We'll search using your business name and website to help find the right Facebook page."}
                 </p>
                 <FacebookPageFinder
                   value={form.facebook_url}
