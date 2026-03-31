@@ -88,6 +88,13 @@ const markdownComponents = {
   h3: ({ children }) => <h3 className="text-sm font-bold text-[#1877F2] mt-5 mb-2 uppercase tracking-wide">{children}</h3>,
   blockquote: ({ children }) => <blockquote className="border-l-4 border-[#1877F2] bg-blue-50 rounded-r-xl px-5 py-4 my-5 text-gray-800 italic text-sm leading-relaxed">{children}</blockquote>,
   hr: () => <hr className="border-gray-200 my-6" />,
+  pre: ({ children }) => <pre className="bg-gray-900 text-green-300 rounded-xl p-4 my-4 text-xs leading-relaxed overflow-x-auto whitespace-pre-wrap break-all">{children}</pre>,
+  code: ({ children, className }) => {
+    if (className || (typeof children === 'string' && children.includes('\n'))) {
+      return <code className="block">{children}</code>;
+    }
+    return <code className="bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-xs font-mono">{children}</code>;
+  },
 };
 
 function SectionedReport({ text }) {
