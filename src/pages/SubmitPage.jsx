@@ -368,7 +368,9 @@ export default function SubmitPage() {
         mainGoal: form.mainGoal, postingFrequency: form.postingFrequency, contentType: form.contentType,
         seoScore: seoScore, facebookNotFound: facebookNotFound, auditId: data.audit.id,
       }));
-      fetch(`${API_BASE}/api/audits/${data.audit.id}/seo-score`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ score: seoScore?.score ?? seoScore }) }).catch((err) => console.error("[SEO SCORE SAVE ERROR]:", err)); navigate("/audit-preview");
+      const seoValue = seoScore?.score ?? seoScore;
+      console.log("[SEO SCORE DEBUG]:", { raw: seoScore, sending: seoValue, auditId: data.audit.id });
+      fetch(`${API_BASE}/api/audits/${data.audit.id}/seo-score`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ score: seoValue }) }).catch((err) => console.error("[SEO SCORE SAVE ERROR]:", err)); navigate("/audit-preview");
     } catch (err) {
       console.error("[AUDIT ERROR]:", err);
       alert("Error creating audit. Please try again.");
@@ -499,12 +501,16 @@ export default function SubmitPage() {
 
             {step === 6 && (
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-1">
-                  {preloadedCandidates.length ? "We found some possible matches!" : "Find Your Facebook Page"}
-                </h1>
-                <p className="text-sm text-gray-400 mb-4">
-                  {preloadedCandidates.length ? "Confirm which one is yours." : "We'll search using your business name and website to help find the right Facebook page."}
-                </p>
+                {!form.facebook_url && (
+                  <>
+                    <h1 className="text-2xl font-bold text-gray-900 mb-1">
+                      {preloadedCandidates.length ? "We found some possible matches!" : "Find Your Facebook Page"}
+                    </h1>
+                    <p className="text-sm text-gray-400 mb-4">
+                      {preloadedCandidates.length ? "Confirm which one is yours." : "We'll search using your business name and website to help find the right Facebook page."}
+                    </p>
+                  </>
+                )}
                 <FacebookPageFinder
                   value={form.facebook_url}
                   onChange={(url) => set("facebook_url", url)}
