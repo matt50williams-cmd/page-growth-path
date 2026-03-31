@@ -86,8 +86,10 @@ export default function Dashboard() {
     );
   }
 
-  const latestAudit = audits[0];
-  const seoScore = latestAudit?.seo_score;
+  const latestFacebookAudit = audits.find(a => a.account_type !== "SEO Audit") || null;
+  const latestAudit = latestFacebookAudit || audits[0];
+  const seoAudit = audits.find(a => a.seo_score != null) || latestAudit;
+  const seoScore = seoAudit?.seo_score;
   const seoNum = seoScore != null ? Math.round(typeof seoScore === 'object' ? seoScore.score : seoScore) : null;
 
   return (
