@@ -545,7 +545,7 @@ export default function SubmitPage() {
                   <ArrowLeft className="w-4 h-4" /> Back
                 </button>
               )}
-              <button type="button" disabled={!canNext() || isSubmitting} onClick={() => { if (step === 1 && !validateEmailField(form.email)) return; if (step === 2) fireBackgroundScrape(); if (step < TOTAL_STEPS) goToStep(step + 1); else handleSubmit(); }} className="inline-flex items-center gap-2 bg-[#1877F2] text-white px-6 py-3.5 text-sm font-bold rounded-2xl hover:bg-[#1457C0] transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-md shadow-blue-100">
+              <button type="button" disabled={!canNext() || isSubmitting} onClick={() => { if (step === 1 && !validateEmailField(form.email)) return; const stepEvents = [EVENTS.STEP_1_COMPLETED, EVENTS.STEP_2_COMPLETED, EVENTS.STEP_3_COMPLETED, EVENTS.STEP_4_COMPLETED, EVENTS.STEP_5_COMPLETED, EVENTS.STEP_6_COMPLETED]; trackEvent(stepEvents[step - 1], { email: form.email }); if (step === 2) fireBackgroundScrape(); if (step < TOTAL_STEPS) goToStep(step + 1); else handleSubmit(); }} className="inline-flex items-center gap-2 bg-[#1877F2] text-white px-6 py-3.5 text-sm font-bold rounded-2xl hover:bg-[#1457C0] transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-md shadow-blue-100">
                 {step === TOTAL_STEPS ? (isSubmitting ? "Submitting..." : "Get My Audit →") : "Next →"}
               </button>
             </div>

@@ -27,6 +27,12 @@ export async function trackEvent(eventType, options = {}) {
 export const EVENTS = {
   LANDING_VIEWED: 'landing_viewed',
   INTAKE_STARTED: 'intake_started',
+  STEP_1_COMPLETED: 'step_1_completed',
+  STEP_2_COMPLETED: 'step_2_completed',
+  STEP_3_COMPLETED: 'step_3_completed',
+  STEP_4_COMPLETED: 'step_4_completed',
+  STEP_5_COMPLETED: 'step_5_completed',
+  STEP_6_COMPLETED: 'step_6_completed',
   INTAKE_SUBMITTED: 'intake_submitted',
   PREVIEW_VIEWED: 'preview_viewed',
   UNLOCK_CLICKED: 'unlock_clicked',

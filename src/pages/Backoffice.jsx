@@ -165,11 +165,60 @@ export default function Backoffice() {
           <div className="space-y-6">
             {funnel ? (
               <>
+                {funnel.steps?.length > 0 && (
+                  <div className="bg-white border border-gray-100 rounded-2xl p-6">
+                    <h3 className="font-bold text-gray-900 mb-2">Step-by-Step Funnel</h3>
+                    <p className="text-xs text-gray-400 mb-6">Unique users who completed each step (last {funnel.lookback_days || 30} days)</p>
+                    <div className="space-y-1">
+                      {funnel.steps.map((s, i) => {
+                        const first = funnel.steps[0]?.count || 1;
+                        const pct = first > 0 ? Math.round((s.count / first) * 100) : 0;
+                        const prev = i > 0 ? funnel.steps[i - 1] : null;
+                        const dropPct = prev && prev.count > 0 ? Math.round(((prev.count - s.count) / prev.count) * 100) : 0;
+                        const barColors = ["bg-blue-500","bg-blue-500","bg-blue-400","bg-blue-400","bg-blue-300","bg-blue-300","bg-blue-300","bg-green-500","bg-green-600"];
+                        return (
+                          <div key={s.event_type}>
+                            {i > 0 && dropPct > 0 && (
+                              <div className="flex items-center gap-2 py-1 pl-4">
+                                <div className="w-px h-4 bg-red-200" />
+                                <span className="text-xs font-semibold text-red-400">-{dropPct}% drop-off ({prev.count - s.count} lost)</span>
+                              </div>
+                            )}
+                            <div className="flex items-center gap-4">
+                              <div className="w-48 shrink-0">
+                                <p className="text-sm font-medium text-gray-700 truncate">{s.label}</p>
+                              </div>
+                              <div className="flex-1 h-8 bg-gray-100 rounded-lg overflow-hidden relative">
+                                <div className={`h-full ${barColors[i] || "bg-blue-400"} rounded-lg transition-all duration-500`} style={{ width: `${Math.max(pct, 2)}%` }} />
+                                <span className="absolute inset-0 flex items-center justify-center text-xs font-bold" style={{ color: pct > 40 ? "white" : "#374151" }}>{s.count}</span>
+                              </div>
+                              <div className="w-14 text-right shrink-0">
+                                <span className={`text-sm font-bold ${pct >= 70 ? "text-green-600" : pct >= 40 ? "text-yellow-500" : "text-red-500"}`}>{pct}%</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {funnel.steps.length >= 2 && (() => {
+                      const first = funnel.steps[0]?.count || 0;
+                      const last = funnel.steps[funnel.steps.length - 1]?.count || 0;
+                      const overallPct = first > 0 ? ((last / first) * 100).toFixed(1) : 0;
+                      return (
+                        <div className="mt-6 pt-4 border-t border-gray-100 flex items-center justify-between">
+                          <span className="text-sm font-semibold text-gray-600">Overall Conversion</span>
+                          <span className="text-lg font-extrabold text-[#1877F2]">{overallPct}%</span>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+
                 <div className="bg-white border border-gray-100 rounded-2xl p-6">
-                  <h3 className="font-bold text-gray-900 mb-6">Conversion Funnel</h3>
-                  <div className="space-y-4">{funnel.counts?.map(({event_type,count})=>{const first=funnel.counts[0]?.count||1;const pct=Math.round((count/first)*100);return(<div key={event_type}><div className="flex justify-between text-sm mb-1"><span className="capitalize font-medium">{event_type.replace(/_/g," ")}</span><span className="font-bold">{count} ({pct}%)</span></div><div className="h-3 bg-gray-100 rounded-full overflow-hidden"><div className="h-full bg-[#1877F2] rounded-full" style={{width:`${pct}%`}} /></div></div>);})}</div>
+                  <h3 className="font-bold text-gray-900 mb-6">All Event Counts</h3>
+                  <div className="space-y-4">{funnel.funnel_counts?.map(({event_type,count})=>{const first=funnel.funnel_counts[0]?.count||1;const pct=Math.round((count/first)*100);return(<div key={event_type}><div className="flex justify-between text-sm mb-1"><span className="capitalize font-medium">{event_type.replace(/_/g," ")}</span><span className="font-bold">{count} ({pct}%)</span></div><div className="h-3 bg-gray-100 rounded-full overflow-hidden"><div className="h-full bg-[#1877F2] rounded-full" style={{width:`${pct}%`}} /></div></div>);})}</div>
                 </div>
-                {funnel.dropoffs?.length>0&&(<div className="bg-white border border-gray-100 rounded-2xl p-6"><h3 className="font-bold text-gray-900 mb-4">Drop-offs</h3><table className="w-full text-sm"><thead><tr className="border-b border-gray-100"><th className="text-left text-xs font-bold text-gray-500 uppercase px-4 py-3">Email</th><th className="text-left text-xs font-bold text-gray-500 uppercase px-4 py-3">Source</th><th className="text-left text-xs font-bold text-gray-500 uppercase px-4 py-3">Date</th></tr></thead><tbody className="divide-y divide-gray-50">{funnel.dropoffs.slice(0,20).map((d,i)=>(<tr key={i}><td className="px-4 py-3">{d.email||"--"}</td><td className="px-4 py-3 text-xs text-gray-500">{d.utm_source||"direct"}</td><td className="px-4 py-3 text-xs text-gray-400">{d.created_at?new Date(d.created_at).toLocaleDateString():"--"}</td></tr>))}</tbody></table></div>)}
+                {funnel.dropoffs?.length>0&&(<div className="bg-white border border-gray-100 rounded-2xl p-6"><h3 className="font-bold text-gray-900 mb-4">Drop-offs (Started but didn't pay)</h3><table className="w-full text-sm"><thead><tr className="border-b border-gray-100"><th className="text-left text-xs font-bold text-gray-500 uppercase px-4 py-3">Email</th><th className="text-left text-xs font-bold text-gray-500 uppercase px-4 py-3">Source</th><th className="text-left text-xs font-bold text-gray-500 uppercase px-4 py-3">Date</th></tr></thead><tbody className="divide-y divide-gray-50">{funnel.dropoffs.slice(0,20).map((d,i)=>(<tr key={i}><td className="px-4 py-3">{d.email||"--"}</td><td className="px-4 py-3 text-xs text-gray-500">{d.utm_source||"direct"}</td><td className="px-4 py-3 text-xs text-gray-400">{d.created_at?new Date(d.created_at).toLocaleDateString():"--"}</td></tr>))}</tbody></table></div>)}
               </>
             ) : (<div className="bg-white border border-gray-100 rounded-2xl p-8 text-center"><p className="text-gray-400">No funnel data yet</p></div>)}
           </div>
