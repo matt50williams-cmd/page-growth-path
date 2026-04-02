@@ -41,7 +41,6 @@ export default function PreviewReport() {
   const [error, setError] = useState(null);
   const [unlocking, setUnlocking] = useState(false);
   const [msgIndex, setMsgIndex] = useState(0);
-  const [autoUnlock, setAutoUnlock] = useState(false);
   const orderRef = useRef(null);
   const { display: timerDisplay, expired: timerExpired } = useCountdown(10);
 
@@ -69,7 +68,6 @@ export default function PreviewReport() {
         facebookUrl: orderData.pageUrl,
       });
       setLoading(false);
-      setTimeout(() => setAutoUnlock(true), 3000);
     };
     init();
   }, []);
@@ -104,10 +102,6 @@ export default function PreviewReport() {
       setUnlocking(false);
     }
   }, []);
-
-  useEffect(() => {
-    if (autoUnlock && orderRef.current) handleUnlock();
-  }, [autoUnlock, handleUnlock]);
 
   if (error) {
     return (
