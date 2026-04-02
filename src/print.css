@@ -1,0 +1,11 @@
+@media print {
+  @page {
+    margin: 15mm 18mm;
+    size: A4;
+  }
+  nav, .no-print, button { display: none !important; }
+  body { background: white !important; }
+  * { box-shadow: none !important; }
+  .bg-gradient-to-br { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .bg-\[\#f7f8fa\] { background: white !important; }
+}
