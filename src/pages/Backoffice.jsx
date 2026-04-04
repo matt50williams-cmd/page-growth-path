@@ -22,6 +22,7 @@ export default function Backoffice() {
   const [refreshing, setRefreshing] = useState(false);
   const [audits, setAudits] = useState([]);
   const [funnel, setFunnel] = useState(null);
+  const [reviewData, setReviewData] = useState(null);
   const [days, setDays] = useState(30);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [filterStatus, setFilterStatus] = useState("all");
@@ -37,12 +38,14 @@ export default function Backoffice() {
     try {
       const token = document.cookie.match(/pageaudit_token=([^;]+)/)?.[1] || localStorage.getItem("pageaudit_token");
       const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
-      const [auditsRes, funnelRes] = await Promise.all([
+      const [auditsRes, funnelRes, reviewsRes] = await Promise.all([
         fetch(`${API_BASE}/api/admin/audits`, { headers }),
-        fetch(`${API_BASE}/api/admin/funnel?days=${days}`, { headers })
+        fetch(`${API_BASE}/api/admin/funnel?days=${days}`, { headers }),
+        fetch(`${API_BASE}/api/admin/reviews`, { headers }).catch(() => null)
       ]);
       if (auditsRes.ok) setAudits(await auditsRes.json());
       if (funnelRes.ok) setFunnel(await funnelRes.json());
+      if (reviewsRes?.ok) setReviewData(await reviewsRes.json());
     } catch (err) { console.error(err); }
     finally { setLoading(false); setRefreshing(false); }
   };
@@ -261,10 +264,71 @@ export default function Backoffice() {
           </div>
         )}
         {activeTab==="reviews" && (
-          <div className="bg-white border border-gray-100 rounded-2xl p-8 text-center">
-            <Star className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Reviews Coming Soon</h3>
-            <p className="text-sm text-gray-500">Customer reviews will appear here once the feedback system is built.</p>
+          <div className="space-y-6">
+            {reviewData?.stats ? (
+              <>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <StatCard label="Total Reviews" value={reviewData.stats.total_reviews} sub={`${reviewData.stats.with_feedback} with feedback`} color="blue" icon={Star} />
+                  <StatCard label="Avg Rating" value={reviewData.stats.avg_rating ? `${reviewData.stats.avg_rating}/5` : "—"} sub="across all reviews" color="green" icon={Star} />
+                  <StatCard label="5-Star Reviews" value={reviewData.stats.distribution?.[5] || 0} sub={`${reviewData.stats.total_reviews ? Math.round(((reviewData.stats.distribution?.[5] || 0) / reviewData.stats.total_reviews) * 100) : 0}% of total`} color="purple" icon={Star} />
+                  <StatCard label="Low Ratings" value={(reviewData.stats.distribution?.[1] || 0) + (reviewData.stats.distribution?.[2] || 0)} sub="1-2 stars" color="orange" icon={Star} />
+                </div>
+
+                <div className="bg-white border border-gray-100 rounded-2xl p-6">
+                  <h3 className="font-bold text-gray-900 mb-4">Rating Distribution</h3>
+                  <div className="space-y-2">
+                    {[5, 4, 3, 2, 1].map(star => {
+                      const count = reviewData.stats.distribution?.[star] || 0;
+                      const total = reviewData.stats.total_reviews || 1;
+                      const pct = Math.round((count / total) * 100);
+                      return (
+                        <div key={star} className="flex items-center gap-3">
+                          <span className="text-sm font-medium text-gray-600 w-12 shrink-0">{star} star</span>
+                          <div className="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-yellow-400 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                          </div>
+                          <span className="text-sm font-bold text-gray-600 w-16 text-right">{count} ({pct}%)</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {reviewData.reviews?.length > 0 && (
+                  <div className="bg-white border border-gray-100 rounded-2xl p-6">
+                    <h3 className="font-bold text-gray-900 mb-4">All Reviews ({reviewData.reviews.length})</h3>
+                    <div className="space-y-4">
+                      {reviewData.reviews.map(r => (
+                        <div key={r.id} className="border border-gray-100 rounded-xl p-4">
+                          <div className="flex items-start justify-between mb-2">
+                            <div>
+                              <p className="text-sm font-semibold text-gray-900">{r.business_name || r.customer_name || r.email}</p>
+                              <p className="text-xs text-gray-400">{r.email}</p>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              {[1, 2, 3, 4, 5].map(s => (
+                                <Star key={s} className={`w-4 h-4 ${s <= r.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-200"}`} />
+                              ))}
+                            </div>
+                          </div>
+                          {r.feedback && <p className="text-sm text-gray-600 italic">"{r.feedback}"</p>}
+                          <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
+                            <span>{r.created_at ? new Date(r.created_at).toLocaleDateString() : "—"}</span>
+                            {r.overall_score && <span>Score: {Math.round(r.overall_score)}/100</span>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="bg-white border border-gray-100 rounded-2xl p-8 text-center">
+                <Star className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
+                <h3 className="text-lg font-bold text-gray-900 mb-2">No Reviews Yet</h3>
+                <p className="text-sm text-gray-500">Customer reviews will appear here after customers rate their audits.</p>
+              </div>
+            )}
           </div>
         )}
       </div>

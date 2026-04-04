@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
-import { audits as auditsApi } from "@/api/apiClient";
-import { Eye, Download, Share2, CheckCircle, Clock, AlertCircle, Loader2, HelpCircle, X } from "lucide-react";
+import { audits as auditsApi, reviews as reviewsApi } from "@/api/apiClient";
+import { Eye, Download, Share2, CheckCircle, Clock, AlertCircle, Loader2, HelpCircle, X, Star } from "lucide-react";
 
 function StatusBadge({ status }) {
   const colors = {
@@ -37,6 +37,7 @@ export default function Dashboard() {
   const [searchParams] = useSearchParams();
   const { user, logout, isLoadingAuth } = useAuth();
   const [audits, setAudits] = useState([]);
+  const [userReviews, setUserReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(null);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -48,8 +49,9 @@ export default function Dashboard() {
     if (!user) { navigate("/login"); return; }
     const loadData = async () => {
       try {
-        const data = await auditsApi.list();
+        const [data, revData] = await Promise.all([auditsApi.list(), reviewsApi.list().catch(() => [])]);
         setAudits(data || []);
+        setUserReviews(revData || []);
 
         const seoSuccess = searchParams.get("seo_success");
         const seoAuditId = searchParams.get("audit_id");
@@ -197,6 +199,28 @@ export default function Dashboard() {
             </button>
           </div>
         </div>
+
+        {userReviews.length > 0 && (
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 mb-8">
+            <h3 className="text-base font-bold text-gray-900 mb-4">Your Reviews</h3>
+            <div className="space-y-3">
+              {userReviews.map(review => (
+                <div key={review.id} className="flex items-start gap-4 bg-gray-50 rounded-xl p-4">
+                  <div className="flex gap-0.5 shrink-0 mt-0.5">
+                    {[1, 2, 3, 4, 5].map(s => (
+                      <Star key={s} className={`w-4 h-4 ${s <= review.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-200"}`} />
+                    ))}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900">{review.business_name || "Audit #" + review.audit_id}</p>
+                    {review.feedback && <p className="text-xs text-gray-500 mt-1 italic">"{review.feedback}"</p>}
+                    <p className="text-xs text-gray-400 mt-1">{review.created_at ? new Date(review.created_at).toLocaleDateString() : ""}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div>
           <h3 className="text-lg font-bold text-gray-900 mb-4">All Audits</h3>

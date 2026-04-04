@@ -74,12 +74,19 @@ export const funnel = {
   },
 };
 
+export const reviews = {
+  async submit(data) { return await apiFetch('/api/reviews', { method: 'POST', body: JSON.stringify(data) }); },
+  async getForAudit(auditId, email) { return await apiFetch(`/api/reviews/${auditId}?email=${encodeURIComponent(email)}`); },
+  async list() { return await apiFetch('/api/reviews'); },
+};
+
 export const admin = {
   async getAudits(filters = {}) { const params = new URLSearchParams(filters).toString(); return await apiFetch(`/api/admin/audits?${params}`); },
   async getFunnel(days = 30) { return await apiFetch(`/api/admin/funnel?days=${days}`); },
   async getRevenue(days = 30) { return await apiFetch(`/api/admin/revenue?days=${days}`); },
   async getOverview() { return await apiFetch('/api/admin/overview'); },
+  async getReviews() { return await apiFetch('/api/admin/reviews'); },
 };
 
-const api = { auth, audits, payments, funnel, admin };
+const api = { auth, audits, payments, funnel, reviews, admin };
 export default api;

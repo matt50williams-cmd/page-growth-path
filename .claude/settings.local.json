@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "additionalDirectories": [
+      "c:\\Users\\matt5\\pageaudit-engine\\src\\routes"
+    ],
+    "allow": [
+      "Read(//c/Users/matt5/pageaudit-engine/src/**)"
+    ]
+  }
+}

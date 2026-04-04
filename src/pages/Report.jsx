@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
+import { reviews as reviewsApi } from "@/api/apiClient";
 import remarkGfm from "remark-gfm";
-import { CheckCircle, Download, Share2, Copy, ClipboardCheck } from "lucide-react";
+import { CheckCircle, Download, Share2, Copy, ClipboardCheck, Star } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
 const API_BASE = "https://pageaudit-engine.onrender.com";
@@ -147,6 +148,12 @@ export default function Report() {
   const [reportId, setReportId] = useState(null);
   const isPrint = new URLSearchParams(window.location.search).get("print") === "true";
   const [loading, setLoading] = useState(true);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewHover, setReviewHover] = useState(0);
+  const [reviewFeedback, setReviewFeedback] = useState("");
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
+  const [reviewSaving, setReviewSaving] = useState(false);
+  const [existingReview, setExistingReview] = useState(null);
 
   const loadReportFromData = (data) => {
     setSubmission({
@@ -208,6 +215,38 @@ export default function Report() {
       }
       setLoading(false); if (isPrint) { setTimeout(() => window.print(), 1000); } }; loadReport();
   }, [id, isLoadingAuth]);
+
+  useEffect(() => {
+    if (!reportId || !submission?.email) return;
+    reviewsApi.getForAudit(reportId, submission.email).then(data => {
+      if (data?.review) {
+        setExistingReview(data.review);
+        setReviewRating(data.review.rating);
+        setReviewFeedback(data.review.feedback || "");
+        setReviewSubmitted(true);
+      }
+    }).catch(() => {});
+  }, [reportId, submission?.email]);
+
+  const handleReviewSubmit = async () => {
+    if (!reviewRating || !reportId || !submission?.email) return;
+    setReviewSaving(true);
+    try {
+      await reviewsApi.submit({
+        audit_id: parseInt(reportId),
+        email: submission.email,
+        customer_name: submission.name || null,
+        business_name: submission.businessName || null,
+        rating: reviewRating,
+        feedback: reviewFeedback.trim() || null,
+      });
+      setReviewSubmitted(true);
+    } catch (err) {
+      console.error("Review submit failed:", err);
+    } finally {
+      setReviewSaving(false);
+    }
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 60);
@@ -338,6 +377,56 @@ export default function Report() {
         ) : (
           <div className="bg-red-50 border border-red-200 rounded-2xl p-6 md:p-8 shadow-sm text-center">
             <p className="text-red-600 font-semibold">Report failed to generate. Please try again.</p>
+          </div>
+        )}
+
+        {/* Review / Rating Section */}
+        {rawText && submission?.email && (
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 md:p-8 text-center">
+            {reviewSubmitted ? (
+              <div>
+                <div className="flex justify-center gap-1 mb-3">
+                  {[1, 2, 3, 4, 5].map(star => (
+                    <Star key={star} className={`w-8 h-8 ${star <= reviewRating ? "fill-yellow-400 text-yellow-400" : "text-gray-200"}`} />
+                  ))}
+                </div>
+                <p className="text-sm font-semibold text-gray-900 mb-1">Thank you for your feedback!</p>
+                {reviewFeedback && <p className="text-xs text-gray-500 italic">"{reviewFeedback}"</p>}
+              </div>
+            ) : (
+              <div>
+                <p className="text-sm font-bold text-gray-900 mb-1">How would you rate this audit?</p>
+                <p className="text-xs text-gray-400 mb-4">Your feedback helps us improve our reports.</p>
+                <div className="flex justify-center gap-1.5 mb-5">
+                  {[1, 2, 3, 4, 5].map(star => (
+                    <button key={star} type="button"
+                      onMouseEnter={() => setReviewHover(star)}
+                      onMouseLeave={() => setReviewHover(0)}
+                      onClick={() => setReviewRating(star)}
+                      className="transition-transform hover:scale-110">
+                      <Star className={`w-10 h-10 transition-colors ${star <= (reviewHover || reviewRating) ? "fill-yellow-400 text-yellow-400" : "text-gray-200 hover:text-yellow-200"}`} />
+                    </button>
+                  ))}
+                </div>
+                {reviewRating > 0 && (
+                  <div className="max-w-sm mx-auto space-y-3">
+                    <textarea
+                      value={reviewFeedback}
+                      onChange={e => setReviewFeedback(e.target.value)}
+                      placeholder="Any additional feedback? (optional)"
+                      rows={3}
+                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#1877F2] resize-none"
+                    />
+                    <button
+                      onClick={handleReviewSubmit}
+                      disabled={reviewSaving}
+                      className="w-full bg-[#1877F2] text-white text-sm font-bold py-3 rounded-xl hover:bg-[#1457C0] transition-colors disabled:opacity-50">
+                      {reviewSaving ? "Submitting..." : "Submit Review"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
