@@ -153,6 +153,7 @@ export default function Report() {
   const [reviewFeedback, setReviewFeedback] = useState("");
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
   const [reviewSaving, setReviewSaving] = useState(false);
+  const [reviewError, setReviewError] = useState("");
   const [existingReview, setExistingReview] = useState(null);
 
   const loadReportFromData = (data) => {
@@ -217,7 +218,7 @@ export default function Report() {
   }, [id, isLoadingAuth]);
 
   useEffect(() => {
-    if (!reportId || !submission?.email) return;
+    if (!reportId || !submission?.email || isNaN(parseInt(reportId))) return;
     reviewsApi.getForAudit(reportId, submission.email).then(data => {
       if (data?.review) {
         setExistingReview(data.review);
@@ -229,20 +230,26 @@ export default function Report() {
   }, [reportId, submission?.email]);
 
   const handleReviewSubmit = async () => {
-    if (!reviewRating || !reportId || !submission?.email) return;
+    const auditIdNum = parseInt(reportId);
+    if (!reviewRating || !auditIdNum || isNaN(auditIdNum) || !submission?.email) {
+      setReviewError("Unable to submit review — missing audit data. Please refresh and try again.");
+      return;
+    }
     setReviewSaving(true);
+    setReviewError("");
     try {
       await reviewsApi.submit({
-        audit_id: parseInt(reportId),
+        audit_id: auditIdNum,
         email: submission.email,
         customer_name: submission.name || null,
-        business_name: submission.businessName || null,
+        business_name: null,
         rating: reviewRating,
         feedback: reviewFeedback.trim() || null,
       });
       setReviewSubmitted(true);
     } catch (err) {
       console.error("Review submit failed:", err);
+      setReviewError(err.message || "Failed to submit review. Please try again.");
     } finally {
       setReviewSaving(false);
     }
@@ -423,6 +430,9 @@ export default function Report() {
                       className="w-full bg-[#1877F2] text-white text-sm font-bold py-3 rounded-xl hover:bg-[#1457C0] transition-colors disabled:opacity-50">
                       {reviewSaving ? "Submitting..." : "Submit Review"}
                     </button>
+                    {reviewError && (
+                      <p className="text-xs text-red-500 text-center mt-2">{reviewError}</p>
+                    )}
                   </div>
                 )}
               </div>
