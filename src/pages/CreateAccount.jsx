@@ -357,10 +357,12 @@ export default function CreateAccount() {
                 <input type={showPassword ? "text" : "password"} value={confirmPassword}
                   onChange={e => { setConfirmPassword(e.target.value); if (passwordError) setPasswordError(""); }}
                   placeholder="Confirm your password"
-                  className={`w-full border-2 rounded-2xl px-4 py-3.5 text-sm focus:outline-none transition-all ${passwordError ? "border-red-300" : "border-gray-100 focus:border-[#1877F2]"}`} />
+                  className={`w-full border-2 rounded-2xl px-4 py-3.5 text-sm focus:outline-none transition-all ${passwordError || (confirmPassword && password !== confirmPassword) ? "border-red-300" : "border-gray-100 focus:border-[#1877F2]"}`} />
+                {confirmPassword && password !== confirmPassword && !passwordError && (
+                  <p className="text-xs text-red-500 mt-1.5">Passwords do not match</p>
+                )}
+                {passwordError && <p className="text-xs text-red-500 mt-1.5">{passwordError}</p>}
               </div>
-
-              {passwordError && <p className="text-xs text-red-500 -mt-3">{passwordError}</p>}
 
               <div className="flex items-start gap-3 pt-2">
                 <input type="checkbox" id="terms" checked={agreedToTerms}
@@ -374,7 +376,7 @@ export default function CreateAccount() {
                 </label>
               </div>
 
-              <button onClick={handleCreateAccount} disabled={loading || !password || !confirmPassword || !agreedToTerms}
+              <button onClick={handleCreateAccount} disabled={loading || !password || !confirmPassword || password !== confirmPassword || !agreedToTerms}
                 className="w-full inline-flex items-center justify-center gap-2 bg-[#1877F2] text-white px-10 py-4 font-bold text-base rounded-2xl hover:bg-[#1457C0] transition-all shadow-lg shadow-blue-200 disabled:opacity-60 disabled:cursor-not-allowed mt-2">
                 {loading ? <><Loader2 className="w-5 h-5 animate-spin" /> Building your report...</> : "Create Account & Get My Report →"}
               </button>
