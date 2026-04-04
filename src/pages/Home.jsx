@@ -24,13 +24,6 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white font-sans">
 
-      {/* TOP BAR */}
-      <div className="bg-[#1877F2] text-white text-center py-2.5 px-4">
-        <p className="text-xs font-semibold">
-          🎁 Limited Time: Get Your Facebook Audit + <span className="underline font-bold">FREE Website SEO Score</span> — Today Only!
-        </p>
-      </div>
-
       {/* NAV */}
       <nav className="bg-white border-b border-gray-100 sticky top-0 z-40">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -38,10 +31,16 @@ export default function Home() {
             <BarChart2 className="w-5 h-5 text-[#1877F2]" />
             <span className="font-bold text-base text-black tracking-tight">PageAudit Pro</span>
           </div>
-          <button onClick={() => navigate('/submit-your-page')}
-            className="inline-flex items-center gap-2 bg-[#1877F2] text-white px-5 py-2.5 text-sm font-bold rounded-xl hover:bg-[#1457C0] transition-colors shadow-md shadow-blue-100">
-            Get My Free Audit <ArrowRight className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-3">
+            <button onClick={() => navigate('/login')}
+              className="inline-flex items-center text-sm font-semibold text-[#1877F2] border border-[#1877F2] px-4 py-2.5 rounded-xl hover:bg-blue-50 transition-colors">
+              Login
+            </button>
+            <button onClick={() => navigate('/submit-your-page')}
+              className="inline-flex items-center gap-2 bg-[#1877F2] text-white px-5 py-2.5 text-sm font-bold rounded-xl hover:bg-[#1457C0] transition-colors shadow-md shadow-blue-100">
+              Get My Free Audit <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </nav>
 
