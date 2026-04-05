@@ -5,9 +5,10 @@ import { CheckCircle, Lock, Shield, Zap, Clock, ArrowRight, BarChart2, Loader2, 
 const API_BASE = "https://pageaudit-engine.onrender.com";
 
 const LOCKED_TITLES = [
-  { platform: "Yelp", title: "Yelp listing has critical missing information" },
-  { platform: "NAP Consistency", title: "Business info mismatched across 6+ directories" },
-  { platform: "Competitor Gap", title: "Competitor is outranking you in 3 key areas" },
+  { platform: "Yelp", title: "Yelp listing has critical missing information", severity: "critical" },
+  { platform: "NAP Consistency", title: "Business info mismatched across 6+ directories", severity: "critical" },
+  { platform: "Website Performance", title: "Mobile load speed is below Google's threshold", severity: "warning" },
+  { platform: "Competitor Analysis", title: "A nearby competitor is outranking you in 3 key areas", severity: "warning" },
 ];
 
 const COST_LINES = {
@@ -46,13 +47,30 @@ export default function TeaserResults() {
 
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
-  // Extract real findings from scan data
-  const realFindings = scanData?.findings || scanData?.google?.findings || [];
-  const criticalCount = realFindings.filter(f => f.severity === "critical").length;
-  const warningCount = realFindings.filter(f => f.severity === "warning").length;
-  const goodCount = realFindings.filter(f => f.severity === "good").length;
+  // Extract ALL findings from scan data, sort by severity, take top 4
+  const allScanFindings = [
+    ...(scanData?.findings || []),
+    ...(scanData?.google?.findings || []),
+    ...(scanData?.allFindings || []),
+  ];
+  // Deduplicate by title
+  const seen = new Set();
+  const dedupedFindings = allScanFindings.filter(f => {
+    if (seen.has(f.title)) return false;
+    seen.add(f.title);
+    return true;
+  });
+  // Sort: critical first, then warning, then good
+  const severityOrder = { critical: 0, warning: 1, good: 2 };
+  dedupedFindings.sort((a, b) => (severityOrder[a.severity] ?? 9) - (severityOrder[b.severity] ?? 9));
+  const realFindings = dedupedFindings.slice(0, 4);
+
+  const criticalCount = dedupedFindings.filter(f => f.severity === "critical").length;
+  const warningCount = dedupedFindings.filter(f => f.severity === "warning").length;
+  const goodCount = dedupedFindings.filter(f => f.severity === "good").length;
   const totalIssues = criticalCount + warningCount;
   const score = scanData?.preliminaryScore ?? scanData?.google?.score ?? null;
+  const allGood = criticalCount === 0 && warningCount === 0;
 
   const handleUnlock = () => {
     if (!email.trim() || !email.includes("@")) { setShowEmailModal(true); return; }
@@ -119,32 +137,46 @@ export default function TeaserResults() {
         {/* ═══ SECTION 2 — DIAGNOSIS HEADER ═══ */}
         <div style={{ textAlign: "center", marginBottom: 40 }}>
           <h1 style={{ ...heading, fontSize: "clamp(24px, 4vw, 36px)", fontWeight: 800, color: "#fff", lineHeight: 1.15, marginBottom: 12 }}>
-            We found {totalIssues > 0 ? totalIssues : "potential"} issue{totalIssues !== 1 ? "s" : ""} affecting<br />
-            <span style={{ color: "#ef4444" }}>{businessName}</span>'s online presence
+            {criticalCount > 0
+              ? <>We found <span style={{ color: "#ef4444" }}>{criticalCount} critical issue{criticalCount > 1 ? "s" : ""}</span> affecting<br />{businessName}'s online presence</>
+              : warningCount > 0
+                ? <>We found <span style={{ color: "#f59e0b" }}>{warningCount} issue{warningCount > 1 ? "s" : ""}</span> that could be<br />costing <span style={{ color: "#f59e0b" }}>{businessName}</span> customers</>
+                : <>{businessName} looks good on Google —<br />but we found issues on <span style={{ color: "#f59e0b" }}>other platforms</span> that need attention</>
+            }
           </h1>
           <p style={{ color: "#94a3b8", fontSize: 15, maxWidth: 560, margin: "0 auto 24px", lineHeight: 1.6 }}>
-            These problems are costing you customers every single day. Here's what we found.
+            {allGood
+              ? "Your Google profile is strong, but there are likely problems on Yelp, your website, and business directories that we haven't shown you yet."
+              : "These problems are costing you customers every single day. Here's what we found."}
           </p>
 
           {/* Stat pills */}
           <div style={{ display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" }}>
-            {criticalCount > 0 && (
-              <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 999, padding: "6px 14px" }}>
-                <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#ef4444" }} />
-                <span style={{ color: "#ef4444", fontSize: 13, fontWeight: 700 }}>{criticalCount} Critical</span>
+            {allGood ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 999, padding: "8px 16px" }}>
+                <span style={{ color: "#f59e0b", fontSize: 13, fontWeight: 600 }}>✅ Google looks strong — but we found issues on other platforms</span>
               </div>
-            )}
-            {warningCount > 0 && (
-              <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 999, padding: "6px 14px" }}>
-                <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#f59e0b" }} />
-                <span style={{ color: "#f59e0b", fontSize: 13, fontWeight: 700 }}>{warningCount} Warning{warningCount > 1 ? "s" : ""}</span>
-              </div>
-            )}
-            {goodCount > 0 && (
-              <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.2)", borderRadius: 999, padding: "6px 14px" }}>
-                <CheckCircle style={{ width: 14, height: 14, color: "#10b981" }} />
-                <span style={{ color: "#10b981", fontSize: 13, fontWeight: 700 }}>{goodCount} Looking Good</span>
-              </div>
+            ) : (
+              <>
+                {criticalCount > 0 && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 999, padding: "6px 14px" }}>
+                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#ef4444" }} />
+                    <span style={{ color: "#ef4444", fontSize: 13, fontWeight: 700 }}>{criticalCount} Critical</span>
+                  </div>
+                )}
+                {warningCount > 0 && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 999, padding: "6px 14px" }}>
+                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#f59e0b" }} />
+                    <span style={{ color: "#f59e0b", fontSize: 13, fontWeight: 700 }}>{warningCount} Warning{warningCount > 1 ? "s" : ""}</span>
+                  </div>
+                )}
+                {goodCount > 0 && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.2)", borderRadius: 999, padding: "6px 14px" }}>
+                    <CheckCircle style={{ width: 14, height: 14, color: "#10b981" }} />
+                    <span style={{ color: "#10b981", fontSize: 13, fontWeight: 700 }}>{goodCount} Looking Good</span>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -212,26 +244,30 @@ export default function TeaserResults() {
           <h2 style={{ ...heading, fontSize: 22, fontWeight: 700, color: "#fff", marginBottom: 4 }}>43 More Issues Found</h2>
           <p style={{ color: "#94a3b8", fontSize: 14, marginBottom: 20 }}>Including problems with your Yelp listing, NAP consistency, competitor gaps, and more.</p>
 
-          <div style={{ position: "relative" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {LOCKED_TITLES.map((lt, i) => (
-                <div key={i} style={{ ...card, padding: "16px 18px", filter: "blur(3px)", opacity: 0.4, userSelect: "none" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <Lock style={{ width: 16, height: 16, color: "#64748b" }} />
-                    <div>
-                      <span style={{ fontSize: 11, color: "#64748b", fontWeight: 600 }}>{lt.platform}</span>
-                      <p style={{ color: "#94a3b8", fontSize: 15, fontWeight: 600 }}>{lt.title}</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {LOCKED_TITLES.map((lt, i) => {
+              const sevColor = lt.severity === "critical" ? "#ef4444" : "#f59e0b";
+              const sevBg = lt.severity === "critical" ? "rgba(239,68,68,0.04)" : "rgba(245,158,11,0.04)";
+              const sevBorder = lt.severity === "critical" ? "rgba(239,68,68,0.15)" : "rgba(245,158,11,0.15)";
+              return (
+                <div key={i} style={{ ...card, background: sevBg, borderColor: sevBorder, padding: 0, overflow: "hidden", position: "relative" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 18px", borderBottom: `1px solid ${sevBorder}` }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: sevColor }}>{lt.severity === "critical" ? "🔴 Critical" : "⚠️ Warning"}</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "#64748b" }}>{lt.platform}</span>
+                  </div>
+                  <div style={{ padding: "14px 18px" }}>
+                    <p style={{ color: "#94a3b8", fontSize: 15, fontWeight: 600, filter: "blur(4px)", userSelect: "none" }}>{lt.title}</p>
+                    <p style={{ color: "#64748b", fontSize: 13, marginTop: 6, filter: "blur(3px)", userSelect: "none" }}>This issue is impacting your visibility and may be driving customers to competitors in your area.</p>
+                  </div>
+                  <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(10,15,30,0.4)" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(10,15,30,0.8)", padding: "6px 14px", borderRadius: 999 }}>
+                      <Lock style={{ width: 13, height: 13, color: "#64748b" }} />
+                      <span style={{ color: "#94a3b8", fontSize: 12, fontWeight: 600 }}>Unlock to see this issue and fix</span>
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-            <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(180deg, rgba(10,15,30,0) 0%, rgba(10,15,30,0.95) 70%)", borderRadius: 14 }}>
-              <div style={{ textAlign: "center" }}>
-                <Lock style={{ width: 28, height: 28, color: "#64748b", margin: "0 auto 8px", display: "block" }} />
-                <p style={{ ...heading, fontSize: 16, fontWeight: 700, color: "#fff" }}>Unlock to see all findings</p>
-              </div>
-            </div>
+              );
+            })}
           </div>
         </div>
 
