@@ -64,7 +64,7 @@ export default function TeaserResults() {
   }, []);
 
   const handleUnlock = () => {
-    navigate("/submit-your-page", { state: { businessName, email: email.trim() } });
+    navigate("/submit-your-page", { state: { businessName, email: email.trim(), source: "teaser", teaserData: location.state } });
   };
 
   const syne = { fontFamily: "'Syne', sans-serif" };

@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -w '\\\\n\\\\nHTTP_CODE: %{http_code}\\\\nTIME: %{time_total}s\\\\n' -X POST https://pageaudit-engine.onrender.com/api/scan/teaser -H 'Content-Type: application/json' -d '{\"businessName\":\"Starbucks\",\"city\":\"Seattle\",\"state\":\"WA\"}')",
+      "Bash(node -e ':*)",
+      "Bash(node src/db/migrate.js)",
+      "Bash(npm run:*)",
+      "Bash(echo \"EXIT: $?\")"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\matt5\\pageaudit-engine"
+    ]
+  }
+}
