@@ -96,6 +96,11 @@ export const rep = {
   async payouts() { return await apiFetch('/api/rep/payouts'); },
   async dismissAlert(id) { return await apiFetch(`/api/rep/alerts/${id}/read`, { method: 'POST' }); },
   async lookup(code) { return await apiFetch(`/api/rep/lookup/${code}`); },
+  async getBusinesses(params = {}) { const qs = new URLSearchParams(params).toString(); return await apiFetch(`/api/reps/businesses?${qs}`); },
+  async upsertBusiness(data) { return await apiFetch('/api/reps/businesses', { method: 'POST', body: JSON.stringify(data) }); },
+  async updateBusiness(id, data) { return await apiFetch(`/api/reps/businesses/${id}`, { method: 'PATCH', body: JSON.stringify(data) }); },
+  async getBusiness(id) { return await apiFetch(`/api/reps/businesses/${id}`); },
+  async getFollowUpsDue() { return await apiFetch('/api/reps/businesses/follow-ups-due'); },
 };
 
 export const admin = {

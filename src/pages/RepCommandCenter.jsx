@@ -150,6 +150,26 @@ export default function RepCommandCenter() {
 
   useEffect(() => { if (!isLoadingAuth && !user) navigate("/login"); }, [user, isLoadingAuth]);
 
+  // Offline sync queue processor
+  useEffect(() => {
+    const processQueue = async () => {
+      const queue = S.get("sync_queue", []);
+      if (!queue.length) return;
+      const token = localStorage.getItem("pageaudit_token");
+      if (!token) return;
+      const failed = [];
+      for (const item of queue) {
+        try {
+          await fetch(`${API_BASE}/api/reps/businesses`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(item.data) });
+        } catch { item.attempts = (item.attempts || 0) + 1; if (item.attempts < 5) failed.push(item); }
+      }
+      S.set("sync_queue", failed);
+    };
+    processQueue();
+    const interval = setInterval(processQueue, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Morning briefing check
   useEffect(() => {
     const h = new Date().getHours();
@@ -217,7 +237,24 @@ export default function RepCommandCenter() {
     // Sync to backend
     try {
       const token = localStorage.getItem("pageaudit_token");
-      if (token) fetch(`${API_BASE}/api/reps/visits`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ business_name: visitForm.businessName, owner_name: visitForm.ownerName, phone: visitForm.phone, address: visitForm.address, industry: visitForm.industry, outcome: visitForm.outcome, notes: visitForm.notes, follow_up_date: visitForm.followUpDate || null, rep_link_sent: visitForm.linkSent }) }).catch(() => {});
+      if (token) {
+        // Sync visit
+        fetch(`${API_BASE}/api/reps/visits`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ business_name: visitForm.businessName, owner_name: visitForm.ownerName, phone: visitForm.phone, address: visitForm.address, industry: visitForm.industry, outcome: visitForm.outcome, notes: visitForm.notes, follow_up_date: visitForm.followUpDate || null, rep_link_sent: visitForm.linkSent }) }).catch(() => {});
+        // Sync business record with all contact data
+        const statusMap = { closed: "client", follow_up: "following_up", demo: "assessed", not_interested: "not_a_fit", not_available: "prospect" };
+        fetch(`${API_BASE}/api/reps/businesses`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({
+          business_name: visitForm.businessName, address: visitForm.address, phone: visitForm.phone, industry: visitForm.industry,
+          owner_first_name: visitForm.ownerName?.split(" ")[0] || null, owner_last_name: visitForm.ownerName?.split(" ").slice(1).join(" ") || null,
+          status: statusMap[visitForm.outcome] || "prospect", interest_level: visitForm.outcome === "closed" ? "hot" : visitForm.outcome === "follow_up" ? "warm" : visitForm.outcome === "demo" ? "warm" : "cold",
+          follow_up_date: visitForm.followUpDate || null, notes: visitForm.notes,
+          last_scan_score: preScanResult?.preliminaryScore || null, last_scan_data: preScanResult || null, last_scanned_at: preScanResult ? new Date().toISOString() : null,
+        }) }).catch(err => {
+          // Queue for offline retry
+          const queue = S.get("sync_queue", []);
+          queue.push({ id: Date.now(), type: "business_record", data: visitForm, attempts: 0 });
+          S.set("sync_queue", queue);
+        });
+      }
     } catch {}
     setVisitForm({ businessName: "", ownerName: "", phone: "", address: "", industry: "", outcome: "", notes: "", followUpDate: "", linkSent: false });
     if (visitForm.outcome !== "closed") setTab("today");
