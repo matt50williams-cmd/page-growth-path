@@ -80,13 +80,28 @@ export const reviews = {
   async list() { return await apiFetch('/api/reviews'); },
 };
 
+export const rep = {
+  async dashboard() { return await apiFetch('/api/rep/dashboard'); },
+  async payouts() { return await apiFetch('/api/rep/payouts'); },
+  async dismissAlert(id) { return await apiFetch(`/api/rep/alerts/${id}/read`, { method: 'POST' }); },
+  async lookup(code) { return await apiFetch(`/api/rep/lookup/${code}`); },
+};
+
 export const admin = {
   async getAudits(filters = {}) { const params = new URLSearchParams(filters).toString(); return await apiFetch(`/api/admin/audits?${params}`); },
   async getFunnel(days = 30) { return await apiFetch(`/api/admin/funnel?days=${days}`); },
   async getRevenue(days = 30) { return await apiFetch(`/api/admin/revenue?days=${days}`); },
   async getOverview() { return await apiFetch('/api/admin/overview'); },
   async getReviews() { return await apiFetch('/api/admin/reviews'); },
+  async getReps() { return await apiFetch('/api/admin/reps'); },
+  async createRep(data) { return await apiFetch('/api/admin/reps', { method: 'POST', body: JSON.stringify(data) }); },
+  async getCommissions() { return await apiFetch('/api/admin/commissions'); },
+  async updateCommissionStatus(id, data) { return await apiFetch(`/api/admin/commissions/${id}/status`, { method: 'POST', body: JSON.stringify(data) }); },
+  async releaseBuffer() { return await apiFetch('/api/admin/commissions/release-buffer', { method: 'POST' }); },
+  async getPayouts(filter) { return await apiFetch(`/api/admin/payouts?filter=${filter || 'all'}`); },
+  async createPayoutBatch() { return await apiFetch('/api/admin/payouts/create-batch', { method: 'POST' }); },
+  async updatePayoutStatus(id, data) { return await apiFetch(`/api/admin/payouts/${id}/status`, { method: 'POST', body: JSON.stringify(data) }); },
 };
 
-const api = { auth, audits, payments, funnel, reviews, admin };
+const api = { auth, audits, payments, funnel, reviews, rep, admin };
 export default api;

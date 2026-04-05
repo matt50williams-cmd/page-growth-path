@@ -23,6 +23,9 @@ import Login from './pages/Login';
 import SeoAuditPage from './pages/SeoAuditPage';
 import SeoLoadingPage from './pages/SeoLoadingPage';
 import TeaserResults from './pages/TeaserResults';
+import RepDashboard from './pages/RepDashboard';
+import RepAgreement from './pages/RepAgreement';
+import ScanRedirect from './pages/ScanRedirect';
 
 function StripeRedirectHandler() {
   const navigate = useNavigate();
@@ -77,6 +80,9 @@ function AuthenticatedApp() {
         <Route path="/seo-audit" element={<SeoAuditPage />} />
         <Route path="/seo-loading" element={<SeoLoadingPage />} />
         <Route path="/teaser-results" element={<TeaserResults />} />
+        <Route path="/rep-dashboard" element={<RepDashboard />} />
+        <Route path="/rep-agreement" element={<RepAgreement />} />
+        <Route path="/scan" element={<ScanRedirect />} />
         <Route path="*" element={<PageNotFound />} />
       </Routes>
     </>

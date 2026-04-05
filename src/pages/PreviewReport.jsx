@@ -88,6 +88,7 @@ export default function PreviewReport() {
           audit_id: currentOrder.auditId,
           email: currentOrder.email,
           customer_name: currentOrder.name,
+          rep_code: localStorage.getItem("pageaudit_rep_code") || null,
         }),
       });
       const data = await res.json();
