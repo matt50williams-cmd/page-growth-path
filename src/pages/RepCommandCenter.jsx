@@ -40,6 +40,63 @@ const OUTCOMES = [
 
 const INDUSTRIES = ["Restaurant","Plumber","Electrician","HVAC","Roofer","Dentist","Salon","Auto Repair","Gym","Lawyer","Real Estate","Landscaper","Cleaning","Vet","Spa","Other"];
 
+const API_BASE = "https://pageaudit-engine.onrender.com";
+
+const MOTIVATION = [
+  "Every no gets you closer to a yes. Keep going 💪",
+  "Top reps hear 7 no's per close. You might be one away.",
+  "Move on fast. The next business might be your best close today.",
+  "Not interested today doesn't mean not interested forever. Come back in 30 days.",
+  "Their loss. Next! 🚀",
+  "Rejection is data, not defeat. Learn and move on.",
+  "The money is in the follow ups. Today's no is next month's yes.",
+];
+
+const TIME_TIPS = {
+  early: "Early bird! Catch business owners before they get busy. Great time for coffee shops, bakeries, and breakfast spots.",
+  morning: "Prime morning hours. Most businesses open and owners available. Lead with the free scan.",
+  lunch: "Avoid restaurants — they're in lunch rush. Hit retail, services, offices, and salons.",
+  afternoon: "Best hours of the day. Owners relaxed, not too busy. Your highest close rate window.",
+  evening: "Afternoon push. Close rate stays strong. Owners winding down — more time to talk.",
+  night: "Great job today! Time to log your follow ups and prep for tomorrow.",
+};
+
+const DAILY_QUOTES = [
+  "The difference between a good rep and a great rep is 5 more visits a day.",
+  "Nobody ever closed a deal from their car. Get out and knock.",
+  "Your competition is still in bed. You're already winning.",
+  "Every door you skip is money left on the table.",
+  "The best time to sell was yesterday. The second best time is right now.",
+  "Consistency beats talent. Show up every day.",
+  "The business owner who says no today might say yes next month. Log everything.",
+  "Your rep link is a 24/7 salesperson. Send it to everyone you meet.",
+  "Revenue is a lagging indicator. Activity is the leading one. Move your feet.",
+  "The scan does the selling. You just need to get them to look.",
+];
+
+function getTimeTip() {
+  const h = new Date().getHours();
+  if (h < 8) return TIME_TIPS.early;
+  if (h < 11) return TIME_TIPS.morning;
+  if (h < 13) return TIME_TIPS.lunch;
+  if (h < 16) return TIME_TIPS.afternoon;
+  if (h < 18) return TIME_TIPS.evening;
+  return TIME_TIPS.night;
+}
+
+const DEMO_DATA = {
+  businessName: "Example Restaurant", city: "Your City", state: "",
+  preliminaryScore: 42, scoreLabel: "Critical",
+  google: { found: true, score: 42, rating: 3.8, reviewCount: 12, hasHours: false, photoCount: 4, businessStatus: "OPERATIONAL" },
+  findings: [
+    { platform: "Google", severity: "critical", title: "3.8-star rating is hurting your business", description: "Below the 4.0 threshold. Customers filter by 4+ stars." },
+    { platform: "NAP Consistency", severity: "critical", title: "Wrong phone number on 8 directories", description: "Your phone number doesn't match on Bing, Apple Maps, and 6 other platforms." },
+    { platform: "Website", severity: "critical", title: "Website loads in 8 seconds on mobile", description: "Google penalizes slow websites. Average loads in under 2 seconds." },
+    { platform: "Facebook", severity: "warning", title: "No Facebook posts in 60 days", description: "Inactive pages signal to customers your business may not be active." },
+    { platform: "Google", severity: "warning", title: "Only 4 photos on Google listing", description: "Google recommends at least 10 photos for business listings." },
+  ],
+};
+
 const OBJECTIONS = [
   { q: "\"I'm not interested\"", a: "Totally fair. Can I just show you your score real quick? It's free and takes 60 seconds. Most business owners are surprised by what we find." },
   { q: "\"How much does it cost?\"", a: "The full report is $99 today. That's less than one lost customer. Most business owners make that back the same week." },
@@ -54,6 +111,18 @@ export default function RepCommandCenter() {
   const navigate = useNavigate();
   const { user, isLoadingAuth } = useAuth();
   const [tab, setTab] = useState("today");
+  const [showBriefing, setShowBriefing] = useState(false);
+  const [preScanBiz, setPreScanBiz] = useState("");
+  const [preScanCity, setPreScanCity] = useState("");
+  const [preScanResult, setPreScanResult] = useState(null);
+  const [preScanLoading, setPreScanLoading] = useState(false);
+  const [nearbyPlaces, setNearbyPlaces] = useState([]);
+  const [nearbyLoading, setNearbyLoading] = useState(false);
+  const [showDemo, setShowDemo] = useState(false);
+  const [rejectionMsg, setRejectionMsg] = useState(null);
+  const [followUpText, setFollowUpText] = useState(null);
+  const [earnSlider, setEarnSlider] = useState(10);
+  const [subRate, setSubRate] = useState(30);
   const [visits, setVisits] = useState(S.get("visits", []));
   const [contacts, setContacts] = useState(S.get("contacts", []));
   const [territory, setTerritory] = useState(S.get("territory", []));
@@ -80,6 +149,15 @@ export default function RepCommandCenter() {
   }, []);
 
   useEffect(() => { if (!isLoadingAuth && !user) navigate("/login"); }, [user, isLoadingAuth]);
+
+  // Morning briefing check
+  useEffect(() => {
+    const h = new Date().getHours();
+    const briefingKey = `briefing_shown_${todayStr}`;
+    if (h < 11 && !S.get(briefingKey, false) && visits.length > 0) {
+      setShowBriefing(true);
+    }
+  }, []);
 
   // Persist
   useEffect(() => { S.set("visits", visits); }, [visits]);
@@ -135,11 +213,50 @@ export default function RepCommandCenter() {
     const stats = { todayVisits: todayVisits.length + 1, totalCloses: totalCloses + (visitForm.outcome === "closed" ? 1 : 0), totalEarnings: totalEarnings + (visitForm.outcome === "closed" ? 60 : 0), streak: s };
     checkBadges(stats);
     if (visitForm.outcome === "closed") { setCelebration(true); setTimeout(() => setCelebration(false), 2500); }
+    else if (visitForm.outcome === "not_interested") { setRejectionMsg(MOTIVATION[Math.floor(Math.random() * MOTIVATION.length)]); setTimeout(() => setRejectionMsg(null), 4000); }
+    // Sync to backend
+    try {
+      const token = localStorage.getItem("pageaudit_token");
+      if (token) fetch(`${API_BASE}/api/reps/visits`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ business_name: visitForm.businessName, owner_name: visitForm.ownerName, phone: visitForm.phone, address: visitForm.address, industry: visitForm.industry, outcome: visitForm.outcome, notes: visitForm.notes, follow_up_date: visitForm.followUpDate || null, rep_link_sent: visitForm.linkSent }) }).catch(() => {});
+    } catch {}
     setVisitForm({ businessName: "", ownerName: "", phone: "", address: "", industry: "", outcome: "", notes: "", followUpDate: "", linkSent: false });
     if (visitForm.outcome !== "closed") setTab("today");
   };
 
   const copy = (t, k) => { navigator.clipboard.writeText(t); setCopied(k); setTimeout(() => setCopied(null), 2000); };
+
+  const runPreScan = async (name, city) => {
+    if (!name) return;
+    setPreScanLoading(true); setPreScanResult(null);
+    try {
+      const token = localStorage.getItem("pageaudit_token");
+      const res = await fetch(`${API_BASE}/api/scan/prescan`, { method: "POST", headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ businessName: name, city: city || "" }) });
+      if (!res.ok) throw new Error("Scan failed");
+      setPreScanResult(await res.json());
+    } catch { setPreScanResult({ error: true }); }
+    finally { setPreScanLoading(false); }
+  };
+
+  const findNearby = async () => {
+    setNearbyLoading(true); setNearbyPlaces([]);
+    try {
+      const pos = await new Promise((ok, fail) => navigator.geolocation.getCurrentPosition(ok, fail, { timeout: 8000 }));
+      const res = await fetch(`${API_BASE}/api/scan/nearby?lat=${pos.coords.latitude}&lng=${pos.coords.longitude}`);
+      const data = await res.json();
+      setNearbyPlaces(data.places || []);
+    } catch { setNearbyPlaces([]); }
+    finally { setNearbyLoading(false); }
+  };
+
+  const generateOpening = (result) => {
+    if (!result?.google) return "";
+    const s = result.preliminaryScore || result.google.score || 0;
+    const issues = (result.findings || []).filter(f => f.severity !== "good").length;
+    const biz = result.businessName || result.google.name || "your business";
+    if (s < 50) return `Hi, I'm ${repName} with The Agency. I just ran a quick scan on ${biz} and your online presence score is ${s} out of 100 — that means customers searching for you online are having trouble finding you. You have ${issues} critical issues right now. Can I show you? Takes 60 seconds.`;
+    if (s < 70) return `Hi, I'm ${repName} with The Agency. I just scanned ${biz} and found ${issues} issues affecting your online presence. Your score is ${s} out of 100 — there's real room to improve and I can show you exactly how. Takes 60 seconds.`;
+    return `Hi, I'm ${repName} with The Agency. I just scanned ${biz} — you're actually doing pretty well online with a ${s} out of 100. But I found ${issues} specific things your competitors are beating you on. Want to see?`;
+  };
   const H = { fontFamily: "'Plus Jakarta Sans', sans-serif" };
   const card = { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: 16 };
   const btn48 = { minHeight: 48, borderRadius: 10, border: "none", cursor: "pointer", fontWeight: 600, fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%" };
@@ -202,15 +319,21 @@ export default function RepCommandCenter() {
               </div>
             </div>
 
+            {/* TIME TIP */}
+            <div style={{ ...card, marginBottom: 16, display: "flex", gap: 10, alignItems: "flex-start", background: "rgba(37,99,235,0.06)", borderColor: "rgba(37,99,235,0.15)" }}>
+              <span style={{ fontSize: 16, flexShrink: 0 }}>⏰</span>
+              <p style={{ color: "#94a3b8", fontSize: 13, lineHeight: 1.5 }}>{getTimeTip()}</p>
+            </div>
+
             {/* QUICK ACTIONS */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
               {[
-                { emoji: "🔍", label: "Run Free Scan", action: () => navigate("/scanning") },
+                { emoji: "⚡", label: "Pre-Scan", action: () => setTab("prescan"), bg: "rgba(249,115,22,0.1)", border: "rgba(249,115,22,0.3)" },
                 { emoji: "+", label: "Log a Visit", action: () => setTab("log") },
-                { emoji: "📋", label: "My Script", action: () => { setTab("tools"); } },
+                { emoji: "🎬", label: "Run Demo", action: () => setShowDemo(true) },
                 { emoji: "💬", label: "Objections", action: () => { setTab("tools"); } },
-              ].map(({ emoji, label, action }) => (
-                <button key={label} onClick={action} style={{ ...card, minHeight: 80, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, cursor: "pointer", border: "1px solid rgba(255,255,255,0.08)" }}>
+              ].map(({ emoji, label, action, bg, border }) => (
+                <button key={label} onClick={action} style={{ ...card, minHeight: 80, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, cursor: "pointer", background: bg || card.background, border: `1px solid ${border || "rgba(255,255,255,0.08)"}` }}>
                   <span style={{ fontSize: emoji === "+" ? 28 : 24 }}>{emoji}</span>
                   <span style={{ fontSize: 12, fontWeight: 600, color: "#c8d0dc" }}>{label}</span>
                 </button>
@@ -410,6 +533,7 @@ export default function RepCommandCenter() {
                 );
               })}
             </div>
+            <button onClick={() => setTab("earn")} style={{ ...btn48, background: "rgba(249,115,22,0.1)", color: "#f97316", border: "1px solid rgba(249,115,22,0.3)", marginTop: 16 }}>💰 Earnings Calculator</button>
           </div>
         )}
 
@@ -506,14 +630,140 @@ export default function RepCommandCenter() {
             </div>
           </div>
         )}
+
+        {/* ═══ PRE-SCAN ═══ */}
+        {tab === "prescan" && (
+          <div style={{ paddingTop: 20 }}>
+            <h2 style={{ ...H, fontSize: 22, fontWeight: 800, color: "#fff", marginBottom: 4 }}>Pre-Scan Mode ⚡</h2>
+            <p style={{ color: "#64748b", fontSize: 13, marginBottom: 20 }}>Know their score before you walk in</p>
+
+            {!preScanResult ? (
+              <>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
+                  <button onClick={findNearby} disabled={nearbyLoading} style={{ ...card, minHeight: 60, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, cursor: "pointer" }}>
+                    <span style={{ fontSize: 20 }}>{nearbyLoading ? "⏳" : "📍"}</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "#94a3b8" }}>{nearbyLoading ? "Finding..." : "Nearby"}</span>
+                  </button>
+                  <button onClick={() => {}} style={{ ...card, minHeight: 60, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, cursor: "pointer" }}>
+                    <span style={{ fontSize: 20 }}>🔍</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "#94a3b8" }}>Type Name</span>
+                  </button>
+                </div>
+
+                {nearbyPlaces.length > 0 && (
+                  <div style={{ marginBottom: 16 }}>
+                    <p style={{ fontSize: 12, fontWeight: 600, color: "#94a3b8", marginBottom: 8 }}>Nearby businesses:</p>
+                    {nearbyPlaces.map((p, i) => (
+                      <button key={i} onClick={() => { setPreScanBiz(p.name); setPreScanCity(""); runPreScan(p.name, ""); }}
+                        style={{ ...card, width: "100%", padding: 12, marginBottom: 6, display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", textAlign: "left" }}>
+                        <div><p style={{ color: "#c8d0dc", fontSize: 13, fontWeight: 600 }}>{p.name}</p><p style={{ color: "#4b5563", fontSize: 11 }}>{p.address}</p></div>
+                        {p.rating && <span style={{ color: "#f59e0b", fontSize: 12, fontWeight: 700 }}>⭐ {p.rating}</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <input type="text" value={preScanBiz} onChange={e => setPreScanBiz(e.target.value)} placeholder="Business name..."
+                  style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "12px 14px", fontSize: 14, color: "#fff", outline: "none", boxSizing: "border-box", marginBottom: 8 }} />
+                <input type="text" value={preScanCity} onChange={e => setPreScanCity(e.target.value)} placeholder="City (optional)"
+                  style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "12px 14px", fontSize: 14, color: "#fff", outline: "none", boxSizing: "border-box", marginBottom: 12 }} />
+                <button onClick={() => runPreScan(preScanBiz, preScanCity)} disabled={!preScanBiz.trim() || preScanLoading}
+                  style={{ ...btn48, background: "#f97316", color: "#fff", opacity: preScanBiz.trim() ? 1 : 0.4 }}>
+                  {preScanLoading ? "Scanning..." : "Run Pre-Scan →"}
+                </button>
+              </>
+            ) : preScanResult.error ? (
+              <div style={{ textAlign: "center", padding: 20 }}>
+                <p style={{ color: "#ef4444", fontSize: 14, marginBottom: 12 }}>Scan failed. Try again.</p>
+                <button onClick={() => setPreScanResult(null)} style={{ ...btn48, background: "#2563eb", color: "#fff" }}>Try Again</button>
+              </div>
+            ) : (
+              <div>
+                {/* SCORE */}
+                <div style={{ textAlign: "center", marginBottom: 20 }}>
+                  {(() => { const s = preScanResult.preliminaryScore || 0; const c = s >= 70 ? "#10b981" : s >= 50 ? "#f59e0b" : "#ef4444"; const l = s >= 70 ? "Moderate Opportunity" : s >= 50 ? "Good Opportunity" : "High Opportunity"; return (
+                    <div><p style={{ ...H, fontSize: 48, fontWeight: 800, color: c }}>{s}<span style={{ fontSize: 20, color: "#64748b" }}>/100</span></p>
+                    <p style={{ color: "#c8d0dc", fontSize: 15, fontWeight: 700 }}>{preScanResult.businessName || preScanBiz}</p>
+                    <p style={{ color: c, fontSize: 13, fontWeight: 600, marginTop: 4 }}>{l}</p></div>); })()}
+                </div>
+
+                {/* TOP FINDINGS */}
+                <div style={{ marginBottom: 16 }}>
+                  {(preScanResult.findings || []).filter(f => f.severity !== "good").slice(0, 3).map((f, i) => (
+                    <div key={i} style={{ ...card, padding: 12, marginBottom: 6, display: "flex", alignItems: "flex-start", gap: 8 }}>
+                      <span style={{ fontSize: 12, marginTop: 2 }}>{f.severity === "critical" ? "🔴" : "⚠️"}</span>
+                      <p style={{ color: "#c8d0dc", fontSize: 13, lineHeight: 1.4 }}>{f.title}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* OPENING LINE */}
+                <div style={{ borderLeft: "3px solid #2563eb", background: "rgba(37,99,235,0.06)", borderRadius: "0 10px 10px 0", padding: 14, marginBottom: 16 }}>
+                  <p style={{ fontSize: 11, fontWeight: 700, color: "#3b82f6", textTransform: "uppercase", marginBottom: 6 }}>Your Opening Line</p>
+                  <p style={{ color: "#c8d0dc", fontSize: 13, lineHeight: 1.6, fontStyle: "italic" }}>"{generateOpening(preScanResult)}"</p>
+                  <button onClick={() => copy(generateOpening(preScanResult), "opening")} style={{ marginTop: 8, background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "4px 12px", fontSize: 11, fontWeight: 600, color: copied === "opening" ? "#10b981" : "#64748b", cursor: "pointer" }}>
+                    {copied === "opening" ? "Copied!" : "📋 Copy Opening Line"}
+                  </button>
+                </div>
+
+                {/* ACTIONS */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <button onClick={() => { setVisitForm(f => ({ ...f, businessName: preScanResult.businessName || preScanBiz, address: preScanResult.google?.address || "" })); setTab("log"); }}
+                    style={{ ...btn48, background: "#f97316", color: "#fff" }}>🚪 Log This Visit</button>
+                  <button onClick={() => navigate("/teaser-results", { state: { businessName: preScanResult.businessName || preScanBiz, scanData: preScanResult } })}
+                    style={{ ...btn48, background: "#2563eb", color: "#fff" }}>🔍 Show Customer Their Scan</button>
+                  <button onClick={() => { setPreScanResult(null); setPreScanBiz(""); setPreScanCity(""); setNearbyPlaces([]); }}
+                    style={{ ...btn48, background: "rgba(255,255,255,0.05)", color: "#94a3b8", border: "1px solid rgba(255,255,255,0.1)" }}>↩ Scan Another Business</button>
+                </div>
+                <p style={{ color: "#4b5563", fontSize: 10, textAlign: "center", marginTop: 8 }}>DEMO — Pre-scan data only</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ═══ EARNINGS CALC (inside Stats) ═══ */}
+        {tab === "earn" && (
+          <div style={{ paddingTop: 20 }}>
+            <h2 style={{ ...H, fontSize: 22, fontWeight: 800, color: "#fff", marginBottom: 20 }}>Earnings Calculator</h2>
+            <div style={{ marginBottom: 20 }}>
+              <p style={{ color: "#94a3b8", fontSize: 13, marginBottom: 8 }}>Closes per month: <strong style={{ color: "#fff" }}>{earnSlider}</strong></p>
+              <input type="range" min={0} max={50} value={earnSlider} onChange={e => setEarnSlider(parseInt(e.target.value))}
+                style={{ width: "100%", accentColor: "#f97316" }} />
+            </div>
+            <div style={{ marginBottom: 20 }}>
+              <p style={{ color: "#94a3b8", fontSize: 13, marginBottom: 8 }}>Subscribe to monthly: <strong style={{ color: "#fff" }}>{subRate}%</strong></p>
+              <input type="range" min={0} max={100} value={subRate} onChange={e => setSubRate(parseInt(e.target.value))}
+                style={{ width: "100%", accentColor: "#f97316" }} />
+            </div>
+            {(() => {
+              const monthSubs = Math.round(earnSlider * (subRate / 100));
+              const upfront = earnSlider * 60;
+              const month1 = monthSubs * 20;
+              const month6 = monthSubs * 6 * 20;
+              const month12 = monthSubs * 12 * 20;
+              return (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div style={{ ...card }}><p style={{ fontSize: 10, color: "#64748b", textTransform: "uppercase" }}>Upfront</p><p style={{ fontSize: 22, fontWeight: 700, color: "#10b981" }}>{"$"}{upfront}/mo</p></div>
+                  <div style={{ ...card }}><p style={{ fontSize: 10, color: "#64748b", textTransform: "uppercase" }}>Residual Mo 1</p><p style={{ fontSize: 22, fontWeight: 700, color: "#3b82f6" }}>{"$"}{month1}/mo</p></div>
+                  <div style={{ ...card }}><p style={{ fontSize: 10, color: "#64748b", textTransform: "uppercase" }}>Residual Mo 6</p><p style={{ fontSize: 22, fontWeight: 700, color: "#f97316" }}>{"$"}{month6} total</p></div>
+                  <div style={{ ...card }}><p style={{ fontSize: 10, color: "#64748b", textTransform: "uppercase" }}>Residual Mo 12</p><p style={{ fontSize: 22, fontWeight: 700, color: "#f97316" }}>{"$"}{month12} total</p></div>
+                </div>
+              );
+            })()}
+            <p style={{ color: "#94a3b8", fontSize: 13, textAlign: "center", marginTop: 16, lineHeight: 1.5 }}>After 12 months of {earnSlider} closes/mo you'd have <strong style={{ color: "#10b981" }}>{"$"}{Math.round(earnSlider * (subRate / 100)) * 20}/mo</strong> in passive income. Forever.</p>
+            <button onClick={() => setTab("stats")} style={{ ...btn48, background: "rgba(255,255,255,0.05)", color: "#94a3b8", border: "1px solid rgba(255,255,255,0.1)", marginTop: 16 }}>Back to Stats</button>
+          </div>
+        )}
       </div>
+
+      {/* Overlays rendered via portal-style positioning */}
 
       {/* ═══ BOTTOM NAV ═══ */}
       <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "#111827", borderTop: "1px solid rgba(255,255,255,0.08)", display: "flex", zIndex: 100 }}>
         {[
           { k: "today", emoji: "🏠", label: "Today" },
+          { k: "prescan", emoji: "⚡", label: "Scan" },
           { k: "log", emoji: "📋", label: "Log" },
-          { k: "territory", emoji: "📍", label: "Territory" },
           { k: "stats", emoji: "📊", label: "Stats" },
           { k: "contacts", emoji: "👤", label: "Contacts" },
           { k: "tools", emoji: "🛠️", label: "Tools" },
