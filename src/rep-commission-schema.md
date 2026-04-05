@@ -88,6 +88,91 @@ Customer doesn't fix → Commission: CANCELLED
 - Reps are independent contractors, not employees
 - The Agency LLC does not withhold taxes
 
+## Chargeback Policy
+
+### Clawback Rules
+- Any chargeback filed by a customer on an audit sold by Representative results in:
+  - Immediate cancellation of that commission
+  - Clawback of commission from next weekly payout if already paid
+  - Formal warning issued to Representative
+- Subtract clawback amounts from weekly payout before processing
+- If clawbacks exceed payout amount, carry negative balance to next week
+- Rep sees clawback line items clearly on their commission statement
+
+### Three Strikes Policy
+- **Strike 1**: Written warning, mandatory retraining required
+- **Strike 2** (within 90 days of Strike 1): Account suspended pending review by The Agency LLC
+- **Strike 3** (at any time): Permanent deactivation, all pending commissions forfeited, no appeal process
+
+### Clawback Notice Example
+```
+CLAWBACK NOTICE
+Customer: Joe's Pizza Dallas
+Reason: Customer filed chargeback
+Original commission: $60
+Amount clawed back: $60
+Applied to: Week of April 7 payout
+Remaining payout this week: $120
+
+This is strike 1 of 3.
+Please review our conduct guidelines.
+```
+
+## Stripe Webhook Integration
+
+### Events To Handle
+
+#### charge.dispute.created
+- Find customer by stripe_customer_id
+- Find rep by customer rep_code
+- Set commission status = clawback
+- Set buffer_status = held
+- Increment rep chargeback_count
+- Increment rep chargeback_strikes
+- Create rep_alert type = chargeback_warning
+- Send rep email: "A customer filed a chargeback. Your commission has been reversed."
+- Send admin email: "Chargeback received — rep [name] customer [business]"
+- Check strike level:
+  - Strike 1: warning email only
+  - Strike 2: suspend rep account, email rep
+  - Strike 3: terminate rep account, forfeit all pending commissions
+
+#### charge.dispute.closed (won by merchant)
+- Remove clawback from commission
+- Restore commission to pending status
+- Send rep email: "Good news — the chargeback dispute was resolved in our favor. Your commission has been restored."
+- Decrement chargeback_strikes by 1
+
+#### charge.dispute.closed (won by customer)
+- Confirm clawback permanently
+- Commission status = cancelled
+- Send rep email: "The chargeback was confirmed. Commission remains reversed."
+
+#### invoice.payment_failed
+- Find customer subscription
+- Find rep
+- Set monthly commission = held
+- Create rep_alert type = payment_failed
+- Send rep email with customer name and SMS template to contact customer
+- Start 14 day resolution countdown
+
+#### invoice.payment_succeeded
+- Find customer
+- Find rep
+- Create new monthly commission record
+- Set buffer_start_date = today
+- Set buffer_release_date = today + 7 days
+- Set buffer_status = buffering
+- Send rep notification: "Monthly commission of $[amount] is now in 7-day buffer period"
+
+#### customer.subscription.deleted
+- Find customer
+- Find rep
+- Stop future monthly commissions
+- Do NOT clawback already paid commissions
+- Create rep_alert type = customer_cancelled
+- Send rep email: "[Business name] cancelled their subscription. Your monthly commission of $[amount] will stop. Previously paid commissions are not affected."
+
 ## Database Tables
 
 ### reps
@@ -102,8 +187,12 @@ Customer doesn't fix → Commission: CANCELLED
 - agreement_signed (boolean), agreement_signed_at
 - agreement_ip_address, agreement_full_name
 - contractor_acknowledgment (boolean)
+- chargeback_count (integer default 0)
+- chargeback_strikes (integer default 0)
+- last_chargeback_at (timestamp)
+- suspension_reason, suspended_at, reactivated_at
 - approved_at, approved_by
-- status (active/pending/deactivated)
+- status (active/pending/suspended/deactivated/terminated)
 - created_at, updated_at
 
 ### rep_commissions
@@ -111,11 +200,14 @@ Customer doesn't fix → Commission: CANCELLED
 - customer_email, customer_name, business_name
 - product_type (one_time_audit/monthly_monitor/pro_monitor/pro_plus)
 - sale_amount, commission_amount
-- status (pending/approved/paid/held/cancelled)
-- payment_status (customer_paid/payment_failed/refunded)
+- status (pending/approved/paid/held/cancelled/clawback)
+- payment_status (customer_paid/payment_failed/refunded/chargeback)
 - held_reason (null/payment_failed/customer_churned/refund/chargeback)
 - buffer_release_date (payment_date + 7 days)
 - buffer_status (buffering/released/held/cancelled)
+- clawback_amount (if commission reversed)
+- clawback_reason
+- clawback_at
 - cleared_at, paid_at
 - created_at, updated_at
 
@@ -124,6 +216,7 @@ Customer doesn't fix → Commission: CANCELLED
 - week_start_date, week_end_date
 - total_amount
 - commission_ids (array of commission IDs included)
+- clawback_total (subtracted from total_amount before payout)
 - status (pending_approval/approved/processing/paid/cancelled)
 - requested_at, approved_at, approved_by
 - paid_at
@@ -134,7 +227,13 @@ Customer doesn't fix → Commission: CANCELLED
 
 ### rep_alerts
 - id, rep_id, customer_email
-- alert_type (payment_failed/customer_at_risk/commission_held/payout_ready/w9_required)
+- alert_type (payment_failed/customer_at_risk/commission_held/payout_ready/w9_required/chargeback_warning/account_suspended/account_terminated/clawback_processed/customer_cancelled)
 - message
 - is_read (boolean)
 - created_at
+
+### Payout Processing Notes
+- Only include commissions where buffer_status = released AND payment_status = customer_paid AND no active chargeback AND approved by admin
+- Subtract any clawback amounts from weekly payout before processing
+- If clawbacks exceed payout amount, carry negative balance to next week
+- Rep sees clawback line items clearly on their commission statement
