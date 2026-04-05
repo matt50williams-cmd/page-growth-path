@@ -108,80 +108,96 @@ export default function TeaserResults() {
   const body = { fontFamily: "'Inter', sans-serif" };
   const card = { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14 };
 
+  // Top worst findings as one-liners for offer card
+  const worstFindings = realFindings.filter(f => f.severity !== "good").slice(0, 3);
+  const lockedCount = 43;
+
   return (
     <div style={{ ...body, minHeight: "100vh", background: "#0a0f1e" }}>
       <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
 
-      {/* ═══ SECTION 1 — STATUS BAR ═══ */}
-      <div style={{ background: "rgba(16,185,129,0.06)", borderBottom: "1px solid rgba(16,185,129,0.15)", padding: "10px 20px" }}>
-        <div style={{ maxWidth: 800, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#10b981", display: "inline-block" }} />
-            <span style={{ color: "#10b981", fontSize: 13, fontWeight: 600 }}>Scan Complete</span>
+      {/* ═══ 1. STATUS BAR ═══ */}
+      <div style={{ background: "rgba(16,185,129,0.06)", borderBottom: "1px solid rgba(16,185,129,0.15)", padding: "8px 20px" }}>
+        <div style={{ maxWidth: 800, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#10b981", display: "inline-block" }} />
+            <span style={{ color: "#10b981", fontSize: 12, fontWeight: 600 }}>Scan Complete</span>
           </div>
-          <span style={{ color: "#c8d0dc", fontSize: 13, fontWeight: 600 }}>{businessName}{city ? ` — ${city}` : ""}</span>
-          <span style={{ color: "#64748b", fontSize: 12 }}>4 of 47 checks shown</span>
+          <span style={{ color: "#c8d0dc", fontSize: 12, fontWeight: 600 }}>{businessName}{city ? ` — ${city}` : ""}</span>
         </div>
       </div>
 
-      {/* NAV */}
-      <nav style={{ padding: "14px 24px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-        <div style={{ maxWidth: 800, margin: "0 auto", display: "flex", alignItems: "center", gap: 10 }}>
-          <BarChart2 style={{ width: 18, height: 18, color: "#3b82f6" }} />
-          <span style={{ ...heading, fontWeight: 700, fontSize: 14, color: "#fff" }}>PageAudit Pro</span>
-        </div>
-      </nav>
+      <div style={{ maxWidth: 800, margin: "0 auto", padding: "28px 20px 80px" }}>
 
-      <div style={{ maxWidth: 800, margin: "0 auto", padding: "36px 20px 80px" }}>
-
-        {/* ═══ SECTION 2 — DIAGNOSIS HEADER ═══ */}
-        <div style={{ textAlign: "center", marginBottom: 40 }}>
-          <h1 style={{ ...heading, fontSize: "clamp(24px, 4vw, 36px)", fontWeight: 800, color: "#fff", lineHeight: 1.15, marginBottom: 12 }}>
+        {/* ═══ 2. HEADLINE + PILLS ═══ */}
+        <div style={{ textAlign: "center", marginBottom: 24 }}>
+          <h1 style={{ ...heading, fontSize: "clamp(22px, 3.5vw, 32px)", fontWeight: 800, color: "#fff", lineHeight: 1.15, marginBottom: 10 }}>
             {criticalCount > 0
               ? <>We found <span style={{ color: "#ef4444" }}>{criticalCount} critical issue{criticalCount > 1 ? "s" : ""}</span> affecting<br />{businessName}'s online presence</>
               : warningCount > 0
                 ? <>We found <span style={{ color: "#f59e0b" }}>{warningCount} issue{warningCount > 1 ? "s" : ""}</span> that could be<br />costing <span style={{ color: "#f59e0b" }}>{businessName}</span> customers</>
-                : <>{businessName} looks good on Google —<br />but we found issues on <span style={{ color: "#f59e0b" }}>other platforms</span> that need attention</>
+                : <>{businessName} looks good on Google —<br />but we found issues on <span style={{ color: "#f59e0b" }}>other platforms</span></>
             }
           </h1>
-          <p style={{ color: "#94a3b8", fontSize: 15, maxWidth: 560, margin: "0 auto 24px", lineHeight: 1.6 }}>
-            {allGood
-              ? "Your Google profile is strong, but there are likely problems on Yelp, your website, and business directories that we haven't shown you yet."
-              : "These problems are costing you customers every single day. Here's what we found."}
-          </p>
-
-          {/* Stat pills */}
-          <div style={{ display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", justifyContent: "center", gap: 8, flexWrap: "wrap" }}>
             {allGood ? (
-              <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 999, padding: "8px 16px" }}>
-                <span style={{ color: "#f59e0b", fontSize: 13, fontWeight: 600 }}>✅ Google looks strong — but we found issues on other platforms</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 999, padding: "5px 14px" }}>
+                <span style={{ color: "#f59e0b", fontSize: 12, fontWeight: 600 }}>✅ Google strong — issues found elsewhere</span>
               </div>
             ) : (
               <>
-                {criticalCount > 0 && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 999, padding: "6px 14px" }}>
-                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#ef4444" }} />
-                    <span style={{ color: "#ef4444", fontSize: 13, fontWeight: 700 }}>{criticalCount} Critical</span>
-                  </div>
-                )}
-                {warningCount > 0 && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 999, padding: "6px 14px" }}>
-                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#f59e0b" }} />
-                    <span style={{ color: "#f59e0b", fontSize: 13, fontWeight: 700 }}>{warningCount} Warning{warningCount > 1 ? "s" : ""}</span>
-                  </div>
-                )}
-                {goodCount > 0 && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.2)", borderRadius: 999, padding: "6px 14px" }}>
-                    <CheckCircle style={{ width: 14, height: 14, color: "#10b981" }} />
-                    <span style={{ color: "#10b981", fontSize: 13, fontWeight: 700 }}>{goodCount} Looking Good</span>
-                  </div>
-                )}
+                {criticalCount > 0 && <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 999, padding: "5px 12px", color: "#ef4444", fontSize: 12, fontWeight: 700 }}>🔴 {criticalCount} Critical</span>}
+                {warningCount > 0 && <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 999, padding: "5px 12px", color: "#f59e0b", fontSize: 12, fontWeight: 700 }}>⚠️ {warningCount} Warning{warningCount > 1 ? "s" : ""}</span>}
+                {goodCount > 0 && <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.2)", borderRadius: 999, padding: "5px 12px", color: "#10b981", fontSize: 12, fontWeight: 700 }}>✅ {goodCount} Good</span>}
               </>
             )}
           </div>
         </div>
 
-        {/* ═══ SECTION 3 — FREE FINDINGS ═══ */}
+        {/* ═══ 3. THE OFFER CARD — HIGH UP ═══ */}
+        <div style={{ background: "rgba(255,255,255,0.03)", borderLeft: "4px solid #f97316", border: "1px solid rgba(249,115,22,0.2)", borderLeftWidth: 4, borderRadius: 14, padding: 0, marginBottom: 36, overflow: "hidden" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}>
+            {/* LEFT — what we found */}
+            <div style={{ padding: "22px 24px", borderRight: "1px solid rgba(255,255,255,0.05)" }}>
+              <p style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#94a3b8", marginBottom: 12 }}>What we found so far</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
+                {worstFindings.length > 0 ? worstFindings.map((f, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                    <span style={{ width: 7, height: 7, borderRadius: "50%", background: f.severity === "critical" ? "#ef4444" : "#f59e0b", flexShrink: 0, marginTop: 5 }} />
+                    <span style={{ color: "#c8d0dc", fontSize: 13, lineHeight: 1.4 }}>{f.title}</span>
+                  </div>
+                )) : (
+                  <p style={{ color: "#94a3b8", fontSize: 13 }}>Google looks good — but other platforms need checking</p>
+                )}
+              </div>
+              <p style={{ color: "#64748b", fontSize: 12 }}>...and <strong style={{ color: "#f59e0b" }}>{lockedCount} more issues</strong> locked</p>
+            </div>
+
+            {/* RIGHT — buy */}
+            <div style={{ padding: "22px 24px" }}>
+              <p style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#f97316", marginBottom: 10 }}>Get every issue + exact fix</p>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 14 }}>
+                <span style={{ color: "#64748b", fontSize: 14, textDecoration: "line-through" }}>$197</span>
+                <span style={{ ...heading, fontSize: 32, fontWeight: 800, color: "#fff" }}>$39</span>
+              </div>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Your email address"
+                onKeyDown={e => { if (e.key === "Enter") handleUnlock(); }}
+                style={{ width: "100%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "10px 12px", fontSize: 14, color: "#fff", outline: "none", boxSizing: "border-box", marginBottom: 8 }} />
+              <button onClick={handleUnlock} disabled={processing}
+                style={{ width: "100%", background: "#f97316", color: "#fff", fontSize: 15, fontWeight: 700, padding: "13px 0", borderRadius: 8, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: processing ? 0.6 : 1 }}>
+                {processing ? <><Loader2 style={{ width: 16, height: 16, animation: "spin 1s linear infinite" }} /> Processing...</> : <>Fix My Business — $39 <ArrowRight style={{ width: 16, height: 16 }} /></>}
+              </button>
+              {unlockError && <p style={{ color: "#ef4444", fontSize: 11, textAlign: "center", marginTop: 6 }}>{unlockError}</p>}
+              <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 10, flexWrap: "wrap" }}>
+                {[{ i: Shield, l: "Secure" }, { i: Zap, l: "Instant" }, { i: Clock, l: "No contracts" }].map(({ i: Icon, l }) => (
+                  <span key={l} style={{ display: "flex", alignItems: "center", gap: 3, color: "#64748b", fontSize: 10 }}><Icon style={{ width: 10, height: 10 }} /> {l}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ═══ 4. FREE FINDINGS ═══ */}
         <div style={{ marginBottom: 40 }}>
           <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "#3b82f6", marginBottom: 16 }}>Free Preview — What We Found So Far</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -271,90 +287,32 @@ export default function TeaserResults() {
           </div>
         </div>
 
-        {/* ═══ SECTION 5 — THE PAYWALL ═══ */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 20, marginBottom: 48 }}>
-          {/* LEFT — Problem summary */}
-          <div style={{ padding: "4px 0" }}>
-            <h2 style={{ ...heading, fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 16, lineHeight: 1.3 }}>
-              Here's what's happening to {businessName} right now while you read this:
-            </h2>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {[
-                "Customers searching on Google are seeing outdated or missing information",
-                "Your competitors who fixed these issues are capturing your potential customers",
-                "Every directory with wrong info makes Google trust you less",
-                "Each day without fixes = more lost customers you'll never know about",
-              ].map((line, i) => (
-                <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#ef4444", flexShrink: 0, marginTop: 6 }} />
-                  <p style={{ color: "#c8d0dc", fontSize: 14, lineHeight: 1.6 }}>{line}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* RIGHT — Offer card */}
-          <div style={{ background: "rgba(37,99,235,0.06)", border: "1px solid rgba(37,99,235,0.2)", borderRadius: 16, padding: 28 }}>
-            <p style={{ ...heading, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#3b82f6", marginBottom: 16, textAlign: "center" }}>Get Your Complete Fix-It Plan</p>
-
-            <div style={{ textAlign: "center", marginBottom: 20 }}>
-              <span style={{ color: "#64748b", fontSize: 14, textDecoration: "line-through" }}>$197</span>
-              <span style={{ color: "#64748b", fontSize: 14 }}> → </span>
-              <span style={{ ...heading, fontSize: 36, fontWeight: 800, color: "#fff" }}>$39</span>
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
-              {[
-                "All 47 checks analyzed",
-                "Every issue ranked by impact",
-                "Exact fix for every problem",
-                "AI action plan for your specific business",
-                "Competitor comparison",
-              ].map(item => (
-                <div key={item} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <CheckCircle style={{ width: 16, height: 16, color: "#10b981", flexShrink: 0 }} />
-                  <span style={{ color: "#c8d0dc", fontSize: 13 }}>{item}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Email if not captured */}
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Your email address"
-              onKeyDown={e => { if (e.key === "Enter") handleUnlock(); }}
-              style={{ width: "100%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, padding: "12px 14px", fontSize: 14, color: "#fff", outline: "none", boxSizing: "border-box", textAlign: "center", marginBottom: 10 }} />
-
-            <button onClick={handleUnlock} disabled={processing}
-              style={{ width: "100%", background: "#f97316", color: "#fff", fontSize: 16, fontWeight: 700, padding: "16px 0", borderRadius: 10, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: processing ? 0.6 : 1 }}>
-              {processing ? <><Loader2 style={{ width: 18, height: 18, animation: "spin 1s linear infinite" }} /> Processing...</> : <>Fix My Business — $39 <ArrowRight style={{ width: 18, height: 18 }} /></>}
-            </button>
-
-            {unlockError && <p style={{ color: "#ef4444", fontSize: 12, textAlign: "center", marginTop: 8 }}>{unlockError}</p>}
-
-            <div style={{ display: "flex", justifyContent: "center", gap: 14, marginTop: 12, flexWrap: "wrap" }}>
-              {[{ i: Shield, l: "Secure" }, { i: Zap, l: "Instant access" }, { i: Clock, l: "No contracts" }].map(({ i: Icon, l }) => (
-                <span key={l} style={{ display: "flex", alignItems: "center", gap: 4, color: "#64748b", fontSize: 11 }}><Icon style={{ width: 12, height: 12 }} /> {l}</span>
-              ))}
-            </div>
-
-            <p style={{ color: "#4b5563", fontSize: 11, textAlign: "center", marginTop: 10, lineHeight: 1.5 }}>
-              One-time payment. Yours forever.<br />
-              By purchasing you agree to our <a href="/terms" target="_blank" style={{ color: "#3b82f6", textDecoration: "none" }}>Terms</a> and <a href="/privacy" target="_blank" style={{ color: "#3b82f6", textDecoration: "none" }}>Privacy Policy</a>
-            </p>
+        {/* ═══ 6. CONSEQUENCES ═══ */}
+        <div style={{ ...card, padding: 24, marginBottom: 32 }}>
+          <p style={{ ...heading, fontSize: 16, fontWeight: 700, color: "#fff", marginBottom: 14 }}>Here's what's happening right now while you read this:</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {[
+              "Customers searching on Google are seeing outdated or missing information about " + businessName,
+              "Your competitors who fixed these issues are capturing your potential customers",
+              "Every directory with wrong info makes Google trust you less",
+              "Each day without fixes = more lost customers you'll never know about",
+            ].map((line, i) => (
+              <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#ef4444", flexShrink: 0, marginTop: 6 }} />
+                <p style={{ color: "#c8d0dc", fontSize: 13, lineHeight: 1.5 }}>{line}</p>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* ═══ SOCIAL PROOF ═══ */}
-        <div style={{ ...card, padding: 20, marginBottom: 48, textAlign: "center" }}>
-          <p style={{ color: "#64748b", fontSize: 13, marginBottom: 4 }}>Agencies charge <strong style={{ color: "#c8d0dc" }}>$500–$2,000</strong> for manual audits.</p>
-          <p style={{ color: "#64748b", fontSize: 13 }}>We do it automatically with AI for <strong style={{ color: "#2563eb" }}>$39</strong>.</p>
-        </div>
-
-        {/* ═══ BOTTOM CTA ═══ */}
+        {/* ═══ 7. BOTTOM CTA ═══ */}
         <div style={{ textAlign: "center", marginBottom: 32 }}>
+          <h2 style={{ ...heading, fontSize: 22, fontWeight: 700, color: "#fff", marginBottom: 16 }}>Ready to fix {businessName}?</h2>
           <button onClick={handleUnlock} disabled={processing}
-            style={{ background: "#f97316", color: "#fff", fontSize: 15, fontWeight: 700, padding: "14px 36px", borderRadius: 10, border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8, opacity: processing ? 0.6 : 1 }}>
-            {processing ? "Processing..." : "Get My Complete Audit — $39 →"}
+            style={{ background: "#f97316", color: "#fff", fontSize: 16, fontWeight: 700, padding: "16px 40px", borderRadius: 10, border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8, opacity: processing ? 0.6 : 1 }}>
+            {processing ? "Processing..." : <>Get My Complete Audit — $39 <ArrowRight style={{ width: 16, height: 16 }} /></>}
           </button>
+          <p style={{ color: "#4b5563", fontSize: 11, marginTop: 10 }}>One-time payment · Yours forever · Agencies charge $500–$2,000</p>
         </div>
       </div>
 
