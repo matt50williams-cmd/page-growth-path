@@ -30,6 +30,7 @@ import RepCommissions from './pages/RepCommissions';
 import RepTraining from './pages/RepTraining';
 import ScanRedirect from './pages/ScanRedirect';
 import RepSalesTools from './pages/RepSalesTools';
+import RepCommandCenter from './pages/RepCommandCenter';
 import ScanReport from './pages/ScanReport';
 import ScanningProgress from './pages/ScanningProgress';
 import PostPaymentIntake from './pages/PostPaymentIntake';
@@ -87,7 +88,8 @@ function AuthenticatedApp() {
         <Route path="/seo-audit" element={<SeoAuditPage />} />
         <Route path="/seo-loading" element={<SeoLoadingPage />} />
         <Route path="/teaser-results" element={<TeaserResults />} />
-        <Route path="/rep-dashboard" element={<RepDashboard />} />
+        <Route path="/rep-command-center" element={<RepCommandCenter />} />
+        <Route path="/rep-dashboard" element={<RepCommandCenter />} />
         <Route path="/rep-agreement" element={<RepAgreement />} />
         <Route path="/rep-commissions" element={<RepCommissions />} />
         <Route path="/rep-training" element={<RepTraining />} />
