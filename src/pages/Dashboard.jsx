@@ -117,20 +117,84 @@ export default function Dashboard() {
       </nav>
 
       <div className="flex-1 max-w-5xl mx-auto w-full px-4 md:px-6 py-10 md:py-14">
-        <div className="mb-12">
-          <h1 className="text-4xl font-extrabold text-gray-900 mb-2">
-            Welcome back, {latestAudit?.business_name || latestAudit?.customer_name || user?.full_name || user?.email?.split("@")[0]}
-          </h1>
-          <p className="text-gray-500">Manage your Facebook page audits and strategy reports below.</p>
+        <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
+          <div>
+            <h1 className="text-3xl font-extrabold text-gray-900 mb-1">
+              Welcome back, {user?.full_name || user?.email?.split("@")[0]}
+            </h1>
+            <p className="text-gray-500 text-sm">
+              {audits.length > 1 ? `Monitoring ${audits.length} locations` : "Manage your online presence audit below."}
+            </p>
+          </div>
+          <button onClick={() => navigate("/scanning")}
+            className="inline-flex items-center gap-2 bg-[#1877F2] text-white px-5 py-2.5 text-sm font-semibold rounded-lg hover:bg-[#1457C0] transition-colors">
+            + Add Another Location
+          </button>
         </div>
 
-        {latestAudit && (
+        {/* Combined stats if multiple locations */}
+        {audits.length > 1 && (
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="bg-white border border-gray-200 rounded-xl p-4">
+              <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Locations</p>
+              <p className="text-2xl font-bold text-gray-900">{audits.length}</p>
+            </div>
+            <div className="bg-white border border-gray-200 rounded-xl p-4">
+              <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Avg Score</p>
+              <p className="text-2xl font-bold text-[#1877F2]">{audits.filter(a => a.overall_score).length > 0 ? Math.round(audits.filter(a => a.overall_score).reduce((s, a) => s + parseFloat(a.overall_score), 0) / audits.filter(a => a.overall_score).length) : "--"}/100</p>
+            </div>
+            <div className="bg-white border border-gray-200 rounded-xl p-4">
+              <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Total Issues</p>
+              <p className="text-2xl font-bold text-orange-500">{audits.filter(a => a.status === "completed").length > 0 ? "See reports" : "--"}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Location cards */}
+        {audits.length > 1 ? (
+          <div className="mb-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Your Locations</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {audits.map(a => {
+                const sc = a.overall_score ? Math.round(a.overall_score) : null;
+                const scColor = sc >= 70 ? "text-green-600" : sc >= 50 ? "text-yellow-500" : sc ? "text-red-500" : "text-gray-400";
+                const scLabel = sc >= 85 ? "Excellent" : sc >= 70 ? "Good" : sc >= 50 ? "Needs Work" : sc ? "Critical" : "Pending";
+                return (
+                  <div key={a.id} className="bg-white border border-gray-200 rounded-xl p-5 hover:border-[#1877F2] transition-colors">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <p className="font-bold text-gray-900">{a.business_name || a.customer_name || "Unnamed"}</p>
+                        <p className="text-xs text-gray-500">{a.city || ""}{a.facebook_url ? ` · ${a.facebook_url.replace(/^https?:\/\/(www\.)?/, "").split("/")[0]}` : ""}</p>
+                      </div>
+                      <StatusBadge status={a.status} />
+                    </div>
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className={`text-2xl font-bold ${scColor}`}>{sc || "--"}</span>
+                      <span className="text-xs text-gray-500">/100</span>
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${sc >= 70 ? "bg-green-50 text-green-700" : sc >= 50 ? "bg-yellow-50 text-yellow-700" : sc ? "bg-red-50 text-red-700" : "bg-gray-50 text-gray-500"}`}>{scLabel}</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => handleViewReport(a.id)} className="flex-1 inline-flex items-center justify-center gap-1 bg-[#1877F2] text-white px-3 py-2 text-xs font-semibold rounded-lg hover:bg-[#1457C0]">
+                        <Eye className="w-3.5 h-3.5" /> View Report
+                      </button>
+                      <button onClick={() => handleShareLink(a.id)}
+                        className={`inline-flex items-center gap-1 px-3 py-2 text-xs font-semibold rounded-lg border ${copied === a.id ? "bg-green-50 border-green-300 text-green-700" : "border-gray-200 text-gray-600 hover:border-gray-400"}`}>
+                        {copied === a.id ? <CheckCircle className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5" />}
+                        {copied === a.id ? "Copied" : "Share"}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : latestAudit && (
           <div className="bg-white border-2 border-[#1877F2] rounded-2xl p-8 mb-6 shadow-lg">
             <div className="flex items-start justify-between mb-6">
               <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-[#1877F2] mb-2">Latest Audit</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-[#1877F2] mb-2">Your Audit</p>
                 <h2 className="text-2xl font-bold text-gray-900">{latestAudit.business_name || latestAudit.customer_name || "Your Audit"}</h2>
-                <p className="text-sm text-gray-500 mt-1">{latestAudit.facebook_url}</p>
+                <p className="text-sm text-gray-500 mt-1">{latestAudit.city || ""}</p>
               </div>
               <StatusBadge status={latestAudit.status} />
             </div>

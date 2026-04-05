@@ -29,6 +29,7 @@ import RepSignup from './pages/RepSignup';
 import RepCommissions from './pages/RepCommissions';
 import RepTraining from './pages/RepTraining';
 import ScanRedirect from './pages/ScanRedirect';
+import RepSalesTools from './pages/RepSalesTools';
 import ScanReport from './pages/ScanReport';
 import ScanningProgress from './pages/ScanningProgress';
 import PostPaymentIntake from './pages/PostPaymentIntake';
@@ -91,6 +92,7 @@ function AuthenticatedApp() {
         <Route path="/rep-commissions" element={<RepCommissions />} />
         <Route path="/rep-training" element={<RepTraining />} />
         <Route path="/join" element={<RepSignup />} />
+        <Route path="/rep-sales-tools" element={<RepSalesTools />} />
         <Route path="/scan" element={<ScanRedirect />} />
         <Route path="/scanning" element={<ScanningProgress />} />
         <Route path="/post-payment-details" element={<PostPaymentIntake />} />

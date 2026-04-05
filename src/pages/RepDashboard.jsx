@@ -63,6 +63,7 @@ export default function RepDashboard() {
           </div>
           <div className="flex items-center gap-3">
             <button onClick={() => navigate("/rep-training")} className="text-xs text-[#6b7280] hover:text-[#111827] flex items-center gap-1"><BookOpen className="w-3.5 h-3.5" /> Training</button>
+            <button onClick={() => navigate("/rep-sales-tools")} className="text-xs text-[#6b7280] hover:text-[#111827] flex items-center gap-1"><BookOpen className="w-3.5 h-3.5" /> Sales Tools</button>
             <button onClick={() => navigate("/rep-commissions")} className="text-xs text-[#6b7280] hover:text-[#111827] flex items-center gap-1"><FileText className="w-3.5 h-3.5" /> Commissions</button>
             <span className="text-xs text-[#6b7280]">{r.full_name}</span>
             <button onClick={() => logout("/")} className="text-xs text-[#6b7280] hover:text-[#111827] flex items-center gap-1"><LogOut className="w-3.5 h-3.5" /></button>
