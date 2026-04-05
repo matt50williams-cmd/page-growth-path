@@ -138,14 +138,14 @@ export default function RepAgreement() {
   useEffect(() => {
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap";
+    link.href = "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600&display=swap";
     document.head.appendChild(link);
     return () => { document.head.removeChild(link); };
   }, []);
 
   useEffect(() => { if (!isLoadingAuth && !user) navigate("/login"); }, [user, isLoadingAuth]);
 
-  const syne = { fontFamily: "'Syne', sans-serif" };
+  const syne = { fontFamily: "'Plus Jakarta Sans', sans-serif" };
   const now = new Date();
 
   const handleSign = () => {
@@ -170,7 +170,7 @@ export default function RepAgreement() {
   );
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0a0f1e", fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: "#0a0f1e", fontFamily: "'Inter', sans-serif" }}>
       <nav style={{ background: "rgba(10,15,30,0.9)", borderBottom: "1px solid rgba(255,255,255,0.05)", padding: "16px 24px" }}>
         <div style={{ maxWidth: 800, margin: "0 auto", display: "flex", alignItems: "center", gap: 10 }}>
           <BarChart2 style={{ width: 20, height: 20, color: "#3b82f6" }} />
@@ -185,7 +185,7 @@ export default function RepAgreement() {
         </div>
 
         <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: 24, maxHeight: 400, overflowY: "auto", marginBottom: 32, scrollbarWidth: "thin", scrollbarColor: "#374151 transparent" }}>
-          <pre style={{ color: "#c8d0dc", fontSize: 13, lineHeight: 1.7, whiteSpace: "pre-wrap", fontFamily: "'DM Sans', sans-serif", margin: 0 }}>{AGREEMENT}</pre>
+          <pre style={{ color: "#c8d0dc", fontSize: 13, lineHeight: 1.7, whiteSpace: "pre-wrap", fontFamily: "'Inter', sans-serif", margin: 0 }}>{AGREEMENT}</pre>
         </div>
 
         {signed ? (

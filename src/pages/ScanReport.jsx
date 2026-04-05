@@ -30,7 +30,7 @@ export default function ScanReport() {
   useEffect(() => {
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap";
+    link.href = "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600&display=swap";
     document.head.appendChild(link);
     return () => { document.head.removeChild(link); };
   }, []);
@@ -53,7 +53,7 @@ export default function ScanReport() {
     return () => observer.disconnect();
   }, [data]);
 
-  const syne = { fontFamily: "'Syne', sans-serif" };
+  const syne = { fontFamily: "'Plus Jakarta Sans', sans-serif" };
 
   const handleCopyShare = () => {
     const url = auditId ? `${window.location.origin}/report/scan/${auditId}` : window.location.href;
@@ -73,7 +73,7 @@ export default function ScanReport() {
   );
 
   if (error || !data) return (
-    <div style={{ minHeight: "100vh", background: "#0a0f1e", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: "#0a0f1e", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Inter', sans-serif" }}>
       <div style={{ textAlign: "center" }}>
         <AlertCircle style={{ width: 48, height: 48, color: "#ef4444", margin: "0 auto 16px", display: "block" }} />
         <h2 style={{ ...syne, color: "#fff", fontSize: 24, marginBottom: 8 }}>Report Not Found</h2>
@@ -96,7 +96,7 @@ export default function ScanReport() {
   });
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0a0f1e", fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: "#0a0f1e", fontFamily: "'Inter', sans-serif" }}>
       {/* NAV */}
       <nav style={{ background: "rgba(10,15,30,0.9)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.05)", padding: "14px 24px", position: "sticky", top: 0, zIndex: 50 }}>
         <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>

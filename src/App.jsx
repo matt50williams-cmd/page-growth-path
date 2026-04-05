@@ -30,6 +30,7 @@ import RepCommissions from './pages/RepCommissions';
 import RepTraining from './pages/RepTraining';
 import ScanRedirect from './pages/ScanRedirect';
 import ScanReport from './pages/ScanReport';
+import ScanningProgress from './pages/ScanningProgress';
 
 function StripeRedirectHandler() {
   const navigate = useNavigate();
@@ -90,6 +91,7 @@ function AuthenticatedApp() {
         <Route path="/rep-training" element={<RepTraining />} />
         <Route path="/join" element={<RepSignup />} />
         <Route path="/scan" element={<ScanRedirect />} />
+        <Route path="/scanning" element={<ScanningProgress />} />
         <Route path="/report/scan/:auditId" element={<ScanReport />} />
         <Route path="/report/scan" element={<ScanReport />} />
         <Route path="*" element={<PageNotFound />} />

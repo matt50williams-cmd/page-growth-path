@@ -18,12 +18,12 @@ export default function RepSignup() {
   useEffect(() => {
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap";
+    link.href = "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600&display=swap";
     document.head.appendChild(link);
     return () => { document.head.removeChild(link); };
   }, []);
 
-  const syne = { fontFamily: "'Syne', sans-serif" };
+  const syne = { fontFamily: "'Plus Jakarta Sans', sans-serif" };
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   const handleSubmit = () => {
@@ -44,7 +44,7 @@ export default function RepSignup() {
   );
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0a0f1e", fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: "#0a0f1e", fontFamily: "'Inter', sans-serif" }}>
       <nav style={{ background: "rgba(10,15,30,0.9)", borderBottom: "1px solid rgba(255,255,255,0.05)", padding: "16px 24px" }}>
         <div style={{ maxWidth: 700, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>

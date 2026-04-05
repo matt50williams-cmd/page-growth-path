@@ -23,16 +23,16 @@ export default function RepTraining() {
   useEffect(() => {
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap";
+    link.href = "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600&display=swap";
     document.head.appendChild(link);
     return () => { document.head.removeChild(link); };
   }, []);
 
-  const syne = { fontFamily: "'Syne', sans-serif" };
+  const syne = { fontFamily: "'Plus Jakarta Sans', sans-serif" };
   const card = { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: 24 };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0a0f1e", fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: "#0a0f1e", fontFamily: "'Inter', sans-serif" }}>
       <nav style={{ background: "rgba(10,15,30,0.9)", borderBottom: "1px solid rgba(255,255,255,0.05)", padding: "16px 24px", position: "sticky", top: 0, zIndex: 50 }}>
         <div style={{ maxWidth: 800, margin: "0 auto", display: "flex", alignItems: "center", gap: 12 }}>
           <button onClick={() => navigate("/rep-dashboard")} style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8", display: "flex" }}><ArrowLeft style={{ width: 18, height: 18 }} /></button>

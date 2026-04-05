@@ -50,7 +50,7 @@ export default function Home() {
   useEffect(() => {
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap";
+    link.href = "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600&display=swap";
     document.head.appendChild(link);
     return () => { document.head.removeChild(link); };
   }, []);
@@ -64,11 +64,25 @@ export default function Home() {
   }, []);
 
   const handleScan = (name) => {
-    navigate("/teaser-results", { state: { businessName: (name || "").trim() } });
+    const raw = (name || "").trim();
+    // Try to parse "Joe's Pizza Dallas TX" → businessName, city, state
+    const stateMatch = raw.match(/\b([A-Z]{2})\s*$/);
+    const st = stateMatch ? stateMatch[1] : "";
+    const withoutState = st ? raw.slice(0, -st.length).trim().replace(/,\s*$/, "") : raw;
+    // Last word(s) after business name could be city — rough heuristic
+    const parts = withoutState.split(/\s+/);
+    let biz = raw, ct = "";
+    if (parts.length >= 3) {
+      // Assume last 1-2 words are city
+      const cityWords = parts.length >= 4 ? parts.slice(-2) : parts.slice(-1);
+      ct = cityWords.join(" ");
+      biz = parts.slice(0, parts.length - cityWords.length).join(" ");
+    }
+    navigate("/scanning", { state: { businessName: biz || raw, city: ct, state: st } });
   };
 
-  const syne = { fontFamily: "'Syne', sans-serif" };
-  const dm = { fontFamily: "'DM Sans', sans-serif" };
+  const syne = { fontFamily: "'Plus Jakarta Sans', sans-serif" };
+  const dm = { fontFamily: "'Inter', sans-serif" };
 
   return (
     <div className="min-h-screen" style={{ ...dm, background: "#0a0f1e" }}>
