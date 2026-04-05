@@ -180,9 +180,6 @@ export default function TeaserResults() {
                 <span style={{ color: "#64748b", fontSize: 14, textDecoration: "line-through" }}>$197</span>
                 <span style={{ ...heading, fontSize: 32, fontWeight: 800, color: "#fff" }}>$39</span>
               </div>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Your email address"
-                onKeyDown={e => { if (e.key === "Enter") handleUnlock(); }}
-                style={{ width: "100%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "10px 12px", fontSize: 14, color: "#fff", outline: "none", boxSizing: "border-box", marginBottom: 8 }} />
               <button onClick={handleUnlock} disabled={processing}
                 style={{ width: "100%", background: "#f97316", color: "#fff", fontSize: 15, fontWeight: 700, padding: "13px 0", borderRadius: 8, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: processing ? 0.6 : 1 }}>
                 {processing ? <><Loader2 style={{ width: 16, height: 16, animation: "spin 1s linear infinite" }} /> Processing...</> : <>Fix My Business — $39 <ArrowRight style={{ width: 16, height: 16 }} /></>}
@@ -328,7 +325,7 @@ export default function TeaserResults() {
               style={{ width: "100%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, padding: "14px 16px", fontSize: 15, color: "#fff", outline: "none", boxSizing: "border-box", marginBottom: 14 }} />
             <button onClick={() => { if (email.includes("@")) { setShowEmailModal(false); goToCheckout(); } }}
               disabled={!email.includes("@") || processing}
-              style={{ width: "100%", background: "#2563eb", color: "#fff", fontSize: 15, fontWeight: 700, padding: "14px 0", borderRadius: 10, border: "none", cursor: "pointer", opacity: email.includes("@") ? 1 : 0.4 }}>
+              style={{ width: "100%", background: "#f97316", color: "#fff", fontSize: 15, fontWeight: 700, padding: "14px 0", borderRadius: 10, border: "none", cursor: "pointer", opacity: email.includes("@") ? 1 : 0.4 }}>
               {processing ? "Processing..." : "Continue to Payment →"}
             </button>
             <p style={{ color: "#4b5563", fontSize: 11, textAlign: "center", marginTop: 10 }}>Secure checkout by Stripe. We'll never spam you.</p>

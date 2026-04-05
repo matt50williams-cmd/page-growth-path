@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
-import { Loader2, Eye, EyeOff, CheckCircle } from "lucide-react";
+import { Loader2, Eye, EyeOff, CheckCircle, BarChart2 } from "lucide-react";
 
 const API_BASE = "https://pageaudit-engine.onrender.com";
 
@@ -92,6 +92,14 @@ export default function CreateAccount() {
     "Writing your 7-day action plan...",
     "Finalizing your report...",
   ];
+
+  useEffect(() => {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600&display=swap";
+    document.head.appendChild(link);
+    return () => { document.head.removeChild(link); };
+  }, []);
 
   useEffect(() => {
     if (!loading) return;
@@ -289,93 +297,87 @@ export default function CreateAccount() {
     );
   }
 
+  const inp = { width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "12px 14px", fontSize: 14, color: "#fff", outline: "none", boxSizing: /** @type {const} */ ("border-box") };
+  const inpErr = { ...inp, borderColor: "rgba(239,68,68,0.4)" };
+
   return (
-    <div className="min-h-screen bg-gray-50 font-sans flex flex-col">
-      <nav className="bg-white border-b border-gray-100">
-        <div className="max-w-5xl mx-auto px-6 py-4">
-          <span className="font-bold text-base text-black tracking-tight">PageAudit Pro</span>
+    <div style={{ minHeight: "100vh", background: "#0a0f1e", fontFamily: "'Inter', sans-serif", display: "flex", flexDirection: "column" }}>
+      <nav style={{ padding: "14px 24px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+        <div style={{ maxWidth: 480, margin: "0 auto", display: "flex", alignItems: "center", gap: 10 }}>
+          <BarChart2 style={{ width: 18, height: 18, color: "#3b82f6" }} />
+          <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 14, color: "#fff" }}>PageAudit Pro</span>
         </div>
       </nav>
 
-      <div className="flex-1 flex items-center justify-center px-4 py-10">
-        <div className="w-full max-w-lg">
-          <div className="bg-white border border-gray-100 rounded-3xl shadow-sm px-7 py-8">
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 20px" }}>
+        <div style={{ width: "100%", maxWidth: 480 }}>
+          <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: "28px 24px" }}>
 
-            <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6 flex items-center gap-3">
-              <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />
+            <div style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)", borderRadius: 10, padding: "12px 16px", marginBottom: 24 }}>
+              <CheckCircle style={{ width: 20, height: 20, color: "#10b981", flexShrink: 0 }} />
               <div>
-                <p className="text-sm font-bold text-green-800">Payment Confirmed!</p>
-                <p className="text-xs text-green-600">Create your account to access your full report.</p>
+                <p style={{ color: "#10b981", fontSize: 14, fontWeight: 600 }}>Payment Confirmed!</p>
+                <p style={{ color: "#94a3b8", fontSize: 12 }}>Create your account to access your full report.</p>
               </div>
             </div>
 
-            <h1 className="text-2xl font-bold text-gray-900 mb-1">Secure Your Access</h1>
-            <p className="text-sm text-gray-400 mb-8">Your report will be ready in about 60 seconds after you create your account.</p>
+            <h1 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 22, fontWeight: 800, color: "#fff", marginBottom: 4 }}>Secure Your Access</h1>
+            <p style={{ color: "#94a3b8", fontSize: 13, marginBottom: 24 }}>Your report will be ready in about 60 seconds.</p>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
-                <p className="text-sm text-red-700">{error}</p>
+              <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 10, padding: "12px 16px", marginBottom: 20 }}>
+                <p style={{ color: "#ef4444", fontSize: 13 }}>{error}</p>
                 {error.includes("already exists") && (
-                  <button
-                    type="button"
-                    onClick={() => navigate("/login")}
-                    className="mt-2 text-xs text-[#1877F2] font-semibold hover:underline"
-                  >
-                    Click here to log in instead
-                  </button>
+                  <button type="button" onClick={() => navigate("/login")} style={{ background: "none", border: "none", color: "#3b82f6", fontSize: 12, fontWeight: 600, cursor: "pointer", marginTop: 4, padding: 0 }}>Click here to log in instead</button>
                 )}
               </div>
             )}
 
-            <div className="space-y-5">
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-1.5">Email Address</label>
-                <input type="email" value={order?.email || ""} readOnly
-                  className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3.5 text-sm text-gray-600 bg-gray-50 cursor-not-allowed" />
+                <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#c8d0dc", marginBottom: 6 }}>Email Address</label>
+                <input type="email" value={order?.email || ""} readOnly style={{ ...inp, color: "#64748b", cursor: "not-allowed" }} />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-1.5">Create Password</label>
-                <div className="relative">
+                <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#c8d0dc", marginBottom: 6 }}>Create Password</label>
+                <div style={{ position: "relative" }}>
                   <input type={showPassword ? "text" : "password"} value={password}
                     onChange={e => { setPassword(e.target.value); if (passwordError) setPasswordError(""); }}
                     placeholder="Min 8 characters"
-                    className={`w-full border-2 rounded-2xl px-4 py-3.5 text-sm focus:outline-none transition-all pr-10 ${passwordError ? "border-red-300" : "border-gray-100 focus:border-[#1877F2]"}`} />
+                    style={passwordError ? inpErr : inp} />
                   <button type="button" onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#64748b" }}>
+                    {showPassword ? <EyeOff style={{ width: 16, height: 16 }} /> : <Eye style={{ width: 16, height: 16 }} />}
                   </button>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-1.5">Confirm Password</label>
+                <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#c8d0dc", marginBottom: 6 }}>Confirm Password</label>
                 <input type={showPassword ? "text" : "password"} value={confirmPassword}
                   onChange={e => { setConfirmPassword(e.target.value); if (passwordError) setPasswordError(""); }}
                   placeholder="Confirm your password"
-                  className={`w-full border-2 rounded-2xl px-4 py-3.5 text-sm focus:outline-none transition-all ${passwordError || (confirmPassword && password !== confirmPassword) ? "border-red-300" : "border-gray-100 focus:border-[#1877F2]"}`} />
+                  style={(passwordError || (confirmPassword && password !== confirmPassword)) ? inpErr : inp} />
                 {confirmPassword && password !== confirmPassword && !passwordError && (
-                  <p className="text-xs text-red-500 mt-1.5">Passwords do not match</p>
+                  <p style={{ color: "#ef4444", fontSize: 12, marginTop: 4 }}>Passwords do not match</p>
                 )}
-                {passwordError && <p className="text-xs text-red-500 mt-1.5">{passwordError}</p>}
+                {passwordError && <p style={{ color: "#ef4444", fontSize: 12, marginTop: 4 }}>{passwordError}</p>}
               </div>
 
-              <div className="flex items-start gap-3 pt-2">
-                <input type="checkbox" id="terms" checked={agreedToTerms}
-                  onChange={e => setAgreedToTerms(e.target.checked)}
-                  className="mt-0.5 w-4 h-4 rounded border-gray-300 text-[#1877F2] focus:ring-[#1877F2] cursor-pointer" />
-                <label htmlFor="terms" className="text-xs text-gray-500 leading-relaxed cursor-pointer">
-                  I agree to the{" "}
-                  <Link to="/terms" target="_blank" className="text-[#1877F2] hover:underline font-medium">Terms & Conditions</Link>
-                  {" "}and{" "}
-                  <Link to="/privacy" target="_blank" className="text-[#1877F2] hover:underline font-medium">Privacy Policy</Link>
-                </label>
-              </div>
+              <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer", marginTop: 4 }}>
+                <input type="checkbox" checked={agreedToTerms} onChange={e => setAgreedToTerms(e.target.checked)}
+                  style={{ marginTop: 2, width: 16, height: 16, accentColor: "#2563eb" }} />
+                <span style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.5 }}>
+                  I agree to the <Link to="/terms" target="_blank" style={{ color: "#3b82f6", textDecoration: "none" }}>Terms & Conditions</Link> and <Link to="/privacy" target="_blank" style={{ color: "#3b82f6", textDecoration: "none" }}>Privacy Policy</Link>
+                </span>
+              </label>
 
               <button onClick={handleCreateAccount} disabled={loading || !password || !confirmPassword || password !== confirmPassword || !agreedToTerms}
-                className="w-full inline-flex items-center justify-center gap-2 bg-[#1877F2] text-white px-10 py-4 font-bold text-base rounded-2xl hover:bg-[#1457C0] transition-all shadow-lg shadow-blue-200 disabled:opacity-60 disabled:cursor-not-allowed mt-2">
-                {loading ? <><Loader2 className="w-5 h-5 animate-spin" /> Building your report...</> : "Create Account & Get My Report →"}
+                style={{ width: "100%", background: "#f97316", color: "#fff", fontSize: 16, fontWeight: 700, padding: "16px 0", borderRadius: 10, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: (loading || !password || !confirmPassword || password !== confirmPassword || !agreedToTerms) ? 0.5 : 1, marginTop: 4 }}>
+                {loading ? <><Loader2 style={{ width: 18, height: 18, animation: "spin 1s linear infinite" }} /> Building your report...</> : "Create Account & Get My Report →"}
               </button>
+              <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
             </div>
           </div>
         </div>

@@ -105,7 +105,7 @@ export default function PostPaymentIntake() {
         </div>
 
         <button onClick={handleSubmit}
-          style={{ width: "100%", background: "#2563eb", color: "#fff", fontSize: 15, fontWeight: 700, padding: "14px 0", borderRadius: 10, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 24 }}>
+          style={{ width: "100%", background: "#f97316", color: "#fff", fontSize: 15, fontWeight: 700, padding: "14px 0", borderRadius: 10, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 24 }}>
           Continue <ArrowRight style={{ width: 16, height: 16 }} />
         </button>
 
