@@ -82,14 +82,17 @@ export default function TeaserResults() {
     setProcessing(true);
     setUnlockError("");
     try {
+      // Get stored Google data
+      let bizData = {};
+      try { bizData = JSON.parse(localStorage.getItem("pageaudit_business_data") || "{}"); } catch {}
       const auditRes = await fetch(`${API_BASE}/api/audits`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customer_name: businessName, email: email.trim(), business_name: businessName, city: city || "", account_type: "Business" }),
+        body: JSON.stringify({ customer_name: businessName, email: email.trim(), business_name: businessName, city: city || "", account_type: "Business", website: bizData.website || null }),
       });
       const auditData = await auditRes.json();
       if (!auditRes.ok || !auditData?.audit?.id) throw new Error(auditData?.error || "Failed");
-      localStorage.setItem("pageAuditOrder", JSON.stringify({ name: businessName, email: email.trim(), businessName, city, state, auditId: auditData.audit.id }));
+      localStorage.setItem("pageAuditOrder", JSON.stringify({ name: businessName, email: email.trim(), businessName, city, state, auditId: auditData.audit.id, website: bizData.website || "", address: bizData.address || "", phone: bizData.phone || "" }));
       const stripeRes = await fetch(`${API_BASE}/api/stripe/checkout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

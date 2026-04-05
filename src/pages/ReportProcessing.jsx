@@ -37,11 +37,19 @@ export default function ReportProcessing() {
   let orderData = {};
   try { orderData = JSON.parse(localStorage.getItem("pageAuditOrder") || "{}"); } catch {}
 
-  const businessName = stateData.businessName || orderData.businessName || orderData.business_name || "";
-  const city = stateData.city || orderData.city || "";
-  const state = stateData.state || "";
-  const website = stateData.website || orderData.website || "";
+  // Also pull Google Places data
+  let bizData = {};
+  try { bizData = JSON.parse(localStorage.getItem("pageaudit_business_data") || "{}"); } catch {}
+
+  const businessName = stateData.businessName || orderData.businessName || bizData.businessName || "";
+  const city = stateData.city || orderData.city || bizData.city || "";
+  const state = stateData.state || orderData.state || bizData.state || "";
+  const website = stateData.website || orderData.website || bizData.website || "";
   const facebookUrl = stateData.facebookUrl || orderData.pageUrl || "";
+  const address = orderData.address || bizData.address || "";
+  const phone = orderData.phone || bizData.phone || "";
+  const industry = orderData.industry || "";
+  const challenge = orderData.challenge || "";
 
   const [progress, setProgress] = useState(0);
   const [msgIndex, setMsgIndex] = useState(0);
@@ -135,7 +143,7 @@ export default function ReportProcessing() {
       fetch(`${API_BASE}/api/scan/full`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ auditId: parseInt(auditId), businessName, city, state, website, facebookUrl }),
+        body: JSON.stringify({ auditId: parseInt(auditId), businessName, city, state, website, facebookUrl, address, phone, industry, biggestChallenge: challenge }),
         signal: controller.signal,
       })
         .then(r => {

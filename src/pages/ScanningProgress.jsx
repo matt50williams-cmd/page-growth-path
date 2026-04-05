@@ -85,6 +85,20 @@ export default function ScanningProgress() {
         clearTimeout(timeout);
         scanDataRef.current = data;
         scanDone.current = true;
+        // Store Google Places data for pre-filling downstream
+        try {
+          localStorage.setItem("pageaudit_business_data", JSON.stringify({
+            businessName: data.google?.name || businessName,
+            address: data.google?.address || "",
+            phone: data.google?.phone || "",
+            website: data.google?.website || "",
+            city: city,
+            state: state,
+            placeId: data.google?.placeId || "",
+            rating: data.google?.rating || null,
+            reviewCount: data.google?.reviewCount || null,
+          }));
+        } catch {}
       })
       .catch(err => {
         clearTimeout(timeout);
@@ -101,7 +115,8 @@ export default function ScanningProgress() {
         clearInterval(check);
         setProgress(100);
         setTimeout(() => {
-          navigate("/teaser-results", { state: { businessName: businessName || "", scanData: scanDataRef.current } });
+          const sd = scanDataRef.current;
+          navigate("/teaser-results", { state: { businessName: sd?.google?.name || businessName || "", city, state, scanData: sd, businessData: { address: sd?.google?.address || "", phone: sd?.google?.phone || "", website: sd?.google?.website || "", placeId: sd?.google?.placeId || "" } } });
         }, 500);
       }
     }, 200);
