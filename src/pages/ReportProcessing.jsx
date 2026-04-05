@@ -1,75 +1,215 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { BarChart2, CheckCircle, AlertCircle } from "lucide-react";
 
 const API_BASE = "https://pageaudit-engine.onrender.com";
 
+const MESSAGES = [
+  "Running your complete 47-point audit...",
+  "Checking Google Business Profile...",
+  "Analyzing your star ratings and reviews...",
+  "Scanning Yelp listings...",
+  "Testing website speed on mobile...",
+  "Checking NAP consistency across directories...",
+  "Running competitor analysis...",
+  "Generating AI insights...",
+  "Building your personalized report...",
+];
+
+const PLATFORMS = [
+  { emoji: "🔍", label: "Google Business Profile", delay: 1000, doneDelay: 4000 },
+  { emoji: "⭐", label: "Yelp", delay: 3000, doneDelay: 6000 },
+  { emoji: "🌐", label: "Website Performance", delay: 5000, doneDelay: 8000 },
+  { emoji: "📍", label: "NAP Consistency", delay: 7000, doneDelay: 10000 },
+  { emoji: "🤖", label: "AI Analysis", delay: 9000, doneDelay: 12000 },
+];
+
 export default function ReportProcessing() {
   const navigate = useNavigate();
+  const location = useLocation();
   const params = new URLSearchParams(window.location.search);
-  const auditId = params.get("id") || params.get("audit_id");
-  const [audit, setAudit] = useState(null);
-  const [checking, setChecking] = useState(true);
+
+  // Get data from location.state or URL params or localStorage
+  const stateData = location.state || {};
+  const auditId = stateData.auditId || params.get("id") || params.get("audit_id");
+
+  // Try localStorage pageAuditOrder as fallback
+  let orderData = {};
+  try { orderData = JSON.parse(localStorage.getItem("pageAuditOrder") || "{}"); } catch {}
+
+  const businessName = stateData.businessName || orderData.businessName || orderData.business_name || "";
+  const city = stateData.city || orderData.city || "";
+  const state = stateData.state || "";
+  const website = stateData.website || orderData.website || "";
+  const facebookUrl = stateData.facebookUrl || orderData.pageUrl || "";
+
+  const [progress, setProgress] = useState(0);
+  const [msgIndex, setMsgIndex] = useState(0);
+  const [visibleRows, setVisibleRows] = useState(new Set());
+  const [doneRows, setDoneRows] = useState(new Set());
+  const [error, setError] = useState(null);
+  const scanDone = useRef(false);
+  const scanDataRef = useRef(null);
 
   useEffect(() => {
-    if (!auditId) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600&display=swap";
+    document.head.appendChild(link);
+    return () => { document.head.removeChild(link); };
+  }, []);
 
-    const check = async () => {
-      try {
-        const token = localStorage.getItem('pageaudit_token');
-        const res = await fetch(`${API_BASE}/api/audits/${auditId}`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
-        const data = await res.json();
-        if (data && !data.error) {
-          setAudit(data);
-          if (data.status === "completed") {
-            navigate(`/report/${auditId}`);
-          }
-        }
-      } catch (err) {
-        console.error("Error checking audit:", err);
-      }
-      setChecking(false);
-    };
-
-    check();
-    const interval = setInterval(check, 10000);
+  // Progress bar: 0→95 over 15 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setProgress(p => { if (p >= 95) { clearInterval(interval); return 95; } return p + (95 / 150); });
+    }, 100);
     return () => clearInterval(interval);
-  }, [auditId, navigate]);
+  }, []);
+
+  // Rotating messages every 2s
+  useEffect(() => {
+    const interval = setInterval(() => setMsgIndex(i => (i + 1) % MESSAGES.length), 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Platform row animations
+  useEffect(() => {
+    PLATFORMS.forEach((p, i) => {
+      setTimeout(() => setVisibleRows(s => new Set([...s, i])), p.delay);
+      setTimeout(() => setDoneRows(s => new Set([...s, i])), p.doneDelay);
+    });
+  }, []);
+
+  // Fire full scan API
+  useEffect(() => {
+    if (!auditId) { setError("No audit ID found. Please contact support."); return; }
+
+    console.log(`[REPORT PROCESSING] Starting full scan for audit ${auditId}: ${businessName}, ${city}, ${state}`);
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => { controller.abort(); setError("Scan is taking longer than expected. Your report may still be processing — check your dashboard in a few minutes."); }, 60000);
+
+    fetch(`${API_BASE}/api/scan/full`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ auditId: parseInt(auditId), businessName, city, state, website, facebookUrl }),
+      signal: controller.signal,
+    })
+      .then(r => {
+        if (r.status === 402) throw new Error("Payment required. Please complete payment first.");
+        if (!r.ok) throw new Error("Scan failed. Please try again.");
+        return r.json();
+      })
+      .then(data => {
+        clearTimeout(timeout);
+        if (data.error) throw new Error(data.error);
+        scanDataRef.current = data;
+        scanDone.current = true;
+      })
+      .catch(err => {
+        clearTimeout(timeout);
+        if (err.name !== "AbortError") setError(err.message || "Something went wrong. Please try again or check your dashboard.");
+      });
+
+    return () => { clearTimeout(timeout); controller.abort(); };
+  }, [auditId, businessName, city, state, website, facebookUrl]);
+
+  // Navigate when scan complete + animation far enough
+  useEffect(() => {
+    const check = setInterval(() => {
+      if (scanDone.current && progress >= 80) {
+        clearInterval(check);
+        setProgress(100);
+        setTimeout(() => {
+          navigate("/report/scan/" + auditId, { state: { scanData: scanDataRef.current } });
+        }, 800);
+      }
+    }, 300);
+    return () => clearInterval(check);
+  }, [progress, navigate, auditId]);
+
+  const heading = { fontFamily: "'Plus Jakarta Sans', sans-serif" };
+  const body = { fontFamily: "'Inter', sans-serif" };
+
+  if (error) return (
+    <div style={{ ...body, minHeight: "100vh", background: "#0a0f1e", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ textAlign: "center", maxWidth: 440, padding: 20 }}>
+        <AlertCircle style={{ width: 48, height: 48, color: "#ef4444", margin: "0 auto 16px", display: "block" }} />
+        <h2 style={{ ...heading, color: "#fff", fontSize: 22, fontWeight: 700, marginBottom: 8 }}>Something Went Wrong</h2>
+        <p style={{ color: "#94a3b8", fontSize: 15, marginBottom: 24, lineHeight: 1.6 }}>{error}</p>
+        <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+          <button onClick={() => navigate("/dashboard")} style={{ background: "#2563eb", color: "#fff", border: "none", padding: "12px 28px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Go to Dashboard</button>
+          <a href="mailto:support@pageauditpros.com" style={{ color: "#94a3b8", fontSize: 13, alignSelf: "center", textDecoration: "none" }}>Contact Support</a>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-white text-black font-sans flex flex-col">
-      <nav className="border-b border-gray-100">
-        <div className="max-w-5xl mx-auto px-6 py-4">
-          <span className="font-semibold text-base tracking-tight">PageAudit Pro</span>
+    <div style={{ ...body, minHeight: "100vh", background: "#0a0f1e", display: "flex", flexDirection: "column" }}>
+      <style>{`
+        @keyframes radar{0%{transform:scale(0.3);opacity:0.6}100%{transform:scale(1.2);opacity:0}}
+        @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes glow{0%,100%{box-shadow:0 0 8px rgba(37,99,235,0.4)}50%{box-shadow:0 0 20px rgba(37,99,235,0.8)}}
+        @keyframes msgFade{0%{opacity:0}10%{opacity:1}90%{opacity:1}100%{opacity:0}}
+      `}</style>
+
+      <nav style={{ padding: "16px 24px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <BarChart2 style={{ width: 18, height: 18, color: "#3b82f6" }} />
+          <span style={{ ...heading, fontWeight: 700, fontSize: 14, color: "#fff" }}>PageAudit Pro</span>
         </div>
       </nav>
-      <div className="flex-1 flex flex-col items-center justify-center px-4 py-20 text-center">
-        <div className="w-14 h-14 rounded-full border-4 border-gray-100 border-t-[#1877F2] animate-spin mb-8" />
-        <h1 className="text-2xl md:text-3xl font-semibold text-black mb-3">
-          Your Report is Being Prepared
-        </h1>
-        <p className="text-gray-600 text-base mb-2 max-w-md leading-relaxed">
-          We are analyzing your page and building your custom strategy report.
-        </p>
-        <p className="text-gray-400 text-sm">
-          This usually takes about 60 seconds. You'll be redirected automatically.
-        </p>
-        {audit && (
-          <div className="mt-10 border border-gray-100 rounded-xl px-6 py-4 max-w-sm w-full text-left">
-            <p className="text-xs text-gray-400 uppercase tracking-widest mb-3">Your Audit</p>
-            <p className="text-sm text-gray-700 mb-1"><span className="font-medium">Name:</span> {audit.customer_name}</p>
-            <p className="text-sm text-gray-700 mb-1"><span className="font-medium">Email:</span> {audit.email}</p>
-            <p className="text-sm text-gray-700"><span className="font-medium">Status:</span> <span className="capitalize">{audit.status}</span></p>
+
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+        <div style={{ maxWidth: 480, width: "100%", textAlign: "center" }}>
+          {/* RADAR */}
+          <div style={{ position: "relative", width: 120, height: 120, margin: "0 auto 32px" }}>
+            {[0, 1, 2].map(i => (
+              <div key={i} style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "2px solid rgba(37,99,235,0.3)", animation: "radar 2.4s ease-out infinite", animationDelay: `${i * 0.8}s` }} />
+            ))}
+            <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 40, height: 40, borderRadius: "50%", background: "rgba(37,99,235,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div style={{ width: 16, height: 16, borderRadius: "50%", background: "#2563eb" }} />
+            </div>
           </div>
-        )}
-        <p className="text-xs text-gray-400 mt-10">
-          You can also check your dashboard anytime to view completed reports.
-        </p>
-        <button onClick={() => navigate("/dashboard")}
-          className="mt-4 text-xs text-[#1877F2] hover:underline">
-          Go to Dashboard →
-        </button>
+
+          <h1 style={{ ...heading, fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 8 }}>
+            {businessName ? `Scanning ${businessName}...` : "Running your full audit..."}
+          </h1>
+          <p style={{ color: "#64748b", fontSize: 13, marginBottom: 28 }}>Complete 47-point business audit in progress</p>
+
+          {/* PROGRESS */}
+          <div style={{ marginBottom: 8 }}>
+            <div style={{ height: 6, background: "rgba(255,255,255,0.06)", borderRadius: 999, overflow: "hidden" }}>
+              <div style={{ height: "100%", borderRadius: 999, background: "linear-gradient(90deg,#2563eb,#60a5fa)", width: `${Math.min(progress, 100)}%`, transition: "width 0.3s ease-out", animation: "glow 2s ease-in-out infinite" }} />
+            </div>
+          </div>
+          <p style={{ color: "#64748b", fontSize: 13, marginBottom: 28 }}>{Math.min(Math.round(progress), 100)}%</p>
+
+          {/* STATUS MESSAGE */}
+          <div style={{ height: 24, marginBottom: 28 }}>
+            <p key={msgIndex} style={{ color: "#94a3b8", fontSize: 15, fontWeight: 500, animation: "msgFade 2s ease-in-out" }}>{MESSAGES[msgIndex]}</p>
+          </div>
+
+          {/* PLATFORM CHECKS */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, textAlign: "left", maxWidth: 340, margin: "0 auto 40px" }}>
+            {PLATFORMS.map((p, i) => {
+              if (!visibleRows.has(i)) return <div key={i} style={{ height: 36 }} />;
+              const done = doneRows.has(i);
+              return (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, animation: "fadeIn 0.4s ease-out" }}>
+                  <span style={{ fontSize: 16, width: 24, textAlign: "center" }}>{p.emoji}</span>
+                  <span style={{ flex: 1, fontSize: 14, fontWeight: 500, color: done ? "#c8d0dc" : "#94a3b8" }}>{p.label}</span>
+                  {done ? <CheckCircle style={{ width: 18, height: 18, color: "#10b981" }} /> : <div style={{ width: 18, height: 18, border: "2px solid rgba(37,99,235,0.3)", borderTop: "2px solid #3b82f6", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />}
+                </div>
+              );
+            })}
+          </div>
+
+          <p style={{ color: "#4b5563", fontSize: 12 }}>This usually takes 30–60 seconds. You'll be redirected automatically.</p>
+        </div>
       </div>
     </div>
   );

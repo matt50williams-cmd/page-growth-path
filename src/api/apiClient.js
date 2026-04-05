@@ -74,6 +74,17 @@ export const funnel = {
   },
 };
 
+export const scan = {
+  async teaser(businessName, city, state) {
+    return await apiFetch('/api/scan/teaser', { method: 'POST', body: JSON.stringify({ businessName, city, state }) });
+  },
+  async full(auditId, businessData) {
+    return await apiFetch('/api/scan/full', { method: 'POST', body: JSON.stringify({ auditId, ...businessData }) });
+  },
+  async status(auditId) { return await apiFetch(`/api/scan/status/${auditId}`); },
+  async result(auditId) { return await apiFetch(`/api/scan/result/${auditId}`); },
+};
+
 export const reviews = {
   async submit(data) { return await apiFetch('/api/reviews', { method: 'POST', body: JSON.stringify(data) }); },
   async getForAudit(auditId, email) { return await apiFetch(`/api/reviews/${auditId}?email=${encodeURIComponent(email)}`); },
@@ -103,5 +114,5 @@ export const admin = {
   async updatePayoutStatus(id, data) { return await apiFetch(`/api/admin/payouts/${id}/status`, { method: 'POST', body: JSON.stringify(data) }); },
 };
 
-const api = { auth, audits, payments, funnel, reviews, rep, admin };
+const api = { auth, audits, payments, funnel, scan, reviews, rep, admin };
 export default api;

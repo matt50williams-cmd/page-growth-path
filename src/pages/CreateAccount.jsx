@@ -179,36 +179,32 @@ export default function CreateAccount() {
     try {
       await signup(order.email, password, order.name);
       const auditId = order.auditId || searchParams.get("audit_id");
-      if (auditId) {
-        try {
-          await fetch(`${API_BASE}/api/audits/${auditId}/run`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-          });
-        } catch (err) {
-          console.error("Audit run failed:", err);
-        }
-      }
-      localStorage.removeItem("pageAuditOrder");
-      navigate("/dashboard");
+      // Navigate to report processing — the new scan engine runs there
+      navigate("/report-processing?id=" + auditId, {
+        state: {
+          auditId,
+          businessName: order.businessName || order.name || "",
+          city: order.city || "",
+          state: "",
+          website: order.website || "",
+          facebookUrl: order.pageUrl || "",
+        },
+      });
     } catch (err) {
       if (err.message?.includes("already exists")) {
-        // Try to log them in automatically with the password they just entered
         try {
           await login(order.email, password);
           const auditId = order.auditId || searchParams.get("audit_id");
-          if (auditId) {
-            try {
-              await fetch(`${API_BASE}/api/audits/${auditId}/run`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-              });
-            } catch (runErr) {
-              console.error("Audit run failed:", runErr);
-            }
-          }
-          localStorage.removeItem("pageAuditOrder");
-          navigate("/dashboard");
+          navigate("/report-processing?id=" + auditId, {
+            state: {
+              auditId,
+              businessName: order.businessName || order.name || "",
+              city: order.city || "",
+              state: "",
+              website: order.website || "",
+              facebookUrl: order.pageUrl || "",
+            },
+          });
         } catch (loginErr) {
           setError("An account with this email already exists. Please log in with your existing password.");
           setLoading(false);
