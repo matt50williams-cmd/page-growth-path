@@ -324,7 +324,7 @@ export default function TeaserResults() {
               style={{ width: "100%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, padding: "12px 14px", fontSize: 14, color: "#fff", outline: "none", boxSizing: "border-box", textAlign: "center", marginBottom: 10 }} />
 
             <button onClick={handleUnlock} disabled={processing}
-              style={{ width: "100%", background: "#2563eb", color: "#fff", fontSize: 16, fontWeight: 700, padding: "16px 0", borderRadius: 10, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: processing ? 0.6 : 1 }}>
+              style={{ width: "100%", background: "#f97316", color: "#fff", fontSize: 16, fontWeight: 700, padding: "16px 0", borderRadius: 10, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: processing ? 0.6 : 1 }}>
               {processing ? <><Loader2 style={{ width: 18, height: 18, animation: "spin 1s linear infinite" }} /> Processing...</> : <>Fix My Business — $39 <ArrowRight style={{ width: 18, height: 18 }} /></>}
             </button>
 
@@ -352,7 +352,7 @@ export default function TeaserResults() {
         {/* ═══ BOTTOM CTA ═══ */}
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <button onClick={handleUnlock} disabled={processing}
-            style={{ background: "#2563eb", color: "#fff", fontSize: 15, fontWeight: 700, padding: "14px 36px", borderRadius: 10, border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8, opacity: processing ? 0.6 : 1 }}>
+            style={{ background: "#f97316", color: "#fff", fontSize: 15, fontWeight: 700, padding: "14px 36px", borderRadius: 10, border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8, opacity: processing ? 0.6 : 1 }}>
             {processing ? "Processing..." : "Get My Complete Audit — $39 →"}
           </button>
         </div>

@@ -280,7 +280,7 @@ export default function ScanReport() {
                   ))}
                 </div>
                 <button onClick={() => navigate("/submit-your-page", { state: { plan: name } })}
-                  style={{ width: "100%", fontSize: 13, fontWeight: 600, color: "#fff", background: featured ? "#2563eb" : "transparent", border: featured ? "none" : "1px solid rgba(255,255,255,0.2)", padding: "10px 0", borderRadius: 8, cursor: "pointer" }}>
+                  style={{ width: "100%", fontSize: 13, fontWeight: 700, color: "#fff", background: featured ? "#f97316" : "transparent", border: featured ? "none" : "1px solid rgba(255,255,255,0.2)", padding: "10px 0", borderRadius: 8, cursor: "pointer" }}>
                   Get Started
                 </button>
               </div>

@@ -135,7 +135,7 @@ export default function PreviewReport() {
           <p style={{ color: "#10b981", fontSize: 14, fontWeight: 600, marginBottom: 20 }}>You save $158</p>
 
           <button onClick={handleUnlock} disabled={unlocking}
-            style={{ width: "100%", background: "#2563eb", color: "#fff", fontSize: 16, fontWeight: 700, padding: "16px 0", borderRadius: 10, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: unlocking ? 0.6 : 1 }}>
+            style={{ width: "100%", background: "#f97316", color: "#fff", fontSize: 16, fontWeight: 700, padding: "16px 0", borderRadius: 10, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: unlocking ? 0.6 : 1 }}>
             {unlocking ? <Loader2 style={{ width: 18, height: 18, animation: "spin 1s linear infinite" }} /> : <ArrowRight style={{ width: 18, height: 18 }} />}
             {unlocking ? "Redirecting..." : "Claim My Report →"}
           </button>
@@ -189,7 +189,7 @@ export default function PreviewReport() {
             {timerExpired ? "Your hold has expired. Claim your report now." : `We're holding your report for another ${timerDisplay}.`}
           </p>
           <button onClick={handleUnlock} disabled={unlocking}
-            style={{ background: "#2563eb", color: "#fff", fontSize: 15, fontWeight: 700, padding: "14px 36px", borderRadius: 10, border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8, opacity: unlocking ? 0.6 : 1 }}>
+            style={{ background: "#f97316", color: "#fff", fontSize: 15, fontWeight: 700, padding: "14px 36px", borderRadius: 10, border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8, opacity: unlocking ? 0.6 : 1 }}>
             {unlocking ? "Redirecting..." : "Yes — Claim My Report for $39 →"}
           </button>
           <p style={{ color: "#4b5563", fontSize: 11, marginTop: 12 }}>🔒 Secure · One-time · Instant access</p>

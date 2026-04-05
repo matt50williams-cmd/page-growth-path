@@ -299,7 +299,7 @@ export default function SubmitPage() {
               <p style={{ color: "#94a3b8", fontSize: 13, marginBottom: 20 }}>One-time payment. Yours forever.</p>
 
               <button onClick={handleSubmit} disabled={isSubmitting}
-                style={{ width: "100%", background: "#2563eb", color: "#fff", fontSize: 16, fontWeight: 700, padding: "16px 0", borderRadius: 10, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: isSubmitting ? 0.6 : 1 }}>
+                style={{ width: "100%", background: "#f97316", color: "#fff", fontSize: 16, fontWeight: 700, padding: "16px 0", borderRadius: 10, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: isSubmitting ? 0.6 : 1 }}>
                 {isSubmitting ? <><Loader2 style={{ width: 18, height: 18, animation: "spin 1s linear infinite" }} /> Processing...</> : <>Claim My Complete Audit Report <ArrowRight style={{ width: 18, height: 18 }} /></>}
               </button>
               <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>

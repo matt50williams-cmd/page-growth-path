@@ -96,7 +96,7 @@ export default function Home() {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <button onClick={() => navigate("/login")} style={{ fontSize: 13, fontWeight: 500, color: "#94a3b8", background: "none", border: "none", padding: "8px 16px", cursor: "pointer" }}>Login</button>
-            <button onClick={() => navigate("/submit-your-page")} style={{ fontSize: 13, fontWeight: 600, color: "#fff", background: "#2563eb", border: "none", padding: "10px 20px", borderRadius: 8, cursor: "pointer" }}>Scan My Business Free</button>
+            <button onClick={() => navigate("/submit-your-page")} style={{ fontSize: 13, fontWeight: 600, color: "#fff", background: "#f97316", border: "none", padding: "10px 20px", borderRadius: 8, cursor: "pointer" }}>Scan My Business Free</button>
           </div>
         </div>
       </nav>
@@ -130,7 +130,7 @@ export default function Home() {
                   style={{ width: "100%", background: "rgba(255,255,255,0.05)", color: "#fff", fontSize: 15, padding: "16px 16px 16px 48px", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, outline: "none", boxSizing: "border-box" }} />
               </div>
               <button onClick={() => handleScan(businessName)}
-                style={{ background: "#2563eb", color: "#fff", fontWeight: 600, fontSize: 15, padding: "16px 32px", borderRadius: 12, border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap" }}>
+                style={{ background: "#f97316", color: "#fff", fontWeight: 700, fontSize: 15, padding: "16px 32px", borderRadius: 12, border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap" }}>
                 Scan Free <ArrowRight style={{ width: 16, height: 16 }} />
               </button>
             </div>
@@ -327,7 +327,7 @@ export default function Home() {
                   style={{ width: "100%", background: "rgba(255,255,255,0.05)", color: "#fff", fontSize: 15, padding: "16px 16px 16px 48px", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, outline: "none", boxSizing: "border-box" }} />
               </div>
               <button onClick={() => handleScan(businessName2)}
-                style={{ background: "#2563eb", color: "#fff", fontWeight: 600, fontSize: 15, padding: "16px 32px", borderRadius: 12, border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap" }}>
+                style={{ background: "#f97316", color: "#fff", fontWeight: 700, fontSize: 15, padding: "16px 32px", borderRadius: 12, border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap" }}>
                 Scan Free <ArrowRight style={{ width: 16, height: 16 }} />
               </button>
             </div>
