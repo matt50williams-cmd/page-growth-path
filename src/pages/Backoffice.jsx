@@ -34,9 +34,10 @@ const NAV_ITEMS = [
   { key: "analytics", label: "Analytics", icon: TrendingUp },
   { key: "reviews", label: "Reviews", icon: Star },
   { key: "reps", label: "Reps", icon: UserCheck },
+  { key: "services", label: "Services", icon: Star },
 ];
 
-const TAB_TITLES = { overview: "Overview", customers: "Customers", revenue: "Revenue", funnel: "Funnel", seo: "SEO Audits", analytics: "Analytics", reviews: "Reviews", reps: "Rep Management" };
+const TAB_TITLES = { overview: "Overview", customers: "Customers", revenue: "Revenue", funnel: "Funnel", seo: "SEO Audits", analytics: "Analytics", reviews: "Reviews", reps: "Rep Management", services: "Service Requests" };
 
 const TH = "text-left text-[12px] font-semibold uppercase tracking-[0.04em] text-[#6b7280] px-4 py-3";
 const CARD = "bg-white rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.08)]";
@@ -52,6 +53,7 @@ export default function Backoffice() {
   const [funnel, setFunnel] = useState(null);
   const [reviewData, setReviewData] = useState(null);
   const [repData, setRepData] = useState({ reps: [], commissions: [], payouts: { payouts: [], stats: {} } });
+  const [serviceRequests, setServiceRequests] = useState({ requests: [], stats: {} });
   const [repSubTab, setRepSubTab] = useState("reps");
   const [days, setDays] = useState(30);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
@@ -78,6 +80,8 @@ export default function Backoffice() {
       if (auditsRes.ok) setAudits(await auditsRes.json());
       if (funnelRes.ok) setFunnel(await funnelRes.json());
       if (reviewsRes?.ok) setReviewData(await reviewsRes.json());
+      // Load service requests
+      try { const srRes = await fetch(`${API_BASE}/api/admin/service-requests`, { headers }); if (srRes?.ok) setServiceRequests(await srRes.json()); } catch {}
       // Load rep data
       try {
         const [repsRes, commissionsRes, payoutsRes] = await Promise.all([
@@ -689,6 +693,41 @@ export default function Backoffice() {
                   )}
                 </div>
               )}
+            </div>
+          )}
+
+          {activeTab === "services" && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+                <StatCard label="Total Requests" value={serviceRequests.stats?.total || 0} color="blue" icon={Star} />
+                <StatCard label="New" value={serviceRequests.stats?.new || 0} sub="needs contact" color="orange" icon={Star} />
+                <StatCard label="Contacted" value={serviceRequests.stats?.contacted || 0} color="blue" icon={Star} />
+                <StatCard label="Quoted" value={serviceRequests.stats?.quoted || 0} color="purple" icon={Star} />
+                <StatCard label="Closed" value={serviceRequests.stats?.closed || 0} sub="won" color="green" icon={Star} />
+              </div>
+              <div className={`${CARD} overflow-hidden`}>
+                <div className="px-6 py-4 border-b border-[#e5e7eb]"><h3 className={SECTION_TITLE}>Service Requests</h3></div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead><tr className="border-b border-[#e5e7eb] bg-[#f9fafb]">
+                      <th className={TH}>Customer</th><th className={TH}>Service</th><th className={TH}>Phone</th><th className={TH}>Score</th><th className={TH}>Rep</th><th className={TH}>Status</th><th className={TH}>Date</th>
+                    </tr></thead>
+                    <tbody className="divide-y divide-[#f3f4f6]">
+                      {(serviceRequests.requests || []).length > 0 ? serviceRequests.requests.map(sr => (
+                        <tr key={sr.id} className="hover:bg-[#f9fafb]">
+                          <td className="px-4 py-3"><p className="font-medium text-[#111827]">{sr.customer_name || "--"}</p><p className="text-xs text-[#9ca3af]">{sr.email}</p></td>
+                          <td className="px-4 py-3 text-[#374151] capitalize text-xs">{sr.service_requested?.replace(/_/g, " ")}</td>
+                          <td className="px-4 py-3 text-[#6b7280] text-xs">{sr.phone || "--"}</td>
+                          <td className="px-4 py-3"><span className={`font-bold ${(sr.scan_score || 0) >= 70 ? "text-green-600" : (sr.scan_score || 0) >= 50 ? "text-yellow-500" : sr.scan_score ? "text-red-500" : "text-[#d1d5db]"}`}>{sr.scan_score || "--"}</span></td>
+                          <td className="px-4 py-3 text-xs text-[#6b7280]">{sr.rep_name || sr.rep_code || "direct"}</td>
+                          <td className="px-4 py-3"><StatusBadge status={sr.status === "new" ? "pending" : sr.status === "closed" ? "completed" : sr.status} /></td>
+                          <td className="px-4 py-3 text-xs text-[#9ca3af]">{sr.created_at ? new Date(sr.created_at).toLocaleDateString() : "--"}</td>
+                        </tr>
+                      )) : <tr><td colSpan={7} className="px-4 py-8 text-center text-[#9ca3af]">No service requests yet</td></tr>}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           )}
         </main>

@@ -23,6 +23,10 @@ export default function ScanReport() {
   const [data, setData] = useState(location.state?.scanData || null);
   const [loading, setLoading] = useState(!data);
   const [error, setError] = useState(null);
+  const [quoteModal, setQuoteModal] = useState(null);
+  const [quoteForm, setQuoteForm] = useState({ name: "", email: "", phone: "", bestTime: "" });
+  const [quoteSubmitted, setQuoteSubmitted] = useState(false);
+  const [quoteSubmitting, setQuoteSubmitting] = useState(false);
   const [barsVisible, setBarsVisible] = useState(false);
   const [copied, setCopied] = useState(false);
   const barsRef = useRef(null);
@@ -257,7 +261,42 @@ export default function ScanReport() {
           </div>
         )}
 
-        {/* 7. UPSELL */}
+        {/* 7. AGENCY SERVICES UPSELL */}
+        {(() => {
+          const gs = platforms?.google?.score; const ws = platforms?.website?.score; const ns = platforms?.nap?.score;
+          const rc = platforms?.google?.reviewCount || 0;
+          const services = [];
+          if (ws != null && ws < 60) services.push({ icon: "🌐", title: "Website Rebuild", desc: `Your website scored ${ws}/100. We'll rebuild it fast, modern, and optimized for Google.`, price: "Starting at $1,500", service: "website_build" });
+          if ((gs != null && gs < 70) || rc < 20) services.push({ icon: "📍", title: "Local SEO & Google Maps", desc: `You have ${rc} reviews and your Google score is ${gs || '—'}/100. We'll get you ranking higher within 90 days.`, price: "Starting at $500/mo", service: "local_seo" });
+          if (rc < 20) services.push({ icon: "⭐", title: "Review Growth Service", desc: `You have ${rc} Google reviews. Top businesses in your area have 50+. We'll get you there.`, price: "Starting at $299/mo", service: "review_management" });
+          if (ns != null && ns < 70) services.push({ icon: "📋", title: "Citation Cleanup", desc: "Your business info is wrong on multiple directories. We'll fix every listing.", price: "One-time $199", service: "citation_cleanup" });
+          services.push({ icon: "🚀", title: "Full Service Package", desc: "Let us handle everything. Website, SEO, reviews, social media — done for you monthly.", price: "Custom pricing", service: "full_service_package" });
+
+          return services.length > 1 ? (
+            <div style={{ marginBottom: 48 }}>
+              <div style={{ textAlign: "center", marginBottom: 24 }}>
+                <h2 style={{ ...syne, fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 8 }}>Want us to fix this for you?</h2>
+                <p style={{ color: "#94a3b8", fontSize: 15 }}>Based on your audit results, our agency team can handle everything.</p>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14 }}>
+                {services.map(s => (
+                  <div key={s.service} style={{ background: s.service === "full_service_package" ? "rgba(249,115,22,0.06)" : "rgba(255,255,255,0.03)", border: `1px solid ${s.service === "full_service_package" ? "rgba(249,115,22,0.2)" : "rgba(255,255,255,0.08)"}`, borderRadius: 14, padding: 22, display: "flex", flexDirection: "column" }}>
+                    <span style={{ fontSize: 28, marginBottom: 10 }}>{s.icon}</span>
+                    <h3 style={{ color: "#fff", fontSize: 16, fontWeight: 700, marginBottom: 6 }}>{s.title}</h3>
+                    <p style={{ color: "#94a3b8", fontSize: 13, lineHeight: 1.5, marginBottom: 14, flex: 1 }}>{s.desc}</p>
+                    <p style={{ color: "#c8d0dc", fontSize: 14, fontWeight: 700, marginBottom: 12 }}>{s.price}</p>
+                    <button onClick={() => { setQuoteModal(s.service); setQuoteForm(f => ({ ...f, name: data?.businessName || "", email: "" })); setQuoteSubmitted(false); }}
+                      style={{ width: "100%", background: "#f97316", color: "#fff", fontSize: 13, fontWeight: 700, padding: "12px 0", borderRadius: 8, border: "none", cursor: "pointer" }}>
+                      {s.service === "full_service_package" ? "Schedule Free Consultation" : "Get Free Quote"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null;
+        })()}
+
+        {/* 8. MONITORING UPSELL */}
         <div style={{ marginBottom: 48 }}>
           <div style={{ textAlign: "center", marginBottom: 24 }}>
             <h2 style={{ ...syne, fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 8 }}>Want us to monitor this every month?</h2>
@@ -297,6 +336,48 @@ export default function ScanReport() {
             {copied ? "Link Copied!" : "Copy Share Link"}
           </button>
         </div>
+
+        {/* QUOTE MODAL */}
+        {quoteModal && (
+          <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+            <div style={{ background: "#111827", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: 28, maxWidth: 400, width: "100%", position: "relative" }}>
+              <button onClick={() => setQuoteModal(null)} style={{ position: "absolute", top: 12, right: 12, background: "none", border: "none", cursor: "pointer", color: "#64748b", fontSize: 20 }}>x</button>
+              {quoteSubmitted ? (
+                <div style={{ textAlign: "center", padding: 16 }}>
+                  <CheckCircle style={{ width: 40, height: 40, color: "#10b981", margin: "0 auto 12px", display: "block" }} />
+                  <h3 style={{ ...syne, fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>Request Received!</h3>
+                  <p style={{ color: "#94a3b8", fontSize: 13 }}>Someone from The Agency will contact you within 24 hours.</p>
+                </div>
+              ) : (
+                <div>
+                  <h3 style={{ ...syne, fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 16 }}>Request a Free Quote</h3>
+                  {[
+                    { l: "Name", k: "name", p: "Your name" },
+                    { l: "Email", k: "email", p: "you@business.com", t: "email" },
+                    { l: "Phone", k: "phone", p: "(555) 123-4567", t: "tel" },
+                    { l: "Best time to reach you", k: "bestTime", p: "e.g. Mornings" },
+                  ].map(({ l, k, p, t }) => (
+                    <div key={k} style={{ marginBottom: 10 }}>
+                      <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#94a3b8", marginBottom: 4 }}>{l}</label>
+                      <input type={t || "text"} value={quoteForm[k]} onChange={e => setQuoteForm(f => ({ ...f, [k]: e.target.value }))} placeholder={p}
+                        style={{ width: "100%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "10px 12px", fontSize: 14, color: "#fff", outline: "none", boxSizing: "border-box" }} />
+                    </div>
+                  ))}
+                  <button disabled={quoteSubmitting || !quoteForm.email} onClick={async () => {
+                    setQuoteSubmitting(true);
+                    try {
+                      await fetch(`${API_BASE}/api/service-requests`, { method: "POST", headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ name: quoteForm.name, email: quoteForm.email, phone: quoteForm.phone, bestTime: quoteForm.bestTime, service: quoteModal, auditId: auditId ? parseInt(auditId) : null, scanScore: overallScore || null, rep_code: localStorage.getItem("pageaudit_rep_code") || null }) });
+                      setQuoteSubmitted(true);
+                    } catch {} finally { setQuoteSubmitting(false); }
+                  }} style={{ width: "100%", background: "#f97316", color: "#fff", fontSize: 15, fontWeight: 700, padding: "14px 0", borderRadius: 8, border: "none", cursor: "pointer", marginTop: 8, opacity: quoteForm.email ? 1 : 0.4 }}>
+                    {quoteSubmitting ? "Submitting..." : "Submit Request"}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* FOOTER */}
         <div style={{ borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: 24, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
