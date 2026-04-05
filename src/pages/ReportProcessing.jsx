@@ -81,38 +81,82 @@ export default function ReportProcessing() {
     });
   }, []);
 
-  // Fire full scan API
+  // Wait for Stripe webhook to confirm payment, then fire scan
   useEffect(() => {
     if (!auditId) { setError("No audit ID found. Please contact support."); return; }
+    let cancelled = false;
 
-    console.log(`[REPORT PROCESSING] Starting full scan for audit ${auditId}: ${businessName}, ${city}, ${state}`);
+    const waitForPayment = async (retries = 0) => {
+      try {
+        const res = await fetch(`${API_BASE}/api/audits/${auditId}/status`);
+        const data = await res.json();
+        if (data.paid) return true;
+        if (cancelled) return false;
+        if (retries >= 10) return false;
+        await new Promise(r => setTimeout(r, 2000));
+        return waitForPayment(retries + 1);
+      } catch {
+        if (retries >= 10) return false;
+        await new Promise(r => setTimeout(r, 2000));
+        return waitForPayment(retries + 1);
+      }
+    };
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => { controller.abort(); setError("Scan is taking longer than expected. Your report may still be processing — check your dashboard in a few minutes."); }, 60000);
+    const runScan = async () => {
+      console.log(`[REPORT PROCESSING] Waiting for payment confirmation on audit ${auditId}`);
+      const paid = await waitForPayment();
+      if (cancelled) return;
 
-    fetch(`${API_BASE}/api/scan/full`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ auditId: parseInt(auditId), businessName, city, state, website, facebookUrl }),
-      signal: controller.signal,
-    })
-      .then(r => {
-        if (r.status === 402) throw new Error("Payment required. Please complete payment first.");
-        if (!r.ok) throw new Error("Scan failed. Please try again.");
-        return r.json();
+      if (!paid) {
+        setError("Your payment is still being confirmed. This usually takes a few seconds. Please wait or check your dashboard in a minute.");
+        // Keep retrying in background
+        const retry = setInterval(async () => {
+          try {
+            const res = await fetch(`${API_BASE}/api/audits/${auditId}/status`);
+            const data = await res.json();
+            if (data.paid) {
+              clearInterval(retry);
+              setError(null);
+              fireScan();
+            }
+          } catch {}
+        }, 3000);
+        return;
+      }
+
+      fireScan();
+    };
+
+    const fireScan = () => {
+      console.log(`[REPORT PROCESSING] Payment confirmed. Starting full scan for: ${businessName}, ${city}, ${state}`);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => { controller.abort(); setError("Scan is taking longer than expected. Your report may still be processing — check your dashboard in a few minutes."); }, 60000);
+
+      fetch(`${API_BASE}/api/scan/full`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ auditId: parseInt(auditId), businessName, city, state, website, facebookUrl }),
+        signal: controller.signal,
       })
-      .then(data => {
-        clearTimeout(timeout);
-        if (data.error) throw new Error(data.error);
-        scanDataRef.current = data;
-        scanDone.current = true;
-      })
-      .catch(err => {
-        clearTimeout(timeout);
-        if (err.name !== "AbortError") setError(err.message || "Something went wrong. Please try again or check your dashboard.");
-      });
+        .then(r => {
+          if (r.status === 402) throw new Error("Payment is still processing. Please wait a moment.");
+          if (!r.ok) throw new Error("Scan failed. Please try again.");
+          return r.json();
+        })
+        .then(data => {
+          clearTimeout(timeout);
+          if (data.error) throw new Error(data.error);
+          scanDataRef.current = data;
+          scanDone.current = true;
+        })
+        .catch(err => {
+          clearTimeout(timeout);
+          if (err.name !== "AbortError") setError(err.message || "Something went wrong. Please try again or check your dashboard.");
+        });
+    };
 
-    return () => { clearTimeout(timeout); controller.abort(); };
+    runScan();
+    return () => { cancelled = true; };
   }, [auditId, businessName, city, state, website, facebookUrl]);
 
   // Navigate when scan complete + animation far enough
