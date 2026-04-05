@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { CheckCircle, Lock, AlertTriangle, AlertCircle, Shield, Zap, Clock, ArrowRight, BarChart2, Search, Globe, Facebook, MapPin, Star } from "lucide-react";
+import { CheckCircle, Lock, AlertTriangle, AlertCircle, Shield, Zap, Clock, ArrowRight, BarChart2, Search, Globe, Facebook, MapPin, Star, Loader2, X } from "lucide-react";
+
+const API_BASE = "https://pageaudit-engine.onrender.com";
 
 const FREE_FINDINGS = [
   {
@@ -54,6 +56,9 @@ export default function TeaserResults() {
   const navigate = useNavigate();
   const businessName = location.state?.businessName || "Your Business";
   const [email, setEmail] = useState("");
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const [unlockError, setUnlockError] = useState("");
 
   useEffect(() => {
     const link = document.createElement("link");
@@ -64,7 +69,59 @@ export default function TeaserResults() {
   }, []);
 
   const handleUnlock = () => {
-    navigate("/submit-your-page", { state: { businessName, email: email.trim(), source: "teaser", teaserData: location.state } });
+    if (!email.trim() || !email.includes("@")) {
+      setShowEmailModal(true);
+      return;
+    }
+    goToCheckout();
+  };
+
+  const goToCheckout = async () => {
+    if (!email.trim() || !email.includes("@")) return;
+    setProcessing(true);
+    setUnlockError("");
+    try {
+      // 1. Create audit record
+      const auditRes = await fetch(`${API_BASE}/api/audits`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customer_name: businessName, email: email.trim(), business_name: businessName,
+          city: location.state?.city || "", account_type: "Business",
+        }),
+      });
+      const auditData = await auditRes.json();
+      if (!auditRes.ok || !auditData?.audit?.id) throw new Error(auditData?.error || "Failed to create audit");
+
+      // 2. Save to localStorage
+      localStorage.setItem("pageAuditOrder", JSON.stringify({
+        name: businessName, email: email.trim(), businessName,
+        city: location.state?.city || "", state: location.state?.state || "",
+        auditId: auditData.audit.id,
+      }));
+
+      // 3. Go to Stripe checkout
+      const stripeRes = await fetch(`${API_BASE}/api/stripe/checkout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          audit_id: auditData.audit.id,
+          email: email.trim(),
+          customer_name: businessName,
+          rep_code: localStorage.getItem("pageaudit_rep_code") || null,
+        }),
+      });
+      const stripeData = await stripeRes.json();
+      if (stripeData.url) {
+        window.location.href = stripeData.url;
+      } else {
+        throw new Error(stripeData.error || "Checkout failed");
+      }
+    } catch (err) {
+      console.error("Unlock error:", err);
+      setUnlockError(err.message || "Something went wrong. Please try again.");
+      setProcessing(false);
+    }
   };
 
   const syne = { fontFamily: "'Plus Jakarta Sans', sans-serif" };
@@ -206,17 +263,21 @@ export default function TeaserResults() {
           </div>
 
           {/* CTA Button */}
-          <button onClick={handleUnlock}
+          <button onClick={handleUnlock} disabled={processing}
             style={{
               width: "100%", maxWidth: 400, background: "#2563eb", color: "#fff", fontSize: 17, fontWeight: 700,
               padding: "18px 32px", borderRadius: 12, border: "none", cursor: "pointer", display: "flex",
               alignItems: "center", justifyContent: "center", gap: 10, margin: "0 auto 16px",
+              opacity: processing ? 0.6 : 1,
             }}>
-            Unlock Full Audit — $39 <ArrowRight style={{ width: 18, height: 18 }} />
+            {processing ? <><Loader2 style={{ width: 18, height: 18, animation: "spin 1s linear infinite" }} /> Processing...</> : <>Unlock Full Audit — $39 <ArrowRight style={{ width: 18, height: 18 }} /></>}
           </button>
+          <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
+
+          {unlockError && <p style={{ color: "#ef4444", fontSize: 13, textAlign: "center", marginBottom: 12 }}>{unlockError}</p>}
 
           <p style={{ color: "#64748b", fontSize: 13, marginBottom: 20, lineHeight: 1.5 }}>
-            One-time payment. Yours forever.<br />Cancel anytime if you subscribe.
+            One-time payment. Yours forever.
           </p>
 
           {/* Trust badges */}
@@ -255,6 +316,27 @@ export default function TeaserResults() {
           <p style={{ color: "#64748b", fontSize: 12, marginTop: 12 }}>Results delivered instantly after payment.</p>
         </div>
       </div>
+
+      {/* EMAIL MODAL */}
+      {showEmailModal && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div style={{ background: "#111827", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: 28, maxWidth: 400, width: "100%", position: "relative" }}>
+            <button onClick={() => setShowEmailModal(false)} style={{ position: "absolute", top: 12, right: 12, background: "none", border: "none", cursor: "pointer", color: "#64748b" }}><X style={{ width: 18, height: 18 }} /></button>
+            <h3 style={{ ...syne, fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>Where should we send your report?</h3>
+            <p style={{ color: "#94a3b8", fontSize: 13, marginBottom: 20 }}>Enter your email to continue to secure payment.</p>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter" && email.includes("@")) { setShowEmailModal(false); goToCheckout(); } }}
+              placeholder="you@business.com" autoFocus
+              style={{ width: "100%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, padding: "14px 16px", fontSize: 15, color: "#fff", outline: "none", boxSizing: "border-box", marginBottom: 14 }} />
+            <button onClick={() => { if (email.includes("@")) { setShowEmailModal(false); goToCheckout(); } }}
+              disabled={!email.includes("@") || processing}
+              style={{ width: "100%", background: "#2563eb", color: "#fff", fontSize: 15, fontWeight: 700, padding: "14px 0", borderRadius: 10, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: email.includes("@") ? 1 : 0.4 }}>
+              {processing ? "Processing..." : "Continue to Payment →"}
+            </button>
+            <p style={{ color: "#4b5563", fontSize: 11, textAlign: "center", marginTop: 10 }}>We'll never share your email. Secure checkout by Stripe.</p>
+          </div>
+        </div>
+      )}
 
       {/* FOOTER */}
       <footer style={{ borderTop: "1px solid rgba(255,255,255,0.05)", padding: "24px 16px" }}>

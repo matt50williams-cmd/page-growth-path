@@ -31,6 +31,7 @@ import RepTraining from './pages/RepTraining';
 import ScanRedirect from './pages/ScanRedirect';
 import ScanReport from './pages/ScanReport';
 import ScanningProgress from './pages/ScanningProgress';
+import PostPaymentIntake from './pages/PostPaymentIntake';
 
 function StripeRedirectHandler() {
   const navigate = useNavigate();
@@ -40,7 +41,7 @@ function StripeRedirectHandler() {
       const sessionId = params.get('session_id');
       const auditId = params.get('audit_id');
       if (sessionId && auditId) {
-        navigate(`/create-account?session_id=${sessionId}&audit_id=${auditId}`, { replace: true });
+        navigate(`/post-payment-details?session_id=${sessionId}&audit_id=${auditId}`, { replace: true });
       }
     }
   }, [navigate]);
@@ -92,6 +93,7 @@ function AuthenticatedApp() {
         <Route path="/join" element={<RepSignup />} />
         <Route path="/scan" element={<ScanRedirect />} />
         <Route path="/scanning" element={<ScanningProgress />} />
+        <Route path="/post-payment-details" element={<PostPaymentIntake />} />
         <Route path="/report/scan/:auditId" element={<ScanReport />} />
         <Route path="/report/scan" element={<ScanReport />} />
         <Route path="*" element={<PageNotFound />} />
