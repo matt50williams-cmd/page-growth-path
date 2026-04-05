@@ -64,7 +64,7 @@ export default function Home() {
   }, []);
 
   const handleScan = (name) => {
-    navigate("/submit-your-page", { state: { businessName: (name || "").trim() } });
+    navigate("/teaser-results", { state: { businessName: (name || "").trim() } });
   };
 
   const syne = { fontFamily: "'Syne', sans-serif" };
@@ -97,12 +97,13 @@ export default function Home() {
           </div>
           <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}`}</style>
 
-          <h1 style={{ ...syne, fontSize: "clamp(32px, 5vw, 56px)", fontWeight: 800, color: "#fff", lineHeight: 1.1, marginBottom: 24, letterSpacing: "-0.02em" }}>
-            You're an expert at running your business.{" "}
-            <span style={{ background: "linear-gradient(90deg, #3b82f6, #60a5fa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>We make sure the internet knows it.</span>
+          <h1 style={{ ...syne, fontSize: "clamp(28px, 4vw, 48px)", fontWeight: 800, color: "#fff", lineHeight: 1.1, marginBottom: 24, letterSpacing: "-0.02em" }}>
+            You're an expert at running your business.
+            <br />
+            <span style={{ background: "linear-gradient(90deg, #3b82f6, #60a5fa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontWeight: 700 }}>We make sure the internet knows it.</span>
           </h1>
 
-          <p style={{ color: "#94a3b8", fontSize: "clamp(16px, 2vw, 20px)", lineHeight: 1.6, marginBottom: 40, maxWidth: 640, marginLeft: "auto", marginRight: "auto" }}>
+          <p style={{ color: "#94a3b8", fontSize: "clamp(15px, 1.8vw, 18px)", lineHeight: 1.6, marginBottom: 40, maxWidth: 640, marginLeft: "auto", marginRight: "auto" }}>
             Find out exactly how your business looks online — before your customers do. We scan Google, Yelp, Facebook, Bing, and 20+ platforms and give you a real score, real problems, and a real plan. In 60 seconds.
           </p>
 
@@ -156,7 +157,7 @@ export default function Home() {
       <section style={{ padding: "80px 16px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
         <div style={{ maxWidth: 1060, margin: "0 auto" }}>
           <p style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.15em", color: "#3b82f6", textAlign: "center", marginBottom: 12 }}>How it works</p>
-          <h2 style={{ ...syne, fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 800, color: "#fff", textAlign: "center", marginBottom: 56 }}>Three steps. Sixty seconds. Full picture.</h2>
+          <h2 style={{ ...syne, fontSize: "clamp(24px, 3vw, 36px)", fontWeight: 800, color: "#fff", textAlign: "center", marginBottom: 56 }}>Three steps. Sixty seconds. Full picture.</h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 24 }}>
             {STEPS.map(({ num, title, desc }) => (
               <div key={num} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 28 }}>

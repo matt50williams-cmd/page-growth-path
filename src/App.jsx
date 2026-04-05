@@ -22,6 +22,7 @@ import MyAudits from './pages/MyAudits';
 import Login from './pages/Login';
 import SeoAuditPage from './pages/SeoAuditPage';
 import SeoLoadingPage from './pages/SeoLoadingPage';
+import TeaserResults from './pages/TeaserResults';
 
 function StripeRedirectHandler() {
   const navigate = useNavigate();
@@ -75,6 +76,7 @@ function AuthenticatedApp() {
         <Route path="/terms" element={<Terms />} />
         <Route path="/seo-audit" element={<SeoAuditPage />} />
         <Route path="/seo-loading" element={<SeoLoadingPage />} />
+        <Route path="/teaser-results" element={<TeaserResults />} />
         <Route path="*" element={<PageNotFound />} />
       </Routes>
     </>
