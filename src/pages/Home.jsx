@@ -1,345 +1,294 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Check, Star, BarChart2, Globe } from "lucide-react";
+import { ArrowRight, BarChart2, Search, Check, Star, Shield, Zap, Clock, ChevronRight } from "lucide-react";
+
+const PLATFORMS = ["Google", "Yelp", "Facebook", "Bing", "Apple Maps", "Your Website", "NAP Consistency", "Competitors", "+20 more"];
+
+const STEPS = [
+  { num: "01", title: "Enter your business", desc: "Type your business name and city. That's it — no account, no login, no credit card." },
+  { num: "02", title: "We scan everything", desc: "Our AI checks Google, Yelp, Facebook, Bing, Apple Maps, your website, and 20+ platforms in 60 seconds." },
+  { num: "03", title: "Get your score and plan", desc: "See exactly where you stand, what's broken, and a step-by-step plan to fix it — in plain English." },
+];
+
+const SCORE_BARS = [
+  { label: "Google Business Profile", score: 88, badge: "Verified", color: "#10b981" },
+  { label: "Facebook Presence", score: 52, badge: "Limited", color: "#f59e0b" },
+  { label: "Yelp Profile", score: 71, badge: "Verified", color: "#f59e0b" },
+  { label: "Website SEO", score: 45, badge: "Verified", color: "#ef4444" },
+  { label: "NAP Consistency", score: 63, badge: "Limited", color: "#f59e0b" },
+];
+
+const PLANS = [
+  { name: "One-Time Audit", price: "$39", period: "one time", features: ["Full online presence scan", "Score across 20+ platforms", "Top issues + action plan", "7-day fix-it roadmap", "Competitor snapshot"], featured: false },
+  { name: "Monthly Monitor", price: "$49", period: "/mo", features: ["Everything in One-Time", "Monthly re-scans", "Score tracking over time", "Email alerts for new issues", "Priority support"], featured: false },
+  { name: "Pro Monitor", price: "$79", period: "/mo", features: ["Everything in Monthly", "Weekly re-scans", "Competitor tracking", "Review monitoring", "SEO keyword tracking"], featured: false },
+  { name: "Pro + Review Booster", price: "$99", period: "/mo", features: ["Everything in Pro", "Automated review requests", "Review response templates", "Google review QR codes", "Reputation dashboard", "Social media scheduler"], featured: true, badge: "Best Value" },
+];
+
+const TESTIMONIALS = [
+  { name: "Mike R.", biz: "Plumbing Company Owner", text: "I had no idea my Google listing had the wrong phone number. Customers were calling my old number for months. This scan caught it in 30 seconds — would've taken me forever to figure out on my own." },
+  { name: "Sarah T.", biz: "Restaurant Owner", text: "We were completely invisible on Apple Maps and Bing. The report showed us exactly what was missing and we fixed it in one afternoon. Already seeing more walk-ins from people who say they found us online." },
+  { name: "Dave K.", biz: "Auto Shop Owner", text: "My competitor had half our experience but was outranking us everywhere. The competitor analysis showed me exactly why and the action plan told me what to do about it. Worth every penny." },
+];
+
+const FAQS = [
+  { q: "Is this really free?", a: "The initial scan is 100% free — no account, no credit card. You'll see your overall score and top issues instantly. The full detailed report with your action plan is available for a one-time $39.99." },
+  { q: "How long does the scan take?", a: "About 60 seconds. Our AI checks 20+ platforms simultaneously and generates your score in real time." },
+  { q: "What platforms do you check?", a: "Google Business Profile, Yelp, Facebook, Bing Places, Apple Maps, your website SEO, directory listings, NAP consistency, review sites, and competitor positioning." },
+  { q: "Do I need a website to use this?", a: "No. We scan your business across all platforms. If you do have a website, we'll include a full SEO analysis as a bonus." },
+  { q: "How is this different from free SEO tools?", a: "Free tools check one thing. We check everything — your entire online presence across 20+ platforms — and give you a specific, prioritized plan written for your business." },
+];
 
 export default function Home() {
   const navigate = useNavigate();
-  const [timeLeft, setTimeLeft] = useState({ hours: 2, minutes: 47, seconds: 33 });
+  const [businessName, setBusinessName] = useState("");
+  const [businessName2, setBusinessName2] = useState("");
+  const [openFaq, setOpenFaq] = useState(null);
+  const [scoreVisible, setScoreVisible] = useState(false);
+  const scoreRef = useRef(null);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        let { hours, minutes, seconds } = prev;
-        if (seconds > 0) return { hours, minutes, seconds: seconds - 1 };
-        if (minutes > 0) return { hours, minutes: minutes - 1, seconds: 59 };
-        if (hours > 0) return { hours: hours - 1, minutes: 59, seconds: 59 };
-        return prev;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap";
+    document.head.appendChild(link);
+    return () => { document.head.removeChild(link); };
   }, []);
 
-  const pad = (n) => String(n).padStart(2, '0');
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) setScoreVisible(true);
+    }, { threshold: 0.3 });
+    if (scoreRef.current) observer.observe(scoreRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  const handleScan = (name) => {
+    navigate("/submit-your-page", { state: { businessName: (name || "").trim() } });
+  };
+
+  const syne = { fontFamily: "'Syne', sans-serif" };
+  const dm = { fontFamily: "'DM Sans', sans-serif" };
 
   return (
-    <div className="min-h-screen bg-white font-sans">
+    <div className="min-h-screen" style={{ ...dm, background: "#0a0f1e" }}>
 
-      {/* NAV */}
-      <nav className="bg-white border-b border-gray-100 sticky top-0 z-40">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <BarChart2 className="w-5 h-5 text-[#1877F2]" />
-            <span className="font-bold text-base text-black tracking-tight">PageAudit Pro</span>
+      {/* NAVBAR */}
+      <nav style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 50, background: "rgba(10,15,30,0.8)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+        <div style={{ maxWidth: 1152, margin: "0 auto", padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <BarChart2 style={{ width: 20, height: 20, color: "#3b82f6" }} />
+            <span style={{ ...syne, fontWeight: 700, fontSize: 15, color: "#fff", letterSpacing: "-0.01em" }}>PageAudit Pro</span>
           </div>
-          <div className="flex items-center gap-3">
-            <button onClick={() => navigate('/login')}
-              className="inline-flex items-center text-sm font-semibold text-[#1877F2] border border-[#1877F2] px-4 py-2.5 rounded-xl hover:bg-blue-50 transition-colors">
-              Login
-            </button>
-            <button onClick={() => navigate('/submit-your-page')}
-              className="inline-flex items-center gap-2 bg-[#1877F2] text-white px-5 py-2.5 text-sm font-bold rounded-xl hover:bg-[#1457C0] transition-colors shadow-md shadow-blue-100">
-              Get My Free Audit <ArrowRight className="w-4 h-4" />
-            </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <button onClick={() => navigate("/login")} style={{ fontSize: 13, fontWeight: 500, color: "#94a3b8", background: "none", border: "none", padding: "8px 16px", cursor: "pointer" }}>Login</button>
+            <button onClick={() => navigate("/submit-your-page")} style={{ fontSize: 13, fontWeight: 600, color: "#fff", background: "#2563eb", border: "none", padding: "10px 20px", borderRadius: 8, cursor: "pointer" }}>Scan My Business Free</button>
           </div>
         </div>
       </nav>
 
       {/* HERO */}
-      <section className="bg-gradient-to-br from-[#0f2a6b] via-[#1877F2] to-[#2563eb] text-white py-16 md:py-24 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-2 text-xs font-semibold mb-6 backdrop-blur-sm">
-            ⚡ Powered by 4 AI Systems Working Together
+      <section style={{ paddingTop: 140, paddingBottom: 80, paddingLeft: 16, paddingRight: 16, position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: 80, left: "25%", width: 500, height: 500, background: "rgba(37,99,235,0.06)", borderRadius: "50%", filter: "blur(120px)", pointerEvents: "none" }} />
+        <div style={{ maxWidth: 720, margin: "0 auto", textAlign: "center", position: "relative", zIndex: 1 }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 999, padding: "8px 16px", marginBottom: 32 }}>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#10b981", display: "inline-block", animation: "pulse 2s infinite" }} />
+            <span style={{ fontSize: 13, color: "#94a3b8", fontWeight: 500 }}>Free scan — no account needed</span>
           </div>
-          <h1 className="text-4xl md:text-6xl font-extrabold mb-6 leading-tight">
-            Find Out Why Your Facebook Page<br />
-            <span className="text-yellow-300">Isn't Growing</span> — In Minutes
+          <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}`}</style>
+
+          <h1 style={{ ...syne, fontSize: "clamp(32px, 5vw, 56px)", fontWeight: 800, color: "#fff", lineHeight: 1.1, marginBottom: 24, letterSpacing: "-0.02em" }}>
+            You're an expert at running your business.{" "}
+            <span style={{ background: "linear-gradient(90deg, #3b82f6, #60a5fa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>We make sure the internet knows it.</span>
           </h1>
-          <p className="text-blue-100 text-lg md:text-xl mb-4 max-w-2xl mx-auto leading-relaxed">
-            Get a full Facebook growth audit <strong className="text-white">AND a free website SEO score</strong> — both for just $39.99. Agencies charge $500–$2,000 for the same thing.
+
+          <p style={{ color: "#94a3b8", fontSize: "clamp(16px, 2vw, 20px)", lineHeight: 1.6, marginBottom: 40, maxWidth: 640, marginLeft: "auto", marginRight: "auto" }}>
+            Find out exactly how your business looks online — before your customers do. We scan Google, Yelp, Facebook, Bing, and 20+ platforms and give you a real score, real problems, and a real plan. In 60 seconds.
           </p>
 
-          <div className="flex flex-wrap justify-center gap-3 mb-8">
-            <div className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 flex items-center gap-2 text-sm font-semibold backdrop-blur-sm">
-              <span>📘</span> Full Facebook Growth Audit
+          {/* Scan Box */}
+          <div style={{ maxWidth: 560, margin: "0 auto" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: 8 }}>
+              <div style={{ flex: 1, minWidth: 200, position: "relative" }}>
+                <Search style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", width: 18, height: 18, color: "#64748b" }} />
+                <input type="text" value={businessName} onChange={e => setBusinessName(e.target.value)} onKeyDown={e => e.key === "Enter" && handleScan(businessName)} placeholder="e.g. Joe's Plumbing Dallas TX"
+                  style={{ width: "100%", background: "rgba(255,255,255,0.05)", color: "#fff", fontSize: 15, padding: "16px 16px 16px 48px", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, outline: "none", boxSizing: "border-box" }} />
+              </div>
+              <button onClick={() => handleScan(businessName)}
+                style={{ background: "#2563eb", color: "#fff", fontWeight: 600, fontSize: 15, padding: "16px 32px", borderRadius: 12, border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap" }}>
+                Scan Free <ArrowRight style={{ width: 16, height: 16 }} />
+              </button>
             </div>
-            <div className="bg-yellow-400/20 border border-yellow-400/40 rounded-xl px-4 py-2 flex items-center gap-2 text-sm font-semibold text-yellow-200">
-              <span>🎁</span> FREE Website SEO Score — Limited Time!
+            <div style={{ display: "flex", justifyContent: "center", gap: 20, flexWrap: "wrap", marginTop: 16, color: "#64748b", fontSize: 13 }}>
+              <span style={{ display: "flex", alignItems: "center", gap: 6 }}><Shield style={{ width: 14, height: 14 }} /> No account needed</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 6 }}><Zap style={{ width: 14, height: 14 }} /> No credit card</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 6 }}><Clock style={{ width: 14, height: 14 }} /> Results in 60 seconds</span>
             </div>
-          </div>
-
-          {/* FIXED COUNTDOWN TIMER */}
-          <div className="inline-block bg-white/10 border border-white/20 rounded-2xl px-6 py-4 mb-8 backdrop-blur-sm">
-            <p className="text-xs font-bold uppercase tracking-widest text-blue-200 mb-3">⏰ Limited Time Offer Expires In:</p>
-            <div className="flex items-end justify-center gap-1">
-              <div className="text-center">
-                <div className="text-3xl font-extrabold text-white">{pad(timeLeft.hours)}</div>
-                <div className="text-xs text-blue-200 font-semibold">HRS</div>
-              </div>
-              <div className="text-2xl font-bold text-blue-200 mb-4 mx-1">:</div>
-              <div className="text-center">
-                <div className="text-3xl font-extrabold text-white">{pad(timeLeft.minutes)}</div>
-                <div className="text-xs text-blue-200 font-semibold">MIN</div>
-              </div>
-              <div className="text-2xl font-bold text-blue-200 mb-4 mx-1">:</div>
-              <div className="text-center">
-                <div className="text-3xl font-extrabold text-white">{pad(timeLeft.seconds)}</div>
-                <div className="text-xs text-blue-200 font-semibold">SEC</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button onClick={() => navigate('/submit-your-page')}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-[#1877F2] px-8 py-4 text-base font-extrabold rounded-2xl hover:bg-blue-50 transition-all shadow-xl">
-              Get My Facebook Audit + Free SEO Score <ArrowRight className="w-5 h-5" />
-            </button>
-          </div>
-          <p className="text-blue-200 text-xs mt-4">🔒 One-time payment · No subscription · Instant access</p>
-        </div>
-      </section>
-
-      {/* WHAT YOU GET */}
-      <section className="py-16 px-4 bg-gray-50">
-        <div className="max-w-4xl mx-auto">
-          <p className="text-xs font-bold uppercase tracking-widest text-[#1877F2] text-center mb-3">What's Included</p>
-          <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 text-center mb-4">Two Reports. One Price.</h2>
-          <p className="text-gray-500 text-center mb-10 max-w-xl mx-auto">Agencies charge $500–$2,000 for just the Facebook audit. We include both for $39.99.</p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white border-2 border-[#1877F2] rounded-3xl p-7 shadow-lg">
-              <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 rounded-xl bg-[#1877F2] flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">f</span>
-                </div>
-                <div>
-                  <p className="font-extrabold text-gray-900">Facebook Growth Audit</p>
-                  <p className="text-xs text-gray-400">Full analysis + action plan</p>
-                </div>
-              </div>
-              <div className="space-y-3">
-                {[
-                  "Honest page assessment — no fluff",
-                  "Your #1 growth blocker identified",
-                  "7-day action plan you can start today",
-                  "Custom content strategy + 3 post ideas",
-                  "Followers → customers blueprint",
-                  "30-day growth roadmap",
-                ].map(item => (
-                  <div key={item} className="flex items-start gap-2.5">
-                    <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center shrink-0 mt-0.5">
-                      <Check className="w-2.5 h-2.5 text-white" />
-                    </div>
-                    <p className="text-sm text-gray-700">{item}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="bg-white border-2 border-yellow-400 rounded-3xl p-7 shadow-lg relative overflow-hidden">
-              <div className="absolute top-4 right-4 bg-yellow-400 text-yellow-900 text-xs font-extrabold px-3 py-1 rounded-full">
-                FREE BONUS
-              </div>
-              <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 rounded-xl bg-yellow-400 flex items-center justify-center">
-                  <Globe className="w-5 h-5 text-yellow-900" />
-                </div>
-                <div>
-                  <p className="font-extrabold text-gray-900">Website SEO Score</p>
-                  <p className="text-xs text-gray-400">See how Google sees your site</p>
-                </div>
-              </div>
-              <div className="space-y-3">
-                {[
-                  "Overall SEO score out of 100",
-                  "Top 3 issues hurting your ranking",
-                  "The single most important fix",
-                  "What you're already doing well",
-                  "Side-by-side in your dashboard",
-                  "Upgrade to full SEO report anytime",
-                ].map(item => (
-                  <div key={item} className="flex items-start gap-2.5">
-                    <div className="w-4 h-4 rounded-full bg-yellow-400 flex items-center justify-center shrink-0 mt-0.5">
-                      <Check className="w-2.5 h-2.5 text-yellow-900" />
-                    </div>
-                    <p className="text-sm text-gray-700">{item}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-8 text-center">
-            <button onClick={() => navigate('/submit-your-page')}
-              className="inline-flex items-center gap-2 bg-[#1877F2] text-white px-10 py-4 text-base font-extrabold rounded-2xl hover:bg-[#1457C0] transition-all shadow-lg shadow-blue-200">
-              Get Both Reports for $39.99 <ArrowRight className="w-5 h-5" />
-            </button>
-            <p className="text-gray-400 text-xs mt-3">Regular price $197 · You save $157 · Limited time</p>
           </div>
         </div>
       </section>
 
-      {/* PAIN POINTS */}
-      <section className="py-16 px-4 bg-white">
-        <div className="max-w-4xl mx-auto">
-          <p className="text-xs font-bold uppercase tracking-widest text-[#1877F2] text-center mb-3">Sound Familiar?</p>
-          <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 text-center mb-10">Every Business Owner Has Been Here</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[
-              { emoji: "😤", text: "\"I post all the time but nobody sees it\"" },
-              { emoji: "🤷", text: "\"I have no idea what to post anymore\"" },
-              { emoji: "💸", text: "\"I tried ads but wasted my money\"" },
-              { emoji: "😩", text: "\"My competitor has way fewer followers but more engagement\"" },
-              { emoji: "🔍", text: "\"My website isn't showing up on Google\"" },
-              { emoji: "⏰", text: "\"I don't have time to figure all this out\"" },
-            ].map(({ emoji, text }) => (
-              <div key={text} className="bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 flex items-center gap-3">
-                <span className="text-2xl shrink-0">{emoji}</span>
-                <p className="text-sm font-semibold text-gray-700">{text}</p>
-              </div>
+      {/* PLATFORMS BAR */}
+      <section style={{ padding: "48px 16px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+        <div style={{ maxWidth: 960, margin: "0 auto", textAlign: "center" }}>
+          <p style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.15em", color: "#64748b", marginBottom: 20 }}>We check everywhere your customers look</p>
+          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 8 }}>
+            {PLATFORMS.map(p => (
+              <span key={p} style={{ fontSize: 13, fontWeight: 500, color: "#94a3b8", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", padding: "8px 16px", borderRadius: 999 }}>{p}</span>
             ))}
           </div>
-          <div className="mt-8 text-center bg-blue-50 border border-blue-100 rounded-2xl p-6">
-            <p className="text-lg font-bold text-gray-900 mb-2">We fix all of this in one report.</p>
-            <p className="text-sm text-gray-500">Our AI analyzes your Facebook page AND your website, then gives you a specific action plan to fix every problem — in plain English.</p>
-          </div>
         </div>
       </section>
 
-      {/* VS AGENCY */}
-      <section className="py-16 px-4 bg-gray-50">
-        <div className="max-w-3xl mx-auto">
-          <p className="text-xs font-bold uppercase tracking-widest text-[#1877F2] text-center mb-3">The Comparison</p>
-          <h2 className="text-3xl font-extrabold text-gray-900 text-center mb-10">Why Pay an Agency $2,000?</h2>
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="grid grid-cols-3 bg-gray-50 border-b border-gray-100">
-              <div className="px-4 py-3 text-xs font-bold text-gray-400 uppercase"></div>
-              <div className="px-4 py-3 text-xs font-bold text-gray-700 uppercase text-center">Marketing Agency</div>
-              <div className="px-4 py-3 text-xs font-bold text-[#1877F2] uppercase text-center">PageAudit Pro</div>
-            </div>
-            {[
-              ["Cost", "$500–$2,000", "$39.99"],
-              ["Facebook Audit", "✅", "✅"],
-              ["Website SEO Score", "❌ Extra cost", "✅ FREE included"],
-              ["Turnaround", "1–2 weeks", "Instant"],
-              ["Action Plan", "Generic advice", "Your specific plan"],
-              ["Contract", "3–12 months", "One-time, no contract"],
-            ].map(([label, agency, ours], i) => (
-              <div key={label} className={`grid grid-cols-3 border-b border-gray-50 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
-                <div className="px-4 py-3.5 text-sm font-semibold text-gray-700">{label}</div>
-                <div className="px-4 py-3.5 text-sm text-gray-500 text-center">{agency}</div>
-                <div className="px-4 py-3.5 text-sm font-bold text-[#1877F2] text-center">{ours}</div>
-              </div>
-            ))}
+      {/* PAIN SECTION */}
+      <section style={{ padding: "80px 16px" }}>
+        <div style={{ maxWidth: 680, margin: "0 auto", textAlign: "center" }}>
+          <h2 style={{ ...syne, fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 800, color: "#fff", marginBottom: 24, lineHeight: 1.15 }}>Right now, someone is googling your business.</h2>
+          <div style={{ color: "#94a3b8", fontSize: 17, lineHeight: 1.7, textAlign: "center" }}>
+            <p style={{ marginBottom: 20 }}>They're checking your hours. Reading your reviews. Comparing you to the business that showed up first. And if your Google listing has the wrong phone number, your Yelp page has one review from 2019, or your Facebook page looks abandoned — <span style={{ color: "#fff", fontWeight: 600 }}>they're choosing someone else.</span></p>
+            <p style={{ marginBottom: 20 }}>The worst part? You have no idea it's happening. Your website might be invisible to Google. Your business might not even show up on Apple Maps. A competitor with half your experience could be outranking you everywhere.</p>
+            <p style={{ color: "#fff", fontWeight: 600, fontSize: 19 }}>You can't fix what you can't see. That's why we built this.</p>
           </div>
         </div>
       </section>
 
       {/* HOW IT WORKS */}
-      <section className="py-16 px-4 bg-white">
-        <div className="max-w-4xl mx-auto">
-          <p className="text-xs font-bold uppercase tracking-widest text-[#1877F2] text-center mb-3">How It Works</p>
-          <h2 className="text-3xl font-extrabold text-gray-900 text-center mb-10">3 Simple Steps</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              { step: "1", icon: "📋", title: "Answer 7 Quick Questions", desc: "Tell us about your business and Facebook page. Takes less than 3 minutes on your phone." },
-              { step: "2", icon: "🤖", title: "4 AIs Analyze Everything", desc: "Our AI systems analyze your Facebook page and website simultaneously to find every growth opportunity." },
-              { step: "3", icon: "📈", title: "Get Your Action Plan", desc: "Receive your Facebook audit AND free SEO score with specific steps to start growing today." },
-            ].map(({ step, icon, title, desc }) => (
-              <div key={step} className="text-center">
-                <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-4">
-                  <span className="text-2xl">{icon}</span>
-                </div>
-                <div className="w-6 h-6 rounded-full bg-[#1877F2] text-white text-xs font-bold flex items-center justify-center mx-auto mb-3">
-                  {step}
-                </div>
-                <h3 className="font-bold text-gray-900 mb-2">{title}</h3>
-                <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
+      <section style={{ padding: "80px 16px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+        <div style={{ maxWidth: 1060, margin: "0 auto" }}>
+          <p style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.15em", color: "#3b82f6", textAlign: "center", marginBottom: 12 }}>How it works</p>
+          <h2 style={{ ...syne, fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 800, color: "#fff", textAlign: "center", marginBottom: 56 }}>Three steps. Sixty seconds. Full picture.</h2>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 24 }}>
+            {STEPS.map(({ num, title, desc }) => (
+              <div key={num} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 28 }}>
+                <span style={{ ...syne, fontSize: 40, fontWeight: 800, color: "rgba(37,99,235,0.2)", display: "block", marginBottom: 16 }}>{num}</span>
+                <h3 style={{ color: "#fff", fontWeight: 700, fontSize: 18, marginBottom: 8 }}>{title}</h3>
+                <p style={{ color: "#94a3b8", fontSize: 14, lineHeight: 1.6 }}>{desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* TESTIMONIALS */}
-      <section className="py-16 px-4 bg-gray-50">
-        <div className="max-w-4xl mx-auto">
-          <p className="text-xs font-bold uppercase tracking-widest text-[#1877F2] text-center mb-3">Real Results</p>
-          <h2 className="text-3xl font-extrabold text-gray-900 text-center mb-10">What Business Owners Are Saying</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              { name: "Sarah M.", biz: "Boutique Owner", stars: 5, text: "I had no idea my posting times were killing my reach. The 7-day action plan was so specific — I followed it and doubled my engagement in 2 weeks." },
-              { name: "Mike T.", biz: "HVAC Company", stars: 5, text: "Got the Facebook audit AND found out my website had 3 major SEO issues. Fixed them in a weekend. Worth every penny." },
-              { name: "Jessica R.", biz: "Restaurant Owner", stars: 5, text: "My competitor had half my followers but 10x the engagement. Now I know exactly why and what to do. Game changer." },
-            ].map(({ name, biz, stars, text }) => (
-              <div key={name} className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-                <div className="flex gap-0.5 mb-3">
-                  {Array(stars).fill(0).map((_, i) => (
-                    <Star key={i} className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                  ))}
+      {/* SCORE PREVIEW */}
+      <section ref={scoreRef} style={{ padding: "80px 16px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+        <div style={{ maxWidth: 1060, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 48, alignItems: "center" }}>
+          <div>
+            <p style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.15em", color: "#3b82f6", marginBottom: 12 }}>Your online health report</p>
+            <h2 style={{ ...syne, fontSize: "clamp(28px, 3.5vw, 38px)", fontWeight: 800, color: "#fff", marginBottom: 20, lineHeight: 1.15 }}>See exactly where you stand — and what to fix first.</h2>
+            <p style={{ color: "#94a3b8", fontSize: 17, lineHeight: 1.7, marginBottom: 24 }}>Your scan gives you a score across every platform that matters. No jargon, no fluff — just a clear picture of what's working, what's broken, and the exact steps to fix it.</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {["Overall score across 20+ platforms", "Top 3 issues ranked by impact", "Step-by-step fix-it plan in plain English", "Competitor comparison in your area"].map(item => (
+                <div key={item} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ width: 20, height: 20, borderRadius: "50%", background: "rgba(37,99,235,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Check style={{ width: 12, height: 12, color: "#3b82f6" }} />
+                  </div>
+                  <span style={{ color: "#c8d0dc", fontSize: 14 }}>{item}</span>
                 </div>
-                <p className="text-sm text-gray-700 mb-4 leading-relaxed">"{text}"</p>
-                <div>
-                  <p className="text-sm font-bold text-gray-900">{name}</p>
-                  <p className="text-xs text-gray-400">{biz}</p>
+              ))}
+            </div>
+          </div>
+          <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: 24, position: "relative" }}>
+            <div style={{ position: "absolute", top: -12, right: -12, background: "#2563eb", color: "#fff", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", padding: "4px 12px", borderRadius: 999 }}>Sample</div>
+            <div style={{ textAlign: "center", marginBottom: 24 }}>
+              <p style={{ color: "#64748b", fontSize: 12, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600, marginBottom: 8 }}>Overall Online Score</p>
+              <div style={{ ...syne, fontSize: 64, fontWeight: 800, color: "#fff", lineHeight: 1 }}>61<span style={{ fontSize: 24, color: "#64748b" }}>/100</span></div>
+              <p style={{ color: "#f59e0b", fontSize: 14, fontWeight: 600, marginTop: 4 }}>Needs Improvement</p>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              {SCORE_BARS.map(({ label, score, badge, color }) => (
+                <div key={label}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                    <span style={{ color: "#94a3b8", fontSize: 13 }}>{label}</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 999, background: badge === "Verified" ? "rgba(16,185,129,0.15)" : "rgba(245,158,11,0.15)", color: badge === "Verified" ? "#10b981" : "#f59e0b" }}>{badge}</span>
+                      <span style={{ fontWeight: 700, fontSize: 13, color }}>{score}/100</span>
+                    </div>
+                  </div>
+                  <div style={{ height: 8, background: "rgba(255,255,255,0.05)", borderRadius: 999, overflow: "hidden" }}>
+                    <div style={{ height: "100%", borderRadius: 999, background: color, transition: "width 1s ease-out", width: scoreVisible ? `${score}%` : "0%" }} />
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+            <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.05)", textAlign: "center" }}>
+              <p style={{ color: "#64748b", fontSize: 12 }}>Based on a scan of <span style={{ color: "#fff", fontWeight: 600 }}>24 platforms</span></p>
+            </div>
           </div>
         </div>
       </section>
 
       {/* PRICING */}
-      <section className="py-16 px-4 bg-white">
-        <div className="max-w-lg mx-auto text-center">
-          <p className="text-xs font-bold uppercase tracking-widest text-[#1877F2] mb-3">Simple Pricing</p>
-          <h2 className="text-3xl font-extrabold text-gray-900 mb-10">One Price. Everything Included.</h2>
-          <div className="bg-white border-2 border-[#1877F2] rounded-3xl p-8 shadow-xl">
-            <p className="text-sm text-gray-400 mb-1">What agencies charge: <span className="line-through font-bold">$500–$2,000</span></p>
-            <p className="text-sm text-gray-400 mb-1">Our regular price: <span className="line-through font-bold text-gray-500">$197</span></p>
-            <p className="text-green-600 font-bold text-sm mb-3">Today only — 80% off</p>
-            <div className="flex items-baseline justify-center gap-1 mb-2">
-              <span className="text-6xl font-extrabold text-gray-900">$39</span>
-              <span className="text-3xl font-bold text-gray-400">.99</span>
-            </div>
-            <p className="text-green-600 font-semibold text-sm mb-6">You save $157</p>
-            <div className="space-y-2 mb-6 text-left">
-              {[
-                "✅ Full Facebook Growth Audit",
-                "✅ 7-Day Action Plan",
-                "✅ 30-Day Roadmap",
-                "🎁 FREE Website SEO Score",
-                "🎁 FREE SEO Issues Report",
-                "⚡ Instant delivery",
-                "🔒 One-time payment, no subscription",
-              ].map(item => (
-                <p key={item} className="text-sm text-gray-700 font-medium">{item}</p>
-              ))}
-            </div>
-            <button onClick={() => navigate('/submit-your-page')}
-              className="w-full inline-flex items-center justify-center gap-2 bg-[#1877F2] text-white px-8 py-4 font-extrabold text-base rounded-xl hover:bg-[#1457C0] transition-all shadow-lg shadow-blue-200">
-              Get My Audit + Free SEO Score <ArrowRight className="w-5 h-5" />
-            </button>
-            <p className="text-xs text-gray-400 mt-3">🔒 Secure payment · No contracts · No hidden fees</p>
+      <section style={{ padding: "80px 16px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+          <p style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.15em", color: "#3b82f6", textAlign: "center", marginBottom: 12 }}>Simple pricing</p>
+          <h2 style={{ ...syne, fontSize: "clamp(28px, 4vw, 38px)", fontWeight: 800, color: "#fff", textAlign: "center", marginBottom: 48 }}>Scan free. Upgrade when you're ready.</h2>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
+            {PLANS.map(({ name, price, period, features, featured, badge }) => (
+              <div key={name} style={{ background: featured ? "rgba(37,99,235,0.1)" : "rgba(255,255,255,0.03)", border: `1px solid ${featured ? "rgba(37,99,235,0.3)" : "rgba(255,255,255,0.08)"}`, borderRadius: 16, padding: 24, position: "relative", display: "flex", flexDirection: "column" }}>
+                {badge && <div style={{ position: "absolute", top: -12, left: "50%", transform: "translateX(-50%)", background: "#2563eb", color: "#fff", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", padding: "4px 14px", borderRadius: 999 }}>{badge}</div>}
+                <p style={{ color: featured ? "#3b82f6" : "#64748b", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>{name}</p>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 20 }}>
+                  <span style={{ ...syne, fontSize: 32, fontWeight: 800, color: "#fff" }}>{price}</span>
+                  <span style={{ fontSize: 14, color: "#64748b" }}>{period}</span>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24, flex: 1 }}>
+                  {features.map(f => (
+                    <div key={f} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: featured ? "#c8d0dc" : "#94a3b8" }}>
+                      <Check style={{ width: 14, height: 14, color: "#3b82f6", flexShrink: 0 }} /> {f}
+                    </div>
+                  ))}
+                </div>
+                <button onClick={() => navigate("/submit-your-page")}
+                  style={{ width: "100%", fontSize: 13, fontWeight: 600, color: "#fff", background: featured ? "#2563eb" : "transparent", border: featured ? "none" : "1px solid rgba(255,255,255,0.2)", padding: "12px 0", borderRadius: 8, cursor: "pointer" }}>
+                  {featured ? "Get Started" : "Choose Plan"}
+                </button>
+              </div>
+            ))}
+          </div>
+          <p style={{ textAlign: "center", color: "#64748b", fontSize: 13, marginTop: 24 }}>Competitors like Birdeye charge $299–599/month for less.</p>
+        </div>
+      </section>
+
+      {/* TESTIMONIALS */}
+      <section style={{ padding: "80px 16px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+        <div style={{ maxWidth: 1060, margin: "0 auto" }}>
+          <p style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.15em", color: "#3b82f6", textAlign: "center", marginBottom: 12 }}>What business owners say</p>
+          <h2 style={{ ...syne, fontSize: "clamp(28px, 4vw, 36px)", fontWeight: 800, color: "#fff", textAlign: "center", marginBottom: 48 }}>Real results from real businesses.</h2>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 20 }}>
+            {TESTIMONIALS.map(({ name, biz, text }) => (
+              <div key={name} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 24 }}>
+                <div style={{ display: "flex", gap: 2, marginBottom: 16 }}>
+                  {[1, 2, 3, 4, 5].map(i => <Star key={i} style={{ width: 16, height: 16, fill: "#f59e0b", color: "#f59e0b" }} />)}
+                </div>
+                <p style={{ color: "#c8d0dc", fontSize: 14, lineHeight: 1.65, marginBottom: 20 }}>"{text}"</p>
+                <div>
+                  <p style={{ color: "#fff", fontWeight: 600, fontSize: 14 }}>{name}</p>
+                  <p style={{ color: "#64748b", fontSize: 12 }}>{biz}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* FAQ */}
-      <section className="py-16 px-4 bg-gray-50">
-        <div className="max-w-2xl mx-auto">
-          <p className="text-xs font-bold uppercase tracking-widest text-[#1877F2] text-center mb-3">FAQ</p>
-          <h2 className="text-3xl font-extrabold text-gray-900 text-center mb-10">Common Questions</h2>
-          <div className="space-y-4">
-            {[
-              { q: "Do I need a Facebook page to get the audit?", a: "No! If you don't have a Facebook page yet, we'll include a complete guide on setting one up for maximum impact from day one." },
-              { q: "What if I don't have a website?", a: "No problem — the website SEO score is a bonus. You'll still get the full Facebook growth audit even without a website." },
-              { q: "How is this different from free tools?", a: "Free tools give generic scores. We give you a specific action plan written for YOUR business type, YOUR goals, and YOUR city. Completely personalized." },
-              { q: "How long does it take?", a: "Our AI generates your report in minutes. You'll have your full audit and SEO score ready before you finish your coffee." },
-              { q: "What if I'm not happy with the report?", a: "Our reports are packed with specific, actionable insights tailored to your exact business. If you have any questions about your results, our support team at support@pageauditpros.com is here to help you get the most out of it." },
-            ].map(({ q, a }) => (
-              <div key={q} className="bg-white border border-gray-100 rounded-2xl p-5">
-                <p className="font-bold text-gray-900 mb-2 text-sm">Q: {q}</p>
-                <p className="text-sm text-gray-600 leading-relaxed">{a}</p>
+      <section style={{ padding: "80px 16px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+        <div style={{ maxWidth: 640, margin: "0 auto" }}>
+          <p style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.15em", color: "#3b82f6", textAlign: "center", marginBottom: 12 }}>FAQ</p>
+          <h2 style={{ ...syne, fontSize: 30, fontWeight: 800, color: "#fff", textAlign: "center", marginBottom: 40 }}>Common questions</h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {FAQS.map(({ q, a }, i) => (
+              <div key={q} style={{ border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, overflow: "hidden" }}>
+                <button onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: "#fff", paddingRight: 16 }}>{q}</span>
+                  <ChevronRight style={{ width: 16, height: 16, color: "#64748b", flexShrink: 0, transition: "transform 0.2s", transform: openFaq === i ? "rotate(90deg)" : "none" }} />
+                </button>
+                {openFaq === i && (
+                  <div style={{ padding: "0 20px 16px" }}>
+                    <p style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.6 }}>{a}</p>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -347,34 +296,50 @@ export default function Home() {
       </section>
 
       {/* FINAL CTA */}
-      <section className="py-16 px-4 bg-gradient-to-br from-[#0f2a6b] via-[#1877F2] to-[#2563eb] text-white">
-        <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-extrabold mb-4">Stop Guessing. Start Growing.</h2>
-          <p className="text-blue-100 mb-8 text-lg">Get your Facebook audit AND free website SEO score for just $39.99. The same insights agencies charge thousands for.</p>
-          <button onClick={() => navigate('/submit-your-page')}
-            className="inline-flex items-center gap-2 bg-white text-[#1877F2] px-10 py-4 text-base font-extrabold rounded-2xl hover:bg-blue-50 transition-all shadow-xl">
-            Get My Audit + Free SEO Score <ArrowRight className="w-5 h-5" />
-          </button>
-          <p className="text-blue-200 text-xs mt-4">🔒 One-time · No subscription · Instant access · $39.99</p>
+      <section style={{ padding: "80px 16px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+        <div style={{ maxWidth: 640, margin: "0 auto", textAlign: "center" }}>
+          <h2 style={{ ...syne, fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 800, color: "#fff", marginBottom: 20, lineHeight: 1.15 }}>
+            Find out where you stand.
+            <br />
+            <span style={{ background: "linear-gradient(90deg, #3b82f6, #60a5fa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Right now. Free.</span>
+          </h2>
+          <p style={{ color: "#94a3b8", fontSize: 17, marginBottom: 32 }}>Free scan. 60 seconds. No account needed.</p>
+          <div style={{ maxWidth: 520, margin: "0 auto" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: 8 }}>
+              <div style={{ flex: 1, minWidth: 200, position: "relative" }}>
+                <Search style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", width: 18, height: 18, color: "#64748b" }} />
+                <input type="text" value={businessName2} onChange={e => setBusinessName2(e.target.value)} onKeyDown={e => e.key === "Enter" && handleScan(businessName2)} placeholder="Your business name + city"
+                  style={{ width: "100%", background: "rgba(255,255,255,0.05)", color: "#fff", fontSize: 15, padding: "16px 16px 16px 48px", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, outline: "none", boxSizing: "border-box" }} />
+              </div>
+              <button onClick={() => handleScan(businessName2)}
+                style={{ background: "#2563eb", color: "#fff", fontWeight: 600, fontSize: 15, padding: "16px 32px", borderRadius: 12, border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap" }}>
+                Scan Free <ArrowRight style={{ width: 16, height: 16 }} />
+              </button>
+            </div>
+            <div style={{ display: "flex", justifyContent: "center", gap: 20, flexWrap: "wrap", marginTop: 16, color: "#64748b", fontSize: 13 }}>
+              <span style={{ display: "flex", alignItems: "center", gap: 6 }}><Shield style={{ width: 14, height: 14 }} /> No account needed</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 6 }}><Zap style={{ width: 14, height: 14 }} /> No credit card</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 6 }}><Clock style={{ width: 14, height: 14 }} /> Results in 60 seconds</span>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* FOOTER */}
-      <footer className="bg-gray-900 text-gray-400 py-8 px-4">
-        <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <BarChart2 className="w-4 h-4 text-[#1877F2]" />
-            <span className="font-bold text-white text-sm">PageAudit Pro</span>
+      <footer style={{ borderTop: "1px solid rgba(255,255,255,0.05)", padding: "32px 16px" }}>
+        <div style={{ maxWidth: 1060, margin: "0 auto", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <BarChart2 style={{ width: 16, height: 16, color: "#3b82f6" }} />
+            <span style={{ ...syne, fontWeight: 700, color: "#fff", fontSize: 14 }}>PageAudit Pro</span>
           </div>
-          <div className="flex items-center gap-6 text-xs">
-            <a href="/terms" className="hover:text-white transition-colors">Terms & Conditions</a>
-            <a href="/privacy" className="hover:text-white transition-colors">Privacy Policy</a>
-            <a href="mailto:support@pageauditpros.com" className="hover:text-white transition-colors">support@pageauditpros.com</a>
+          <div style={{ display: "flex", alignItems: "center", gap: 24, fontSize: 12, color: "#64748b" }}>
+            <a href="/privacy" style={{ color: "#64748b", textDecoration: "none" }}>Privacy</a>
+            <a href="/terms" style={{ color: "#64748b", textDecoration: "none" }}>Terms</a>
+            <a href="mailto:support@pageauditpros.com" style={{ color: "#64748b", textDecoration: "none" }}>Support</a>
           </div>
-          <p className="text-xs">© 2026 PageAudit Pro. All rights reserved.</p>
+          <p style={{ fontSize: 12, color: "#64748b" }}>&copy; 2026 The Agency LLC</p>
         </div>
       </footer>
-
     </div>
   );
 }
