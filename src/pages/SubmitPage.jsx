@@ -1,355 +1,98 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Check, ArrowLeft, Globe, MapPin, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
-import { findFacebookCandidates } from "../api/facebook";
+import { useNavigate, useLocation } from "react-router-dom";
+import { BarChart2, ArrowRight, ArrowLeft, Check, Shield, Zap, Clock, Search, Globe, Star, MapPin, Facebook, Loader2 } from "lucide-react";
 import { storeUtmParams, getStoredUtmParams } from "../utils/utm";
 import { trackEvent, EVENTS } from "../utils/tracking";
 
-const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 const API_BASE = import.meta.env.VITE_API_BASE || "https://pageaudit-engine.onrender.com";
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 4;
 
-function StepProgress({ step }) {
-  const labels = ["Let's go!", "Great! Keep going...", "You're doing great!", "Almost there...", "Two more steps!", "Final step!"];
-  return (
-    <div className="mb-6">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-semibold text-[#1877F2]">{labels[step - 1]}</span>
-        <span className="text-xs text-gray-400 font-medium">Step {step} of {TOTAL_STEPS}</span>
-      </div>
-      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-        <div className="h-full bg-[#1877F2] rounded-full transition-all duration-500" style={{ width: `${(step / TOTAL_STEPS) * 100}%` }} />
-      </div>
-    </div>
-  );
-}
-
-function WhyWeAsk({ children }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="mt-2">
-      <button type="button" onClick={() => setOpen(!open)} className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600">
-        <span className="text-gray-300">?</span> Why do we ask this?
-        {open ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-      </button>
-      {open && <p className="text-xs text-gray-500 mt-1.5 pl-1">{children}</p>}
-    </div>
-  );
-}
-
-const DID_YOU_KNOW = [
-  "Pages that post 4-5 times per week grow 3x faster than those that post randomly.",
-  "Facebook's algorithm rewards pages that respond to comments within the first 30 minutes.",
-  "Local businesses that mention their city in posts see up to 40% more reach from nearby customers.",
-  "Pages with a complete About section rank higher in Facebook search results.",
-  "Video posts get 5x more reach than image posts on Facebook - even short 60-second videos.",
-  "The best time to post for most businesses is between 1pm-4pm on weekdays.",
-  "Businesses that respond to reviews get 35% more engagement on their posts.",
+const INDUSTRIES = [
+  "Restaurant", "Plumber", "Electrician", "HVAC", "Roofer", "Dentist", "Salon / Barber",
+  "Auto Repair", "Gym / Fitness", "Lawyer", "Real Estate", "Landscaper",
+  "Cleaning Service", "Contractor", "Medical / Health", "Retail Store", "Other",
 ];
 
-function DidYouKnow({ index }) {
-  return (
-    <div className="mt-6 bg-blue-50 border border-blue-100 rounded-2xl px-4 py-3 flex items-start gap-2">
-      <span className="text-blue-400 text-sm shrink-0">💡</span>
-      <div>
-        <p className="text-xs font-bold text-blue-700 uppercase tracking-wide mb-0.5">Did you know?</p>
-        <p className="text-xs text-blue-600">{DID_YOU_KNOW[index % DID_YOU_KNOW.length]}</p>
-      </div>
-    </div>
-  );
-}
+const CHALLENGES = [
+  "Not enough new customers finding me online",
+  "I have bad or very few online reviews",
+  "My competitors are beating me online",
+  "My website isn't working well",
+  "I'm not sure where to start",
+];
 
-function OptionCard({ selected, onClick, children }) {
-  return (
-    <button type="button" onClick={onClick} className={`w-full text-left px-4 py-3.5 rounded-2xl border-2 transition-all text-sm font-medium flex items-center gap-2 ${selected ? "border-[#1877F2] bg-blue-50 text-[#1877F2]" : "border-gray-100 bg-white hover:border-blue-200 text-gray-700"}`}>
-      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${selected ? "border-[#1877F2] bg-[#1877F2]" : "border-gray-300"}`}>
-        {selected && <Check className="w-3 h-3 text-white" />}
-      </div>
-      {children}
-    </button>
-  );
-}
+const TENURE = ["Less than 1 year", "1-3 years", "3-10 years", "10+ years"];
+const BUDGET = ["$0 — I don't spend anything", "Under $500/mo", "$500-2,000/mo", "$2,000+/mo"];
 
-function HelpFindPage({ businessName, city, onUrlFound, onSkip }) {
-  const [pasteUrl, setPasteUrl] = useState("");
+const CHECKS = [
+  { emoji: "🔍", label: "Google Business Profile", desc: "rating, reviews, hours, photos, response rate" },
+  { emoji: "⭐", label: "Yelp", desc: "rating, review count, listing status" },
+  { emoji: "🌐", label: "Website", desc: "speed, mobile performance, SEO" },
+  { emoji: "📍", label: "NAP Consistency", desc: "name, address, phone across 20+ directories" },
+  { emoji: "📘", label: "Facebook", desc: "page activity and engagement" },
+  { emoji: "🏆", label: "Competitor comparison", desc: "see how you stack up side by side" },
+  { emoji: "🤖", label: "AI recommendations", desc: "personalized action plan" },
+];
 
-  return (
-    <div className="flex flex-col items-center text-center">
-      <div className="text-6xl mb-4">🔍</div>
-      <h2 className="text-xl font-bold text-gray-900 mb-2">We already found your #1 problem!</h2>
-      <p className="text-sm text-gray-500 leading-relaxed mb-1">If we can't find your Facebook page, neither can your customers.</p>
-      <p className="text-sm text-gray-500 leading-relaxed mb-6">Your audit will include a step-by-step visibility fix.</p>
-
-      <a href="https://www.facebook.com" target="_blank" rel="noopener noreferrer" className="w-full bg-[#1877F2] text-white text-base font-bold py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-[#1457C0] transition-colors mb-4">
-        Open Facebook <ExternalLink className="w-4 h-4" />
-      </a>
-
-      <p className="text-xs text-gray-400 mb-2">Find your page, copy the URL, and paste it here:</p>
-      <input type="url" placeholder="https://www.facebook.com/yourbusiness" value={pasteUrl} onChange={(e) => setPasteUrl(e.target.value)} className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3.5 text-sm text-center focus:outline-none focus:border-[#1877F2] transition-all" />
-      {pasteUrl && pasteUrl.includes("facebook.com") && (
-        <button type="button" onClick={() => onUrlFound(pasteUrl)} className="mt-3 w-full bg-green-500 text-white text-sm font-bold py-3.5 rounded-2xl hover:bg-green-600 transition-colors">
-          Use This URL
-        </button>
-      )}
-
-      <button type="button" onClick={onSkip} className="mt-4 text-sm text-[#1877F2] font-semibold hover:underline">
-        Skip for now — include this fix in my report
-      </button>
-    </div>
-  );
-}
-
-function FacebookPageFinder({ value, onChange, businessName, website, city, email, websiteLogoUrl, preloadedCandidates, scrapeLoading }) {
-  const [searchName, setSearchName] = useState(businessName || "");
-  const [candidates, setCandidates] = useState([]);
-  const [searching, setSearching] = useState(false);
-  const [searched, setSearched] = useState(false);
-  const [confirmed, setConfirmed] = useState(false);
-  const [confirmedUrl, setConfirmedUrl] = useState("");
-  const [confirmedName, setConfirmedName] = useState("");
-  const [rejectedUrls, setRejectedUrls] = useState([]);
-  const [showHelper, setShowHelper] = useState(false);
-  const [pasteUrl, setPasteUrl] = useState("");
-  const [cardIndex, setCardIndex] = useState(0);
-
+function useCountdown(minutes) {
+  const [seconds, setSeconds] = useState(minutes * 60);
   useEffect(() => {
-    if (preloadedCandidates?.length && !searched) {
-      setCandidates(preloadedCandidates);
-      setSearched(true);
-    }
-  }, [preloadedCandidates]);
-
-  useEffect(() => { setSearchName(businessName || ""); }, [businessName]);
-
-  const handleSearch = async () => {
-    if (!searchName.trim()) return;
-    setSearching(true);
-    setSearched(false);
-    setCandidates([]);
-    setRejectedUrls([]);
-    setShowHelper(false);
-    setCardIndex(0);
-    try {
-      const result = await findFacebookCandidates({ pageName: searchName, businessName: searchName, website: website || null, email: email || null, city: city || null });
-      if (result.candidates?.length) {
-        setCandidates(result.candidates);
-      } else {
-        setShowHelper(true);
-      }
-    } catch (err) {
-      setShowHelper(true);
-    } finally {
-      setSearching(false);
-      setSearched(true);
-    }
-  };
-
-  const handleConfirm = (url) => {
-    setConfirmedUrl(url);
-    setConfirmedName(searchName || businessName || "");
-    setConfirmed(true);
-    setShowHelper(false);
-    onChange(url);
-  };
-
-  // Normalize candidate to object format (handles both string and object)
-  const getUrl = (c) => typeof c === 'string' ? c : c.url;
-
-  const handleNotMine = () => {
-    const url = getUrl(visibleCandidates[cardIndex]);
-    const newRejected = [...rejectedUrls, url];
-    setRejectedUrls(newRejected);
-    const remaining = candidates.filter(c => !newRejected.includes(getUrl(c)));
-    if (remaining.length === 0) {
-      setShowHelper(true);
-    } else {
-      setCardIndex(Math.min(cardIndex, remaining.length - 1));
-    }
-  };
-
-  const handleStartOver = () => {
-    setConfirmed(false);
-    setConfirmedUrl("");
-    setConfirmedName("");
-    setCandidates([]);
-    setSearched(false);
-    setRejectedUrls([]);
-    setShowHelper(false);
-    setPasteUrl("");
-    setCardIndex(0);
-    onChange("");
-  };
-
-  const visibleCandidates = candidates.filter(c => !rejectedUrls.includes(getUrl(c)));
-  const currentCandidate = visibleCandidates[cardIndex];
-  const currentUrl = currentCandidate ? getUrl(currentCandidate) : null;
-
-  if (confirmed) {
-    return (
-      <div className="bg-green-50 border-2 border-green-400 rounded-2xl p-5">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center shrink-0">
-            <Check className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <p className="font-bold text-green-800 text-sm">Page Confirmed!</p>
-            <p className="text-sm font-semibold text-gray-800">{confirmedName}</p>
-            <p className="text-xs text-green-600 truncate max-w-xs">{confirmedUrl}</p>
-          </div>
-        </div>
-        <p className="text-xs text-green-700 font-medium text-center mb-2">Your audit will analyze this page in detail.</p>
-        <button type="button" onClick={handleStartOver} className="w-full text-xs text-gray-400 hover:text-gray-600 py-1">Not right? Start over</button>
-      </div>
-    );
-  }
-
-  if (showHelper) {
-    return <HelpFindPage businessName={businessName} city={city} onUrlFound={handleConfirm} onSkip={() => { onChange("skip"); }} />;
-  }
-
-  return (
-    <div className="space-y-4">
-      <div>
-        <label className="block text-sm font-semibold text-gray-900 mb-1.5">Facebook Page Name <span className="text-gray-400 font-normal">(optional)</span></label>
-        <div className="flex gap-2">
-          <input type="text" placeholder={businessName || "Your business name"} value={searchName} onChange={(e) => setSearchName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSearch()} className="flex-1 border-2 border-gray-100 rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:border-[#1877F2] transition-all" />
-          <button type="button" onClick={handleSearch} disabled={searching || scrapeLoading} className="bg-[#1877F2] text-white px-5 py-3.5 rounded-2xl text-sm font-bold hover:bg-[#1457C0] transition-colors disabled:opacity-50 flex items-center gap-2 shrink-0">
-            {searching || scrapeLoading ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Finding...</> : <><span>🔍</span> Find</>}
-          </button>
-        </div>
-      </div>
-
-      {searched && visibleCandidates.length > 0 && currentUrl && (
-        <div>
-          {visibleCandidates.length > 1 && (
-            <p className="text-xs text-gray-400 text-center mb-3">{cardIndex + 1} of {visibleCandidates.length} possible matches</p>
-          )}
-
-          <div className="border-2 border-blue-100 bg-blue-50 rounded-2xl p-5">
-            <div className="flex items-center gap-3 mb-4">
-              {currentCandidate?.image ? (
-                <img src={currentCandidate.image} alt="" className="w-12 h-12 rounded-full object-cover shrink-0 bg-gray-200" onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
-              ) : null}
-              <div className={`w-12 h-12 rounded-full bg-[#1877F2] items-center justify-center shrink-0 ${currentCandidate?.image ? 'hidden' : 'flex'}`}>
-                <span className="text-white text-lg font-bold">{(currentCandidate?.name || searchName || businessName || "?").charAt(0).toUpperCase()}</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-base font-bold text-gray-900 truncate">{currentCandidate?.name || searchName || businessName}</p>
-                {currentCandidate?.followers && (
-                  <p className="text-xs text-gray-600 font-medium">{currentCandidate.followers} followers</p>
-                )}
-                <p className="text-xs text-gray-400 truncate">{currentUrl}</p>
-              </div>
-            </div>
-
-            <a href={currentUrl} target="_blank" rel="noopener noreferrer" className="w-full bg-[#1877F2] text-white text-sm font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-[#1457C0] transition-colors mb-3">
-              Open This Page <ExternalLink className="w-4 h-4" />
-            </a>
-
-            <button type="button" onClick={() => handleConfirm(currentUrl)} className="w-full bg-green-500 text-white text-base font-bold py-4 rounded-xl hover:bg-green-600 transition-colors">
-              Yes, That's Mine!
-            </button>
-
-            <button type="button" onClick={handleNotMine} className="w-full text-sm text-gray-400 hover:text-gray-600 py-3">
-              Not mine{visibleCandidates.length > 1 && cardIndex < visibleCandidates.length - 1 ? " — show next" : ""}
-            </button>
-          </div>
-
-          {visibleCandidates.length > 1 && (
-            <div className="flex justify-center gap-3 mt-3">
-              <button type="button" disabled={cardIndex === 0} onClick={() => setCardIndex(cardIndex - 1)} className="text-sm text-[#1877F2] font-semibold disabled:text-gray-300 disabled:cursor-not-allowed">
-                <ArrowLeft className="w-4 h-4 inline mr-1" />Previous
-              </button>
-              <button type="button" disabled={cardIndex >= visibleCandidates.length - 1} onClick={() => setCardIndex(cardIndex + 1)} className="text-sm text-[#1877F2] font-semibold disabled:text-gray-300 disabled:cursor-not-allowed">
-                Next<ArrowLeft className="w-4 h-4 inline ml-1 rotate-180" />
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      <div className="border-t border-gray-100 pt-4">
-        <p className="text-xs text-gray-500 mb-2 font-semibold">Or paste your Facebook URL directly:</p>
-        <input type="url" placeholder="https://www.facebook.com/yourbusiness" value={pasteUrl} onChange={(e) => { setPasteUrl(e.target.value); if (e.target.value.includes("facebook.com")) onChange(e.target.value); }} className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#1877F2] transition-all" />
-        {pasteUrl && pasteUrl.includes("facebook.com") && (
-          <button type="button" onClick={() => handleConfirm(pasteUrl)} className="mt-2 w-full bg-green-500 text-white text-sm font-bold py-3 rounded-2xl hover:bg-green-600 transition-colors">Use This URL</button>
-        )}
-      </div>
-
-      <p className="text-center text-xs text-gray-400">
-        Can't find it?{" "}
-        <button type="button" onClick={() => setShowHelper(true)} className="text-[#1877F2] font-semibold hover:underline">Get help</button>
-      </p>
-    </div>
-  );
+    const t = setInterval(() => setSeconds(s => Math.max(s - 1, 0)), 1000);
+    return () => clearInterval(t);
+  }, []);
+  return `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
 }
 
 export default function SubmitPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const incoming = location.state || {};
+  const countdown = useCountdown(10);
+
   const [step, setStep] = useState(1);
-  const [emailError, setEmailError] = useState("");
-  const [emailTouched, setEmailTouched] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [preloadedCandidates, setPreloadedCandidates] = useState([]);
-  const [seoScore, setSeoScore] = useState(null);
-  const [websiteLogoUrl, setWebsiteLogoUrl] = useState("");
-  const [scrapeLoading, setScrapeLoading] = useState(false);
 
   const [form, setForm] = useState({
-    name: "", email: "", businessName: "", website: "", city: "", facebook_url: "", mainGoal: [], postingFrequency: "", contentType: "",
+    businessName: incoming.businessName || "",
+    city: incoming.city || "",
+    state: incoming.state || "",
+    address: "",
+    phone: "",
+    website: incoming.website || "",
+    email: incoming.email || "",
+    industry: "",
+    googleUrl: "",
+    facebookUrl: incoming.facebookUrl || "",
+    yelpUrl: "",
+    googleClaimed: "",
+    approxReviews: "",
+    tenure: "",
+    challenge: "",
+    budget: "",
+    comp1Name: "",
+    comp1City: "",
+    comp2Name: "",
+    comp2City: "",
   });
 
-  useEffect(() => { storeUtmParams(); trackEvent(EVENTS.INTAKE_STARTED); }, []);
+  useEffect(() => { storeUtmParams(); trackEvent(EVENTS.INTAKE_STARTED); window.scrollTo(0, 0); }, []);
+  useEffect(() => {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600&display=swap";
+    document.head.appendChild(link);
+    return () => { document.head.removeChild(link); };
+  }, []);
 
-  const set = (key, val) => setForm((f) => ({ ...f, [key]: val }));
-
-  const validateEmailField = (email) => {
-    const trimmed = email?.trim() || "";
-    setEmailTouched(true);
-    if (!trimmed) { setEmailError("Email is required"); return false; }
-    if (!isValidEmail(trimmed)) { setEmailError("Please enter a valid email address"); return false; }
-    setEmailError("");
-    return true;
-  };
-
-  const fireBackgroundScrape = async () => {
-    if (!form.businessName && !form.website) return;
-    setScrapeLoading(true);
-    try {
-      const result = await findFacebookCandidates({ pageName: form.businessName || form.name, businessName: form.businessName || form.name, website: form.website || null, email: form.email || null, city: form.city || null });
-      setPreloadedCandidates(result.candidates?.length ? result.candidates : []);
-
-      if (form.website) {
-        try {
-          const scrapeRes = await fetch(`${API_BASE}/api/website/scrape`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ website_url: form.website, business_name: form.businessName || null, city: form.city || null }),
-          });
-          const scrapeData = await scrapeRes.json();
-          if (scrapeData.seo_score) setSeoScore(scrapeData.seo_score);
-          if (scrapeData.logo_url) setWebsiteLogoUrl(scrapeData.logo_url);
-          else setWebsiteLogoUrl("");
-        } catch (err) {
-          console.error("Website scrape failed:", err);
-        }
-      }
-    } catch (err) {
-      console.error("Background scrape failed:", err);
-    } finally {
-      setScrapeLoading(false);
-    }
-  };
-
-  const goToStep = (n) => { setStep(n); window.scrollTo({ top: 0, behavior: "smooth" }); };
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const goTo = (n) => { setStep(n); window.scrollTo({ top: 0, behavior: "smooth" }); };
+  const heading = { fontFamily: "'Plus Jakarta Sans', sans-serif" };
+  const body = { fontFamily: "'Inter', sans-serif" };
 
   const canNext = () => {
-    if (step === 1) return form.name.trim() && form.email.trim() && !emailError && isValidEmail(form.email);
-    if (step === 2) return form.businessName.trim() && form.city.trim();
-    if (step === 3) return form.mainGoal.length > 0;
-    if (step === 4) return !!form.postingFrequency;
-    if (step === 5) return !!form.contentType;
-    if (step === 6) return true;
+    if (step === 1) return form.businessName.trim() && form.city.trim() && form.email.trim() && form.email.includes("@");
+    if (step === 2) return true; // all optional
+    if (step === 3) return true; // all optional
     return true;
   };
 
@@ -358,203 +101,239 @@ export default function SubmitPage() {
     setIsSubmitting(true);
     try {
       const utm = getStoredUtmParams() || {};
-      const fbUrl = form.facebook_url === "skip" ? "" : form.facebook_url || "";
-      const facebookNotFound = !fbUrl || form.facebook_url === "skip";
       const res = await fetch(`${API_BASE}/api/audits`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          customer_name: form.name, email: form.email, facebook_url: fbUrl,
-          facebook_not_found: facebookNotFound,
-          account_type: "Business", goals: form.mainGoal.join(", "),
-          posting_frequency: form.postingFrequency, content_type: form.contentType,
+          customer_name: form.businessName, email: form.email, facebook_url: form.facebookUrl || null,
+          facebook_not_found: !form.facebookUrl, account_type: "Business",
+          goals: form.challenge || null, posting_frequency: null, content_type: null,
           website: form.website || null, city: form.city || null, business_name: form.businessName || null,
           utm_source: utm.utm_source || null, utm_campaign: utm.utm_campaign || null,
           utm_adset: utm.utm_adset || null, utm_ad: utm.utm_ad || null,
         }),
       });
       const data = await res.json();
-      if (!res.ok || !data?.success || !data?.audit?.id) throw new Error(data?.error || "Audit creation failed");
+      if (!res.ok || !data?.success || !data?.audit?.id) throw new Error(data?.error || "Failed to create audit");
+
       localStorage.setItem("pageAuditOrder", JSON.stringify({
-        name: form.name, email: form.email, website: form.website, businessName: form.businessName,
-        pageUrl: fbUrl, businessType: "Business", city: form.city, review_type: "Business",
-        mainGoal: form.mainGoal, postingFrequency: form.postingFrequency, contentType: form.contentType,
-        seoScore: seoScore, facebookNotFound: facebookNotFound, auditId: data.audit.id,
+        name: form.businessName, email: form.email, website: form.website,
+        businessName: form.businessName, city: form.city, state: form.state,
+        pageUrl: form.facebookUrl, businessType: "Business",
+        auditId: data.audit.id, industry: form.industry,
+        address: form.address, phone: form.phone,
+        googleUrl: form.googleUrl, yelpUrl: form.yelpUrl,
+        tenure: form.tenure, challenge: form.challenge, budget: form.budget,
+        comp1Name: form.comp1Name, comp1City: form.comp1City,
+        comp2Name: form.comp2Name, comp2City: form.comp2City,
       }));
-      const seoValue = seoScore?.score ?? seoScore;
-      console.log("[SEO SCORE DEBUG]:", { raw: seoScore, sending: seoValue, auditId: data.audit.id });
-      fetch(`${API_BASE}/api/audits/${data.audit.id}/seo-score`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ score: seoValue }) }).catch((err) => console.error("[SEO SCORE SAVE ERROR]:", err)); navigate("/audit-preview");
+
+      navigate("/audit-preview");
     } catch (err) {
-      console.error("[AUDIT ERROR]:", err);
-      alert("Error creating audit. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
+      console.error("[SUBMIT ERROR]:", err);
+      alert("Something went wrong. Please try again.");
+    } finally { setIsSubmitting(false); }
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50 font-sans flex flex-col">
-      <nav className="bg-white border-b border-gray-100 sticky top-0 z-40">
-        <div className="max-w-lg mx-auto px-6 py-4 flex items-center justify-between">
-          <span className="font-bold text-base text-black tracking-tight">PageAudit Pro</span>
-          {scrapeLoading && (
-            <div className="flex items-center gap-2 text-xs text-green-600 font-medium">
-              <div className="w-3 h-3 border-2 border-green-200 border-t-green-600 rounded-full animate-spin" />
-              Finding your page...
+  const Input = ({ label, k, type = "text", placeholder = "", required = false, helper = "" }) => (
+    <div style={{ marginBottom: 16 }}>
+      <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#c8d0dc", marginBottom: 6 }}>
+        {label} {required && <span style={{ color: "#ef4444" }}>*</span>}
+      </label>
+      <input type={type} value={form[k]} onChange={e => set(k, e.target.value)} placeholder={placeholder}
+        style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "12px 14px", fontSize: 14, color: "#fff", outline: "none", boxSizing: "border-box" }} />
+      {helper && <p style={{ color: "#64748b", fontSize: 11, marginTop: 4 }}>{helper}</p>}
+    </div>
+  );
+
+  const Select = ({ label, k, options, placeholder = "Select..." }) => (
+    <div style={{ marginBottom: 16 }}>
+      <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#c8d0dc", marginBottom: 6 }}>{label}</label>
+      <select value={form[k]} onChange={e => set(k, e.target.value)}
+        style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "12px 14px", fontSize: 14, color: form[k] ? "#fff" : "#64748b", outline: "none", boxSizing: "border-box", appearance: "none" }}>
+        <option value="" style={{ background: "#0f172a" }}>{placeholder}</option>
+        {options.map(o => <option key={o} value={o} style={{ background: "#0f172a" }}>{o}</option>)}
+      </select>
+    </div>
+  );
+
+  const RadioGroup = ({ label, k, options }) => (
+    <div style={{ marginBottom: 16 }}>
+      <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#c8d0dc", marginBottom: 10 }}>{label}</label>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {options.map(o => (
+          <button key={o} type="button" onClick={() => set(k, o)}
+            style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10, border: `1px solid ${form[k] === o ? "rgba(37,99,235,0.5)" : "rgba(255,255,255,0.08)"}`, background: form[k] === o ? "rgba(37,99,235,0.1)" : "rgba(255,255,255,0.02)", cursor: "pointer", textAlign: "left" }}>
+            <div style={{ width: 18, height: 18, borderRadius: "50%", border: `2px solid ${form[k] === o ? "#2563eb" : "#4b5563"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              {form[k] === o && <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#2563eb" }} />}
             </div>
-          )}
+            <span style={{ fontSize: 14, color: form[k] === o ? "#c8d0dc" : "#94a3b8" }}>{o}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{ ...body, minHeight: "100vh", background: "#0a0f1e" }}>
+      {/* NAV */}
+      <nav style={{ background: "rgba(10,15,30,0.9)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.05)", padding: "14px 24px", position: "sticky", top: 0, zIndex: 50 }}>
+        <div style={{ maxWidth: 600, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <BarChart2 style={{ width: 18, height: 18, color: "#3b82f6" }} />
+            <span style={{ ...heading, fontWeight: 700, fontSize: 14, color: "#fff" }}>PageAudit Pro</span>
+          </div>
+          <span style={{ fontSize: 12, color: "#64748b" }}>Step {step} of {TOTAL_STEPS}</span>
         </div>
       </nav>
 
-      <div className="flex-1 flex items-start justify-center px-4 py-8">
-        <div className="w-full max-w-lg">
-          <StepProgress step={step} />
-          <div className="bg-white border border-gray-100 rounded-3xl shadow-sm px-6 py-7">
+      {/* PROGRESS BAR */}
+      <div style={{ maxWidth: 600, margin: "0 auto", padding: "0 20px" }}>
+        <div style={{ height: 3, background: "rgba(255,255,255,0.05)", borderRadius: 999, marginTop: 12 }}>
+          <div style={{ height: "100%", background: "#2563eb", borderRadius: 999, transition: "width 0.4s", width: `${(step / TOTAL_STEPS) * 100}%` }} />
+        </div>
+      </div>
 
-            {step === 1 && (
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-1">Let's get started!</h1>
-                <p className="text-sm text-gray-400 mb-6">Tell us about yourself so we can personalize your audit.</p>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-1.5">Your Name <span className="text-red-400">*</span></label>
-                    <input type="text" placeholder="Jane Smith" value={form.name} onChange={(e) => set("name", e.target.value)} className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:border-[#1877F2] transition-all" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-1.5">Email Address <span className="text-red-400">*</span></label>
-                    <div className="relative">
-                      <input type="email" placeholder="jane@yourbusiness.com" value={form.email} onChange={(e) => { set("email", e.target.value); if (emailError) setEmailError(""); }} onBlur={(e) => validateEmailField(e.target.value)} className={`w-full border-2 rounded-2xl px-4 py-3.5 text-sm focus:outline-none transition-all pr-10 ${emailTouched && isValidEmail(form.email) ? "border-green-300 bg-green-50" : emailTouched && emailError ? "border-red-300" : "border-gray-100 focus:border-[#1877F2]"}`} />
-                      {emailTouched && isValidEmail(form.email) && <div className="absolute right-3 top-1/2 -translate-y-1/2"><Check className="w-5 h-5 text-green-500" /></div>}
+      <div style={{ maxWidth: 600, margin: "0 auto", padding: "32px 20px 80px" }}>
+
+        {/* STEP 1 */}
+        {step === 1 && (
+          <div>
+            <h1 style={{ ...heading, fontSize: 26, fontWeight: 800, color: "#fff", marginBottom: 4 }}>Tell us about your business</h1>
+            <p style={{ color: "#94a3b8", fontSize: 14, marginBottom: 28 }}>We'll scan everywhere your customers look for you</p>
+            <Input label="Business Name" k="businessName" required placeholder="e.g. Joe's Plumbing" />
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 100px", gap: 12 }}>
+              <Input label="City" k="city" required placeholder="e.g. Dallas" />
+              <Input label="State" k="state" placeholder="TX" />
+            </div>
+            <Input label="Street Address" k="address" placeholder="123 Main St" />
+            <Input label="Business Phone" k="phone" type="tel" placeholder="(555) 123-4567" />
+            <Input label="Business Website" k="website" placeholder="https://yourbusiness.com" helper="We'll run a full speed and SEO check on your site" />
+            <Input label="Email Address" k="email" type="email" required placeholder="you@business.com" />
+            <Select label="Industry / Category" k="industry" options={INDUSTRIES} placeholder="Select your industry..." />
+
+            <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 8, marginTop: 24, padding: "16px 0", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+              {[{ i: Search, l: "Google" }, { i: Star, l: "Yelp" }, { i: Facebook, l: "Facebook" }, { i: Globe, l: "Bing" }, { i: MapPin, l: "Apple Maps" }].map(({ i: Icon, l }) => (
+                <div key={l} style={{ display: "flex", alignItems: "center", gap: 4, color: "#64748b", fontSize: 12 }}>
+                  <Icon style={{ width: 14, height: 14 }} /> {l}
+                </div>
+              ))}
+            </div>
+            <p style={{ color: "#4b5563", fontSize: 11, textAlign: "center" }}>We check all of these for you</p>
+          </div>
+        )}
+
+        {/* STEP 2 */}
+        {step === 2 && (
+          <div>
+            <h1 style={{ ...heading, fontSize: 26, fontWeight: 800, color: "#fff", marginBottom: 4 }}>Your online presence</h1>
+            <p style={{ color: "#94a3b8", fontSize: 14, marginBottom: 28 }}>Help us find your existing profiles for the most accurate scan</p>
+            <Input label="Google Business Profile URL" k="googleUrl" placeholder="https://maps.google.com/..." helper="Have your Google listing? Paste the URL for the most accurate results" />
+            <Input label="Facebook Page URL" k="facebookUrl" placeholder="https://facebook.com/yourbusiness" />
+            <Input label="Yelp Page URL" k="yelpUrl" placeholder="https://yelp.com/biz/yourbusiness" />
+            <RadioGroup label="Have you claimed your Google Business Profile?" k="googleClaimed" options={["Yes", "No", "Not sure"]} />
+            <Input label="Approximate number of Google reviews" k="approxReviews" type="number" placeholder="e.g. 25" helper="We'll verify this but it helps us benchmark faster" />
+          </div>
+        )}
+
+        {/* STEP 3 */}
+        {step === 3 && (
+          <div>
+            <h1 style={{ ...heading, fontSize: 26, fontWeight: 800, color: "#fff", marginBottom: 4 }}>Your situation</h1>
+            <p style={{ color: "#94a3b8", fontSize: 14, marginBottom: 28 }}>This helps us prioritize your action plan</p>
+            <RadioGroup label="How long have you been in business?" k="tenure" options={TENURE} />
+            <RadioGroup label="Biggest challenge right now" k="challenge" options={CHALLENGES} />
+            <Select label="Monthly marketing budget (optional)" k="budget" options={BUDGET} placeholder="Select..." />
+          </div>
+        )}
+
+        {/* STEP 4 */}
+        {step === 4 && (
+          <div>
+            <h1 style={{ ...heading, fontSize: 26, fontWeight: 800, color: "#fff", marginBottom: 4 }}>Competitors + Review</h1>
+            <p style={{ color: "#94a3b8", fontSize: 14, marginBottom: 28 }}>We'll show you exactly how you stack up</p>
+
+            <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: 20, marginBottom: 20 }}>
+              <p style={{ color: "#94a3b8", fontSize: 13, fontWeight: 600, marginBottom: 12 }}>Competitor 1 (optional)</p>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 120px", gap: 10 }}>
+                <Input label="" k="comp1Name" placeholder="Business name" />
+                <Input label="" k="comp1City" placeholder="City" />
+              </div>
+            </div>
+            <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: 20, marginBottom: 28 }}>
+              <p style={{ color: "#94a3b8", fontSize: 13, fontWeight: 600, marginBottom: 12 }}>Competitor 2 (optional)</p>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 120px", gap: 10 }}>
+                <Input label="" k="comp2Name" placeholder="Business name" />
+                <Input label="" k="comp2City" placeholder="City" />
+              </div>
+            </div>
+
+            {/* What we'll check */}
+            <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: 20, marginBottom: 28 }}>
+              <p style={{ ...heading, fontSize: 16, fontWeight: 700, color: "#fff", marginBottom: 14 }}>Your complete audit will check:</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {CHECKS.map(c => (
+                  <div key={c.label} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ fontSize: 16, width: 24, textAlign: "center" }}>{c.emoji}</span>
+                    <div>
+                      <span style={{ color: "#c8d0dc", fontSize: 14, fontWeight: 600 }}>{c.label}</span>
+                      <span style={{ color: "#64748b", fontSize: 12 }}> — {c.desc}</span>
                     </div>
-                    {emailTouched && emailError && <p className="text-xs text-red-500 mt-1.5">{emailError}</p>}
                   </div>
-                </div>
-                <DidYouKnow index={0} />
+                ))}
               </div>
-            )}
+            </div>
 
-            {step === 2 && (
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-1">Tell us about your business</h1>
-                <p className="text-sm text-gray-400 mb-6">We'll use this to find your Facebook page and personalize your report.</p>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-1.5">Business Name <span className="text-red-400">*</span></label>
-                    <input type="text" placeholder="e.g. Allred Heating or Righteous Law" value={form.businessName} onChange={(e) => set("businessName", e.target.value)} className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:border-[#1877F2] transition-all" />
-                    <WhyWeAsk>We use your business name to automatically find your Facebook page and search for local competitors in your area.</WhyWeAsk>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-1.5">
-                      <Globe className="w-4 h-4 inline mr-1 text-[#1877F2]" />
-                      Business Website <span className="text-gray-400 font-normal">(optional)</span>
-                    </label>
-                    <input type="url" placeholder="https://yourbusiness.com" value={form.website} onChange={(e) => set("website", e.target.value)} className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:border-[#1877F2] transition-all" />
-                    <div className="mt-2 bg-green-50 border border-green-200 rounded-xl px-3 py-2 flex items-start gap-2">
-                      <span className="text-green-500 text-sm shrink-0">🎁</span>
-                      <p className="text-xs text-green-700 font-medium">Add your website and get a <strong>FREE Website SEO Score</strong> included with your audit - limited time bonus!</p>
-                    </div>
-                    <WhyWeAsk>We scan your website to automatically find your Facebook page and include a free SEO score showing how Google sees your site.</WhyWeAsk>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-1.5">
-                      <MapPin className="w-4 h-4 inline mr-1 text-[#1877F2]" />
-                      City and State <span className="text-red-400">*</span>
-                    </label>
-                    <input type="text" placeholder="e.g. Dallas, TX or Seattle, WA" value={form.city} onChange={(e) => set("city", e.target.value)} className="w-full border-2 border-gray-100 rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:border-[#1877F2] transition-all" />
-                    <WhyWeAsk>We pull real-time data on what is working for businesses in your area right now.</WhyWeAsk>
-                  </div>
-                </div>
-                <DidYouKnow index={2} />
+            {/* Report summary */}
+            <div style={{ textAlign: "center", marginBottom: 20 }}>
+              <p style={{ ...heading, fontSize: 18, fontWeight: 700, color: "#fff", marginBottom: 4 }}>Report prepared for: {form.businessName || "Your Business"}</p>
+              <p style={{ color: "#94a3b8", fontSize: 14 }}>{form.city}{form.state ? `, ${form.state}` : ""}</p>
+            </div>
+
+            {/* Pricing */}
+            <div style={{ background: "rgba(37,99,235,0.08)", border: "1px solid rgba(37,99,235,0.2)", borderRadius: 16, padding: 28, textAlign: "center", marginBottom: 20 }}>
+              <p style={{ color: "#64748b", fontSize: 13, marginBottom: 4 }}><span style={{ textDecoration: "line-through" }}>$197</span></p>
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 2, marginBottom: 8 }}>
+                <span style={{ ...heading, fontSize: 48, fontWeight: 800, color: "#fff" }}>$39</span>
               </div>
-            )}
+              <p style={{ color: "#94a3b8", fontSize: 13, marginBottom: 20 }}>One-time payment. Yours forever.</p>
 
-            {step === 3 && (
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-1">What's your main goal?</h1>
-                <p className="text-sm text-gray-400 mb-6">Your entire action plan is built around this.</p>
-                <div className="space-y-2">
-                  {[{ val: "Grow followers", icon: "👥" }, { val: "Increase engagement", icon: "💬" }, { val: "Generate leads", icon: "💰" }, { val: "Build authority", icon: "⭐" }, { val: "Promote a cause", icon: "❤️" }].map(({ val, icon }) => (
-                    <OptionCard key={val} selected={form.mainGoal.includes(val)} onClick={() => set("mainGoal", form.mainGoal.includes(val) ? form.mainGoal.filter((x) => x !== val) : [...form.mainGoal, val])}>
-                      {icon} {val}
-                    </OptionCard>
-                  ))}
-                </div>
-                <WhyWeAsk>We write your 7-day action plan and 30-day roadmap specifically around this goal.</WhyWeAsk>
-                <DidYouKnow index={3} />
-              </div>
-            )}
-
-            {step === 4 && (
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-1">How often do you post?</h1>
-                <p className="text-sm text-gray-400 mb-6">This helps us assess your current posting strategy.</p>
-                <div className="space-y-2">
-                  {[{ val: "Daily", icon: "🔥" }, { val: "A few times a week", icon: "📅" }, { val: "Weekly", icon: "🗓" }, { val: "Rarely or never", icon: "😴" }].map(({ val, icon }) => (
-                    <OptionCard key={val} selected={form.postingFrequency === val} onClick={() => set("postingFrequency", val)}>{icon} {val}</OptionCard>
-                  ))}
-                </div>
-                <WhyWeAsk>Posting frequency is one of the biggest factors in Facebook reach.</WhyWeAsk>
-                <DidYouKnow index={4} />
-              </div>
-            )}
-
-            {step === 5 && (
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-1">What do you post most?</h1>
-                <p className="text-sm text-gray-400 mb-6">We'll analyze your content performance on this.</p>
-                <div className="space-y-2">
-                  {[{ val: "Videos", icon: "🎥" }, { val: "Images", icon: "📸" }, { val: "Text posts", icon: "✍️" }, { val: "Mixed content", icon: "🎨" }, { val: "Not sure yet", icon: "🤔" }].map(({ val, icon }) => (
-                    <OptionCard key={val} selected={form.contentType === val} onClick={() => set("contentType", val)}>{icon} {val}</OptionCard>
-                  ))}
-                </div>
-                <WhyWeAsk>Different content types perform very differently on Facebook.</WhyWeAsk>
-                <DidYouKnow index={5} />
-              </div>
-            )}
-
-            {step === 6 && (
-              <div>
-                {!form.facebook_url && (
-                  <>
-                    <h1 className="text-2xl font-bold text-gray-900 mb-1">
-                      {preloadedCandidates.length ? "We found some possible matches!" : "Find Your Facebook Page"}
-                    </h1>
-                    <p className="text-sm text-gray-400 mb-4">
-                      {preloadedCandidates.length ? "Confirm which one is yours." : "We'll search using your business name and website to help find the right Facebook page."}
-                    </p>
-                  </>
-                )}
-                <FacebookPageFinder
-                  value={form.facebook_url}
-                  onChange={(url) => set("facebook_url", url)}
-                  email={form.email}
-                  website={form.website}
-                  city={form.city}
-                  businessName={form.businessName}
-                  websiteLogoUrl={websiteLogoUrl}
-                  preloadedCandidates={preloadedCandidates}
-                  scrapeLoading={scrapeLoading}
-                />
-                <DidYouKnow index={6} />
-              </div>
-            )}
-
-            <div className={`mt-8 flex ${step > 1 ? "justify-between" : "justify-end"}`}>
-              {step > 1 && (
-                <button type="button" onClick={() => goToStep(step - 1)} className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-black transition-colors">
-                  <ArrowLeft className="w-4 h-4" /> Back
-                </button>
-              )}
-              <button type="button" disabled={!canNext() || isSubmitting} onClick={() => { if (step === 1 && !validateEmailField(form.email)) return; const stepEvents = [EVENTS.STEP_1_COMPLETED, EVENTS.STEP_2_COMPLETED, EVENTS.STEP_3_COMPLETED, EVENTS.STEP_4_COMPLETED, EVENTS.STEP_5_COMPLETED, EVENTS.STEP_6_COMPLETED]; trackEvent(stepEvents[step - 1], { email: form.email }); if (step === 2) fireBackgroundScrape(); if (step < TOTAL_STEPS) goToStep(step + 1); else handleSubmit(); }} className="inline-flex items-center gap-2 bg-[#1877F2] text-white px-6 py-3.5 text-sm font-bold rounded-2xl hover:bg-[#1457C0] transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-md shadow-blue-100">
-                {step === TOTAL_STEPS ? (isSubmitting ? "Submitting..." : "Get My Audit →") : "Next →"}
+              <button onClick={handleSubmit} disabled={isSubmitting}
+                style={{ width: "100%", background: "#2563eb", color: "#fff", fontSize: 16, fontWeight: 700, padding: "16px 0", borderRadius: 10, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: isSubmitting ? 0.6 : 1 }}>
+                {isSubmitting ? <><Loader2 style={{ width: 18, height: 18, animation: "spin 1s linear infinite" }} /> Processing...</> : <>Claim My Complete Audit Report <ArrowRight style={{ width: 18, height: 18 }} /></>}
               </button>
+              <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
+
+              <div style={{ display: "flex", justifyContent: "center", gap: 16, marginTop: 14, flexWrap: "wrap" }}>
+                {[{ i: Shield, l: "Secure" }, { i: Check, l: "Instant access" }, { i: Clock, l: "No contracts" }].map(({ i: Icon, l }) => (
+                  <span key={l} style={{ display: "flex", alignItems: "center", gap: 4, color: "#64748b", fontSize: 12 }}><Icon style={{ width: 13, height: 13 }} /> {l}</span>
+                ))}
+              </div>
+            </div>
+
+            <p style={{ color: "#4b5563", fontSize: 12, textAlign: "center", marginBottom: 8 }}>Agencies charge $500-2,000 for manual audits. We do it automatically for $39.</p>
+
+            <div style={{ textAlign: "center", padding: "12px 0", borderRadius: 10, background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)" }}>
+              <p style={{ color: "#f59e0b", fontSize: 13, fontWeight: 700 }}>Offer expires in {countdown}</p>
             </div>
           </div>
+        )}
+
+        {/* NAV BUTTONS */}
+        <div style={{ display: "flex", justifyContent: step > 1 ? "space-between" : "flex-end", marginTop: 28 }}>
+          {step > 1 && (
+            <button onClick={() => goTo(step - 1)} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "#94a3b8", fontSize: 14, cursor: "pointer" }}>
+              <ArrowLeft style={{ width: 16, height: 16 }} /> Back
+            </button>
+          )}
+          {step < TOTAL_STEPS && (
+            <button onClick={() => { if (canNext()) goTo(step + 1); }} disabled={!canNext()}
+              style={{ display: "flex", alignItems: "center", gap: 6, background: "#2563eb", color: "#fff", fontSize: 14, fontWeight: 600, padding: "12px 28px", borderRadius: 10, border: "none", cursor: "pointer", opacity: canNext() ? 1 : 0.4 }}>
+              Next <ArrowRight style={{ width: 16, height: 16 }} />
+            </button>
+          )}
         </div>
       </div>
     </div>
   );
 }
-
-
-
