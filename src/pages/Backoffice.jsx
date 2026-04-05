@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
-import { LayoutDashboard, Users, DollarSign, BarChart2, Globe, Star, TrendingUp, RefreshCw, Trash2, Mail, Loader2, LogOut, ChevronDown } from "lucide-react";
+import { LayoutDashboard, Users, DollarSign, BarChart2, Globe, Star, TrendingUp, RefreshCw, Trash2, Mail, Loader2, LogOut, ChevronDown, UserCheck, AlertTriangle } from "lucide-react";
 
 const API_BASE = "https://pageaudit-engine.onrender.com";
 
@@ -33,9 +33,10 @@ const NAV_ITEMS = [
   { key: "seo", label: "SEO Audits", icon: Globe },
   { key: "analytics", label: "Analytics", icon: TrendingUp },
   { key: "reviews", label: "Reviews", icon: Star },
+  { key: "reps", label: "Reps", icon: UserCheck },
 ];
 
-const TAB_TITLES = { overview: "Overview", customers: "Customers", revenue: "Revenue", funnel: "Funnel", seo: "SEO Audits", analytics: "Analytics", reviews: "Reviews" };
+const TAB_TITLES = { overview: "Overview", customers: "Customers", revenue: "Revenue", funnel: "Funnel", seo: "SEO Audits", analytics: "Analytics", reviews: "Reviews", reps: "Rep Management" };
 
 const TH = "text-left text-[12px] font-semibold uppercase tracking-[0.04em] text-[#6b7280] px-4 py-3";
 const CARD = "bg-white rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.08)]";
@@ -50,6 +51,8 @@ export default function Backoffice() {
   const [audits, setAudits] = useState([]);
   const [funnel, setFunnel] = useState(null);
   const [reviewData, setReviewData] = useState(null);
+  const [repData, setRepData] = useState({ reps: [], commissions: [], payouts: { payouts: [], stats: {} } });
+  const [repSubTab, setRepSubTab] = useState("reps");
   const [days, setDays] = useState(30);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [filterStatus, setFilterStatus] = useState("all");
@@ -75,6 +78,19 @@ export default function Backoffice() {
       if (auditsRes.ok) setAudits(await auditsRes.json());
       if (funnelRes.ok) setFunnel(await funnelRes.json());
       if (reviewsRes?.ok) setReviewData(await reviewsRes.json());
+      // Load rep data
+      try {
+        const [repsRes, commissionsRes, payoutsRes] = await Promise.all([
+          fetch(`${API_BASE}/api/admin/reps`, { headers }).catch(() => null),
+          fetch(`${API_BASE}/api/admin/commissions`, { headers }).catch(() => null),
+          fetch(`${API_BASE}/api/admin/payouts`, { headers }).catch(() => null),
+        ]);
+        setRepData({
+          reps: repsRes?.ok ? await repsRes.json() : [],
+          commissions: commissionsRes?.ok ? await commissionsRes.json() : [],
+          payouts: payoutsRes?.ok ? await payoutsRes.json() : { payouts: [], stats: {} },
+        });
+      } catch { /* rep data optional */ }
     } catch (err) { console.error(err); }
     finally { setLoading(false); setRefreshing(false); }
   };
@@ -532,6 +548,145 @@ export default function Backoffice() {
                   <Star className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-[#111827] mb-2">No Reviews Yet</h3>
                   <p className="text-sm text-[#9ca3af]">Customer reviews will appear here after customers rate their audits.</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "reps" && (
+            <div className="space-y-6">
+              {/* Sub-tabs */}
+              <div className="flex gap-2 flex-wrap">
+                {[{ k: "reps", l: "Reps" }, { k: "payouts", l: "Payouts" }, { k: "commissions", l: "Commissions" }, { k: "alerts", l: "Alerts" }].map(t => (
+                  <button key={t.k} onClick={() => setRepSubTab(t.k)}
+                    className={`px-3 py-1.5 text-[12px] font-semibold rounded-md transition-colors ${repSubTab === t.k ? "bg-[#2563eb] text-white" : "text-[#6b7280] bg-white border border-[#e5e7eb] hover:bg-[#f9fafb]"}`}>{t.l}</button>
+                ))}
+              </div>
+
+              {/* SUB-TAB: REPS */}
+              {repSubTab === "reps" && (
+                <div className={`${CARD} overflow-hidden`}>
+                  <div className="px-6 py-4 border-b border-[#e5e7eb] flex items-center justify-between">
+                    <h3 className={SECTION_TITLE}>All Sales Reps ({repData.reps.length})</h3>
+                  </div>
+                  <table className="w-full text-sm">
+                    <thead><tr className="border-b border-[#e5e7eb] bg-[#f9fafb]">
+                      <th className={TH}>Name</th><th className={TH}>Code</th><th className={TH}>Status</th><th className={TH}>Customers</th><th className={TH}>Lifetime</th><th className={TH}>Actions</th>
+                    </tr></thead>
+                    <tbody className="divide-y divide-[#f3f4f6]">
+                      {repData.reps.length > 0 ? repData.reps.map(rep => (
+                        <tr key={rep.id} className="hover:bg-[#f9fafb]">
+                          <td className="px-4 py-3"><p className="font-medium text-[#111827]">{rep.full_name}</p><p className="text-xs text-[#9ca3af]">{rep.email}</p></td>
+                          <td className="px-4 py-3"><code className="text-xs bg-[#f3f4f6] px-2 py-0.5 rounded font-mono">{rep.rep_code}</code></td>
+                          <td className="px-4 py-3">
+                            <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-md border ${rep.status === 'active' ? 'bg-green-50 text-green-700 border-green-200' : rep.status === 'suspended' ? 'bg-orange-50 text-orange-700 border-orange-200' : rep.status === 'terminated' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}`}>{rep.status}</span>
+                          </td>
+                          <td className="px-4 py-3 text-[#374151]">{repData.commissions.filter(c => c.rep_id === rep.id).length}</td>
+                          <td className="px-4 py-3 font-bold text-[#111827]">${parseFloat(rep.total_earned || 0).toFixed(2)}</td>
+                          <td className="px-4 py-3 text-xs text-[#2563eb] font-medium">View</td>
+                        </tr>
+                      )) : <tr><td colSpan={6} className="px-4 py-8 text-center text-[#9ca3af]">No reps yet</td></tr>}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* SUB-TAB: PAYOUTS */}
+              {repSubTab === "payouts" && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <StatCard label="Pending Approval" value={`$${(repData.payouts?.stats?.pending_total || 0).toFixed(2)}`} sub="this week" color="orange" icon={DollarSign} />
+                    <StatCard label="Approved" value={`$${(repData.payouts?.stats?.approved_total || 0).toFixed(2)}`} sub="awaiting payment" color="blue" icon={DollarSign} />
+                    <StatCard label="Paid This Month" value={`$${(repData.payouts?.stats?.paid_this_month || 0).toFixed(2)}`} sub="" color="green" icon={DollarSign} />
+                    <StatCard label="Paid All Time" value={`$${(repData.payouts?.stats?.paid_all_time || 0).toFixed(2)}`} sub="" color="purple" icon={DollarSign} />
+                  </div>
+                  <div className={`${CARD} overflow-hidden`}>
+                    <div className="px-6 py-4 border-b border-[#e5e7eb]"><h3 className={SECTION_TITLE}>Payout Batches</h3></div>
+                    <table className="w-full text-sm">
+                      <thead><tr className="border-b border-[#e5e7eb] bg-[#f9fafb]">
+                        <th className={TH}>Rep</th><th className={TH}>Week</th><th className={TH}>Amount</th><th className={TH}>Status</th><th className={TH}>Actions</th>
+                      </tr></thead>
+                      <tbody className="divide-y divide-[#f3f4f6]">
+                        {(repData.payouts?.payouts || []).length > 0 ? repData.payouts.payouts.map(p => (
+                          <tr key={p.id} className="hover:bg-[#f9fafb]">
+                            <td className="px-4 py-3"><p className="font-medium text-[#111827]">{p.rep_name}</p><p className="text-xs text-[#9ca3af]">{p.rep_code}</p></td>
+                            <td className="px-4 py-3 text-xs text-[#6b7280]">{p.week_start_date ? new Date(p.week_start_date).toLocaleDateString() : "--"}</td>
+                            <td className="px-4 py-3 font-bold text-[#111827]">${parseFloat(p.total_amount).toFixed(2)}</td>
+                            <td className="px-4 py-3"><StatusBadge status={p.status === 'pending_approval' ? 'pending' : p.status === 'paid' ? 'completed' : p.status} /></td>
+                            <td className="px-4 py-3">
+                              <div className="flex gap-2">
+                                {p.status === 'pending_approval' && <button className="text-xs font-semibold text-green-600 hover:underline">Approve</button>}
+                                {p.status === 'pending_approval' && <button className="text-xs font-semibold text-yellow-600 hover:underline">Hold</button>}
+                                {p.status === 'approved' && <button className="text-xs font-semibold text-[#2563eb] hover:underline">Mark Paid</button>}
+                              </div>
+                            </td>
+                          </tr>
+                        )) : <tr><td colSpan={5} className="px-4 py-8 text-center text-[#9ca3af]">No payouts yet</td></tr>}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* SUB-TAB: COMMISSIONS */}
+              {repSubTab === "commissions" && (
+                <div className={`${CARD} overflow-hidden`}>
+                  <div className="px-6 py-4 border-b border-[#e5e7eb]"><h3 className={SECTION_TITLE}>All Commissions</h3></div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead><tr className="border-b border-[#e5e7eb] bg-[#f9fafb]">
+                        <th className={TH}>Date</th><th className={TH}>Rep</th><th className={TH}>Business</th><th className={TH}>Type</th><th className={TH}>Charged</th><th className={TH}>Commission</th><th className={TH}>Buffer</th><th className={TH}>Status</th>
+                      </tr></thead>
+                      <tbody className="divide-y divide-[#f3f4f6]">
+                        {repData.commissions.length > 0 ? repData.commissions.map(c => (
+                          <tr key={c.id} className="hover:bg-[#f9fafb]">
+                            <td className="px-4 py-3 text-xs text-[#9ca3af]">{c.created_at ? new Date(c.created_at).toLocaleDateString() : "--"}</td>
+                            <td className="px-4 py-3"><p className="font-medium text-[#111827]">{c.rep_name}</p><p className="text-xs text-[#9ca3af]">{c.rep_code}</p></td>
+                            <td className="px-4 py-3 text-[#374151]">{c.business_name || c.customer_email || "--"}</td>
+                            <td className="px-4 py-3 text-[#6b7280] capitalize text-xs">{c.product_type?.replace(/_/g, " ")}</td>
+                            <td className="px-4 py-3 text-[#374151]">${parseFloat(c.sale_amount).toFixed(2)}</td>
+                            <td className="px-4 py-3 font-bold text-[#111827]">${parseFloat(c.commission_amount).toFixed(2)}</td>
+                            <td className="px-4 py-3"><StatusBadge status={c.buffer_status === 'buffering' ? 'analyzing' : c.buffer_status === 'released' ? 'completed' : c.buffer_status || 'pending'} /></td>
+                            <td className="px-4 py-3"><StatusBadge status={c.status} /></td>
+                          </tr>
+                        )) : <tr><td colSpan={8} className="px-4 py-8 text-center text-[#9ca3af]">No commissions yet</td></tr>}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* SUB-TAB: ALERTS */}
+              {repSubTab === "alerts" && (
+                <div className={`${CARD} p-6`}>
+                  <h3 className={`${SECTION_TITLE} mb-4`}>Rep Alerts</h3>
+                  {repData.commissions.filter(c => c.status === 'held' || c.payment_status === 'payment_failed').length > 0 ? (
+                    <div className="space-y-3">
+                      {repData.commissions.filter(c => c.status === 'held' || c.payment_status === 'payment_failed').map(c => (
+                        <div key={c.id} className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-4">
+                          <AlertTriangle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-red-800">Payment issue — {c.business_name || c.customer_email}</p>
+                            <p className="text-xs text-red-600">Rep: {c.rep_name} ({c.rep_code}) &middot; Commission: ${parseFloat(c.commission_amount).toFixed(2)}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : <p className="text-sm text-[#9ca3af]">No unresolved alerts</p>}
+                  {/* W9 alerts */}
+                  {repData.reps.filter(r => parseFloat(r.total_earned || 0) >= 500 && !r.w9_submitted).length > 0 && (
+                    <div className="mt-6">
+                      <h4 className="text-sm font-semibold text-[#111827] mb-3">W-9 Required</h4>
+                      <div className="space-y-2">
+                        {repData.reps.filter(r => parseFloat(r.total_earned || 0) >= 500 && !r.w9_submitted).map(r => (
+                          <div key={r.id} className="flex items-center justify-between bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                            <div><p className="text-sm font-medium text-yellow-800">{r.full_name}</p><p className="text-xs text-yellow-600">Earnings: ${parseFloat(r.total_earned).toFixed(2)} — W-9 not on file</p></div>
+                            <button className="text-xs font-semibold text-yellow-700 border border-yellow-300 px-3 py-1 rounded-md hover:bg-yellow-100">Request W-9</button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

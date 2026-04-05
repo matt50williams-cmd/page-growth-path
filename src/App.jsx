@@ -25,6 +25,9 @@ import SeoLoadingPage from './pages/SeoLoadingPage';
 import TeaserResults from './pages/TeaserResults';
 import RepDashboard from './pages/RepDashboard';
 import RepAgreement from './pages/RepAgreement';
+import RepSignup from './pages/RepSignup';
+import RepCommissions from './pages/RepCommissions';
+import RepTraining from './pages/RepTraining';
 import ScanRedirect from './pages/ScanRedirect';
 
 function StripeRedirectHandler() {
@@ -82,6 +85,9 @@ function AuthenticatedApp() {
         <Route path="/teaser-results" element={<TeaserResults />} />
         <Route path="/rep-dashboard" element={<RepDashboard />} />
         <Route path="/rep-agreement" element={<RepAgreement />} />
+        <Route path="/rep-commissions" element={<RepCommissions />} />
+        <Route path="/rep-training" element={<RepTraining />} />
+        <Route path="/join" element={<RepSignup />} />
         <Route path="/scan" element={<ScanRedirect />} />
         <Route path="*" element={<PageNotFound />} />
       </Routes>
