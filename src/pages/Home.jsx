@@ -50,6 +50,49 @@ const FAQS = [
   { q: "How is this different from free SEO tools?", a: "Free SEO tools check your website only. We scan your entire online presence — Google, Yelp, Facebook, NAP consistency — and compare you directly to local competitors. We tell you what's costing you customers, not just what's technically wrong." },
 ];
 
+function ScanBar({ value, onChange, onScan, dark = false, inputId = "", scanError = "" }) {
+  return (
+    <div>
+      <div style={{
+        display: "flex", maxWidth: 540, margin: "0 auto",
+        background: dark ? "#1e293b" : "#fff",
+        border: `2px solid ${dark ? "#334155" : "#e2e8f0"}`,
+        borderRadius: 12, overflow: "hidden",
+        boxShadow: dark ? "none" : "0 2px 12px rgba(0,0,0,0.05)",
+        transition: "border-color 0.2s",
+      }}>
+        <div style={{ flex: 1, position: "relative" }}>
+          <Search style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", width: 18, height: 18, color: dark ? "#64748b" : "#94a3b8" }} />
+          <input type="text" id={inputId || undefined} value={value} onChange={e => onChange(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && onScan(value)}
+            placeholder="e.g. Joe's Plumbing Dallas TX"
+            style={{
+              width: "100%", padding: "16px 16px 16px 48px", fontSize: 16, border: "none", outline: "none",
+              background: "transparent", color: dark ? "#fff" : "#0f172a", boxSizing: "border-box",
+              fontFamily: "'Inter', sans-serif",
+            }} />
+        </div>
+        <button onClick={() => onScan(value)} style={{
+          background: "#2563eb", color: "#fff", fontWeight: 700, fontSize: 15,
+          padding: "16px 28px", border: "none", cursor: "pointer",
+          display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap",
+          transition: "background 0.15s",
+        }}
+          onMouseOver={e => e.currentTarget.style.background = "#1d4ed8"}
+          onMouseOut={e => e.currentTarget.style.background = "#2563eb"}>
+          Scan Free <ArrowRight style={{ width: 16, height: 16 }} />
+        </button>
+      </div>
+      {scanError && <p style={{ color: "#ef4444", fontSize: 13, fontWeight: 600, textAlign: "center", marginTop: 10 }}>{scanError}</p>}
+      <div style={{ display: "flex", justifyContent: "center", gap: 24, flexWrap: "wrap", marginTop: 16, fontSize: 13, color: dark ? "#64748b" : "#94a3b8", fontWeight: 500 }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 5 }}><Shield style={{ width: 13, height: 13 }} /> No account needed</span>
+        <span style={{ display: "flex", alignItems: "center", gap: 5 }}><Zap style={{ width: 13, height: 13 }} /> No credit card</span>
+        <span style={{ display: "flex", alignItems: "center", gap: 5 }}><Clock style={{ width: 13, height: 13 }} /> Results in 60 seconds</span>
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const navigate = useNavigate();
   const [businessName, setBusinessName] = useState("");
@@ -96,47 +139,6 @@ export default function Home() {
   const h = { fontFamily: "'Plus Jakarta Sans', sans-serif" };
   const b = { fontFamily: "'Inter', sans-serif" };
 
-  const ScanBar = ({ value, onChange, onScan, dark = false, inputId = "" }) => (
-    <div>
-      <div style={{
-        display: "flex", maxWidth: 540, margin: "0 auto",
-        background: dark ? "#1e293b" : "#fff",
-        border: `2px solid ${dark ? "#334155" : "#e2e8f0"}`,
-        borderRadius: 12, overflow: "hidden",
-        boxShadow: dark ? "none" : "0 2px 12px rgba(0,0,0,0.05)",
-        transition: "border-color 0.2s",
-      }}>
-        <div style={{ flex: 1, position: "relative" }}>
-          <Search style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", width: 18, height: 18, color: dark ? "#64748b" : "#94a3b8" }} />
-          <input type="text" id={inputId || undefined} value={value} onChange={e => onChange(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && onScan(value)}
-            placeholder="e.g. Joe's Plumbing Dallas TX"
-            style={{
-              width: "100%", padding: "16px 16px 16px 48px", fontSize: 16, border: "none", outline: "none",
-              background: "transparent", color: dark ? "#fff" : "#0f172a", boxSizing: "border-box",
-              fontFamily: "'Inter', sans-serif",
-            }} />
-        </div>
-        <button onClick={() => onScan(value)} style={{
-          background: "#2563eb", color: "#fff", fontWeight: 700, fontSize: 15,
-          padding: "16px 28px", border: "none", cursor: "pointer",
-          display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap",
-          transition: "background 0.15s",
-        }}
-          onMouseOver={e => e.currentTarget.style.background = "#1d4ed8"}
-          onMouseOut={e => e.currentTarget.style.background = "#2563eb"}>
-          Scan Free <ArrowRight style={{ width: 16, height: 16 }} />
-        </button>
-      </div>
-      {scanError && <p style={{ color: "#ef4444", fontSize: 13, fontWeight: 600, textAlign: "center", marginTop: 10 }}>{scanError}</p>}
-      <div style={{ display: "flex", justifyContent: "center", gap: 24, flexWrap: "wrap", marginTop: 16, fontSize: 13, color: dark ? "#64748b" : "#94a3b8", fontWeight: 500 }}>
-        <span style={{ display: "flex", alignItems: "center", gap: 5 }}><Shield style={{ width: 13, height: 13 }} /> No account needed</span>
-        <span style={{ display: "flex", alignItems: "center", gap: 5 }}><Zap style={{ width: 13, height: 13 }} /> No credit card</span>
-        <span style={{ display: "flex", alignItems: "center", gap: 5 }}><Clock style={{ width: 13, height: 13 }} /> Results in 60 seconds</span>
-      </div>
-    </div>
-  );
-
   return (
     <div style={{ ...b, background: "#fff", color: "#1a1a2e", minHeight: "100vh" }}>
 
@@ -174,7 +176,7 @@ export default function Home() {
           <p style={{ fontSize: "clamp(16px, 1.8vw, 19px)", color: "#64748b", lineHeight: 1.65, maxWidth: 580, margin: "0 auto 40px", letterSpacing: "-0.01em" }}>
             See exactly how your business looks online compared to competitors. Google, Yelp, Facebook, your website &mdash; scanned in 60 seconds.
           </p>
-          <ScanBar value={businessName} onChange={setBusinessName} onScan={handleScan} inputId="heroInput" />
+          <ScanBar value={businessName} onChange={setBusinessName} onScan={handleScan} inputId="heroInput" scanError={scanError} />
         </div>
       </section>
 
@@ -373,7 +375,7 @@ export default function Home() {
             Find out where you stand.<br /><span style={{ color: "#60a5fa" }}>Right now. Free.</span>
           </h2>
           <p style={{ fontSize: 17, color: "#94a3b8", marginBottom: 36 }}>60 seconds. No account. No credit card.</p>
-          <ScanBar value={businessName2} onChange={setBusinessName2} onScan={handleScan} dark />
+          <ScanBar value={businessName2} onChange={setBusinessName2} onScan={handleScan} dark scanError={scanError} />
         </div>
       </section>
 
