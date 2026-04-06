@@ -132,9 +132,13 @@ export default function CreateAccount() {
     const stripeSessionId = searchParams.get("session_id");
     const stripeAuditId = searchParams.get("audit_id");
 
+    // URL params are the source of truth — always override localStorage audit_id
     if (savedOrder) {
       const orderData = JSON.parse(savedOrder);
+      // If URL has audit_id, use it (more reliable than localStorage after Stripe redirect)
+      if (stripeAuditId) orderData.auditId = stripeAuditId;
       setOrder(orderData);
+      console.log("[CREATE ACCOUNT] Order loaded. auditId:", orderData.auditId, "email:", orderData.email);
       if (stripeSessionId) {
         fetch(`${API_BASE}/api/stripe/verify/${stripeSessionId}`)
           .then(r => r.json())
@@ -144,12 +148,17 @@ export default function CreateAccount() {
       return;
     }
 
+    // No localStorage — fetch audit from backend using URL param
     if (stripeAuditId) {
+      console.log("[CREATE ACCOUNT] No localStorage, fetching audit", stripeAuditId);
       fetch(`${API_BASE}/api/audits/${stripeAuditId}`)
         .then(r => r.json())
         .then(audit => {
           if (audit && audit.email) {
-            setOrder({ email: audit.email, auditId: stripeAuditId, name: audit.customer_name || "" });
+            const orderData = { email: audit.email, auditId: stripeAuditId, name: audit.customer_name || "", businessName: audit.business_name || "", city: audit.city || "", website: audit.website || "" };
+            setOrder(orderData);
+            // Restore localStorage for downstream pages
+            localStorage.setItem("pageAuditOrder", JSON.stringify(orderData));
             if (stripeSessionId) {
               fetch(`${API_BASE}/api/stripe/verify/${stripeSessionId}`)
                 .then(r => r.json())
