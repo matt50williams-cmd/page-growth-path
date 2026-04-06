@@ -138,6 +138,22 @@ export default function RepTraining() {
 
         {/* SECTION 5 — RULES */}
         <div>
+          <h2 style={{ ...syne, fontSize: 22, fontWeight: 700, color: "#fff", marginBottom: 16 }}>Pricing Strategy — ALWAYS START AT $149</h2>
+          <div style={{ ...card, marginBottom: 20, borderColor: "rgba(249,115,22,0.2)", background: "rgba(249,115,22,0.04)" }}>
+            <p style={{ color: "#f97316", fontSize: 13, fontWeight: 700, marginBottom: 10 }}>Your script:</p>
+            <div style={{ borderLeft: "3px solid #f97316", background: "rgba(249,115,22,0.06)", borderRadius: "0 10px 10px 0", padding: 12, marginBottom: 14 }}>
+              <p style={{ color: "#c8d0dc", fontSize: 14, lineHeight: 1.6, fontStyle: "italic" }}>"Our complete premium audit is $149 — normally $299. We created this specifically to help small businesses like yours."</p>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ fontSize: 14 }}>💎</span><span style={{ color: "#c8d0dc", fontSize: 13 }}><strong style={{ color: "#f97316" }}>Start at $149</strong> — Premium. Full report + competitor analysis.</span></div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ fontSize: 14 }}>📊</span><span style={{ color: "#c8d0dc", fontSize: 13 }}>If they hesitate → <strong style={{ color: "#3b82f6" }}>$129 Standard</strong>. Full report + action plan.</span></div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ fontSize: 14 }}>📋</span><span style={{ color: "#c8d0dc", fontSize: 13 }}>Last resort only → <strong style={{ color: "#94a3b8" }}>$99 Basic</strong>. Core findings.</span></div>
+            </div>
+            <p style={{ color: "#10b981", fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Your commission by tier:</p>
+            <p style={{ color: "#c8d0dc", fontSize: 13 }}>$99 → you earn $49 | $129 → you earn $64 | $149 → you earn $74</p>
+            <p style={{ color: "#f97316", fontSize: 12, fontWeight: 700, marginTop: 10 }}>Never apologize for the price. The audit is worth every penny.</p>
+          </div>
+
           <h2 style={{ ...syne, fontSize: 22, fontWeight: 700, color: "#fff", marginBottom: 16 }}>Rules to Live By</h2>
           <div style={{ background: "rgba(239,68,68,0.06)", border: "2px solid rgba(239,68,68,0.2)", borderRadius: 14, padding: 24 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>

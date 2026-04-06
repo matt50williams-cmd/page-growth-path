@@ -743,12 +743,33 @@ export default function RepCommandCenter() {
                   </button>
                 </div>
 
+                {/* TIER SELECTOR */}
+                <div style={{ marginBottom: 16 }}>
+                  <p style={{ color: "#94a3b8", fontSize: 12, fontWeight: 600, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>Select Package to Present</p>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
+                    {[
+                      { key: "basic", price: "$99", label: "Basic", earn: "$49" },
+                      { key: "standard", price: "$129", label: "Standard", earn: "$64", rec: true },
+                      { key: "premium", price: "$149", label: "Premium", earn: "$74" },
+                    ].map(t => (
+                      <button key={t.key} onClick={() => localStorage.setItem("rep_selected_tier", t.key)}
+                        style={{ ...card, padding: 10, textAlign: "center", cursor: "pointer", border: t.rec ? "1px solid rgba(249,115,22,0.4)" : "1px solid rgba(255,255,255,0.08)", background: t.rec ? "rgba(249,115,22,0.08)" : "rgba(255,255,255,0.03)" }}>
+                        <p style={{ color: "#64748b", fontSize: 10, textDecoration: "line-through" }}>$299</p>
+                        <p style={{ ...H, fontSize: 20, fontWeight: 800, color: "#fff" }}>{t.price}</p>
+                        <p style={{ color: t.rec ? "#f97316" : "#94a3b8", fontSize: 10, fontWeight: 600 }}>{t.label}</p>
+                        <p style={{ color: "#10b981", fontSize: 10, fontWeight: 600, marginTop: 2 }}>You earn {t.earn}</p>
+                        {t.rec && <p style={{ color: "#f97316", fontSize: 8, fontWeight: 700, marginTop: 2 }}>RECOMMENDED</p>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {/* ACTIONS */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   <button onClick={() => { setVisitForm(f => ({ ...f, businessName: preScanResult.businessName || preScanBiz, address: preScanResult.google?.address || "" })); setTab("log"); }}
-                    style={{ ...btn48, background: "#f97316", color: "#fff" }}>🚪 Log This Visit</button>
+                    style={{ ...btn48, background: "#f97316", color: "#fff" }}>Log This Visit</button>
                   <button onClick={() => navigate("/teaser-results", { state: { businessName: preScanResult.businessName || preScanBiz, scanData: preScanResult } })}
-                    style={{ ...btn48, background: "#2563eb", color: "#fff" }}>🔍 Show Customer Their Scan</button>
+                    style={{ ...btn48, background: "#2563eb", color: "#fff" }}>Show Customer Their Scan</button>
                   <button onClick={() => { setPreScanResult(null); setPreScanBiz(""); setPreScanCity(""); setNearbyPlaces([]); }}
                     style={{ ...btn48, background: "rgba(255,255,255,0.05)", color: "#94a3b8", border: "1px solid rgba(255,255,255,0.1)" }}>↩ Scan Another Business</button>
                 </div>
