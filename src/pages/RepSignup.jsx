@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { BarChart2, DollarSign, Users, Calendar, CheckCircle, ArrowRight } from "lucide-react";
 
 const STEPS = [
@@ -11,7 +11,14 @@ const STEPS = [
 
 export default function RepSignup() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [form, setForm] = useState({ full_name: "", email: "", phone: "", city: "" });
+
+  // Capture partner code from URL
+  useEffect(() => {
+    const partnerCode = searchParams.get("partner");
+    if (partnerCode) localStorage.setItem("agency_partner_code", partnerCode.toUpperCase().trim());
+  }, [searchParams]);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
 
