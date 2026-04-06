@@ -122,10 +122,22 @@ export default function ScanReport() {
 
   if (error || !data) return (<div style={{ minHeight: "100vh", background: "#f9fafb", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Inter', sans-serif" }}><div style={{ textAlign: "center" }}><AlertCircle style={{ width: 48, height: 48, color: "#ef4444", margin: "0 auto 16px", display: "block" }} /><h2 style={{ ...H, color: "#0f172a", fontSize: 24, marginBottom: 8 }}>Report Not Found</h2><p style={{ color: "#64748b", fontSize: 15, marginBottom: 24 }}>{error || "We couldn't load this report."}</p><button onClick={() => navigate("/")} style={{ background: "#2563eb", color: "#fff", border: "none", padding: "12px 24px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Go Home</button></div></div>);
 
-  const { overallScore, scoreLabel, platforms, allFindings: rawFindings, topPriorities, summary, monthlyGoal, dataQuality, businessName, city, state, scannedAt, competitors, revenueImpact, quickWins, whatYoureDoingWell, competitorIntel, snapshots, verifiedPages, presenceSection, reportHeadline, lossSummary, competitorSummary, competitorAnalysis, priorityFix } = data;
+  const { overallScore, scoreLabel, platforms, allFindings: rawFindings, topPriorities, summary, monthlyGoal, dataQuality, businessName, city, state, scannedAt, competitors: rawCompetitors, revenueImpact, quickWins, whatYoureDoingWell, competitorIntel, snapshots, verifiedPages, presenceSection, reportHeadline, lossSummary, competitorSummary, competitorAnalysis, priorityFix } = data;
   const sc = scoreColor(overallScore || 0);
   const W = { background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb" };
   const platformKeys = Object.keys(platforms || {}).filter(k => platforms[k] && !platforms[k].excluded);
+
+  // Normalize competitors: backend may send {competitors:[...], ranking} or flat [...] or null
+  const competitors = (() => {
+    if (!rawCompetitors) return { competitors: [], ranking: null, totalInArea: null, estimated: true };
+    // Already nested object shape
+    if (rawCompetitors.competitors && Array.isArray(rawCompetitors.competitors)) return rawCompetitors;
+    // Flat array from old scan results
+    if (Array.isArray(rawCompetitors)) return { competitors: rawCompetitors, ranking: null, totalInArea: rawCompetitors.length + 1, estimated: true };
+    // Object with no competitors array
+    return { competitors: [], ranking: rawCompetitors.ranking || null, totalInArea: rawCompetitors.totalInArea || null, estimated: true };
+  })();
+  console.log("[REPORT] Competitors normalized:", { count: competitors.competitors.length, ranking: competitors.ranking, estimated: competitors.estimated, rawType: typeof rawCompetitors, rawIsArray: Array.isArray(rawCompetitors) });
 
   // ── Quality filter: suppress weak/generic/unsupported findings ──
   const SUPPRESS_TITLES = [
