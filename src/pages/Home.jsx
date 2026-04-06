@@ -50,31 +50,46 @@ const FAQS = [
   { q: "How is this different from free SEO tools?", a: "Free SEO tools check your website only. We scan your entire online presence — Google, Yelp, Facebook, NAP consistency — and compare you directly to local competitors. We tell you what's costing you customers, not just what's technically wrong." },
 ];
 
-function ScanBar({ value, onChange, onScan, dark = false, inputId = "", scanError = "" }) {
+function ScanBar({ biz, city, st, onBiz, onCity, onSt, onScan, dark = false, inputId = "", scanError = "" }) {
+  const bg = dark ? "#1e293b" : "#fff";
+  const border = dark ? "#334155" : "#e2e8f0";
+  const text = dark ? "#fff" : "#0f172a";
+  const placeholder = dark ? "#64748b" : "#94a3b8";
+  const inputStyle = () => ({
+    width: "100%", padding: "14px 14px", fontSize: 15, border: "none", outline: "none",
+    background: "transparent", color: text, boxSizing: "border-box",
+    fontFamily: "'Inter', sans-serif",
+  });
   return (
     <div>
       <div style={{
-        display: "flex", maxWidth: 540, margin: "0 auto",
-        background: dark ? "#1e293b" : "#fff",
-        border: `2px solid ${dark ? "#334155" : "#e2e8f0"}`,
-        borderRadius: 12, overflow: "hidden",
+        display: "flex", flexWrap: "wrap", gap: 8, maxWidth: 600, margin: "0 auto",
+        background: bg, border: `2px solid ${border}`, borderRadius: 12, padding: 8,
         boxShadow: dark ? "none" : "0 2px 12px rgba(0,0,0,0.05)",
-        transition: "border-color 0.2s",
       }}>
-        <div style={{ flex: 1, position: "relative" }}>
-          <Search style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", width: 18, height: 18, color: dark ? "#64748b" : "#94a3b8" }} />
-          <input type="text" id={inputId || undefined} value={value} onChange={e => onChange(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && onScan(value)}
-            placeholder="e.g. Joe's Plumbing Dallas TX"
-            style={{
-              width: "100%", padding: "16px 16px 16px 48px", fontSize: 16, border: "none", outline: "none",
-              background: "transparent", color: dark ? "#fff" : "#0f172a", boxSizing: "border-box",
-              fontFamily: "'Inter', sans-serif",
-            }} />
+        <div style={{ flex: "2 1 180px", position: "relative" }}>
+          <Search style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", width: 16, height: 16, color: placeholder }} />
+          <input type="text" id={inputId || undefined} value={biz} onChange={e => onBiz(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && onScan()}
+            placeholder="Business name"
+            style={{ ...inputStyle(), paddingLeft: 36 }} />
         </div>
-        <button onClick={() => onScan(value)} style={{
-          background: "#2563eb", color: "#fff", fontWeight: 700, fontSize: 15,
-          padding: "16px 28px", border: "none", cursor: "pointer",
+        <div style={{ flex: "1 1 110px", borderLeft: `1px solid ${border}` }}>
+          <input type="text" value={city} onChange={e => onCity(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && onScan()}
+            placeholder="City"
+            style={inputStyle()} />
+        </div>
+        <div style={{ flex: "0 0 70px", borderLeft: `1px solid ${border}` }}>
+          <input type="text" value={st} onChange={e => onSt(e.target.value.toUpperCase().slice(0, 2))}
+            onKeyDown={e => e.key === "Enter" && onScan()}
+            placeholder="ST"
+            maxLength={2}
+            style={{ ...inputStyle(), textAlign: "center" }} />
+        </div>
+        <button onClick={onScan} style={{
+          flex: "0 0 auto", background: "#2563eb", color: "#fff", fontWeight: 700, fontSize: 15,
+          padding: "14px 24px", border: "none", borderRadius: 8, cursor: "pointer",
           display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap",
           transition: "background 0.15s",
         }}
@@ -95,8 +110,12 @@ function ScanBar({ value, onChange, onScan, dark = false, inputId = "", scanErro
 
 export default function Home() {
   const navigate = useNavigate();
-  const [businessName, setBusinessName] = useState("");
-  const [businessName2, setBusinessName2] = useState("");
+  const [bizName, setBizName] = useState("");
+  const [cityVal, setCityVal] = useState("");
+  const [stateVal, setStateVal] = useState("");
+  const [bizName2, setBizName2] = useState("");
+  const [cityVal2, setCityVal2] = useState("");
+  const [stateVal2, setStateVal2] = useState("");
   const [openFaq, setOpenFaq] = useState(/** @type {number|null} */ (null));
   const [scoreVisible, setScoreVisible] = useState(false);
   const scoreRef = useRef(null);
@@ -118,22 +137,14 @@ export default function Home() {
     return () => observer.disconnect();
   }, []);
 
-  const handleScan = (name) => {
-    const raw = (name || "").trim();
-    if (!raw) { setScanError("Please enter a business name and city"); return; }
-    if (raw.split(/\s+/).length < 2) { setScanError("Please include both business name and city (e.g. Joe's Pizza Dallas TX)"); return; }
+  const handleScan = (biz, city, st) => {
+    const b = (biz || "").trim();
+    const c = (city || "").trim();
+    const s = (st || "").trim();
+    if (!b) { setScanError("Please enter a business name"); return; }
+    if (!c) { setScanError("Please enter a city"); return; }
     setScanError("");
-    const stateMatch = raw.match(/\b([A-Z]{2})\s*$/);
-    const st = stateMatch ? stateMatch[1] : "";
-    const withoutState = st ? raw.slice(0, -st.length).trim().replace(/,\s*$/, "") : raw;
-    const parts = withoutState.split(/\s+/);
-    let biz = raw, ct = "";
-    if (parts.length >= 3) {
-      const cityWords = parts.length >= 4 ? parts.slice(-2) : parts.slice(-1);
-      ct = cityWords.join(" ");
-      biz = parts.slice(0, parts.length - cityWords.length).join(" ");
-    }
-    navigate("/scanning", { state: { businessName: biz || raw, city: ct, state: st } });
+    navigate("/scanning", { state: { businessName: b, city: c, state: s } });
   };
 
   const h = { fontFamily: "'Plus Jakarta Sans', sans-serif" };
@@ -176,7 +187,7 @@ export default function Home() {
           <p style={{ fontSize: "clamp(16px, 1.8vw, 19px)", color: "#64748b", lineHeight: 1.65, maxWidth: 580, margin: "0 auto 40px", letterSpacing: "-0.01em" }}>
             See exactly how your business looks online compared to competitors. Google, Yelp, Facebook, your website &mdash; scanned in 60 seconds.
           </p>
-          <ScanBar value={businessName} onChange={setBusinessName} onScan={handleScan} inputId="heroInput" scanError={scanError} />
+          <ScanBar biz={bizName} city={cityVal} st={stateVal} onBiz={setBizName} onCity={setCityVal} onSt={setStateVal} onScan={() => handleScan(bizName, cityVal, stateVal)} inputId="heroInput" scanError={scanError} />
         </div>
       </section>
 
@@ -375,7 +386,7 @@ export default function Home() {
             Find out where you stand.<br /><span style={{ color: "#60a5fa" }}>Right now. Free.</span>
           </h2>
           <p style={{ fontSize: 17, color: "#94a3b8", marginBottom: 36 }}>60 seconds. No account. No credit card.</p>
-          <ScanBar value={businessName2} onChange={setBusinessName2} onScan={handleScan} dark scanError={scanError} />
+          <ScanBar biz={bizName2} city={cityVal2} st={stateVal2} onBiz={setBizName2} onCity={setCityVal2} onSt={setStateVal2} onScan={() => handleScan(bizName2, cityVal2, stateVal2)} dark scanError={scanError} />
         </div>
       </section>
 
