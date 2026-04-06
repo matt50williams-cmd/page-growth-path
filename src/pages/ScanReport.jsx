@@ -122,13 +122,40 @@ export default function ScanReport() {
 
   if (error || !data) return (<div style={{ minHeight: "100vh", background: "#f9fafb", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Inter', sans-serif" }}><div style={{ textAlign: "center" }}><AlertCircle style={{ width: 48, height: 48, color: "#ef4444", margin: "0 auto 16px", display: "block" }} /><h2 style={{ ...H, color: "#0f172a", fontSize: 24, marginBottom: 8 }}>Report Not Found</h2><p style={{ color: "#64748b", fontSize: 15, marginBottom: 24 }}>{error || "We couldn't load this report."}</p><button onClick={() => navigate("/")} style={{ background: "#2563eb", color: "#fff", border: "none", padding: "12px 24px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Go Home</button></div></div>);
 
-  const { overallScore, scoreLabel, platforms, allFindings, topPriorities, summary, monthlyGoal, dataQuality, businessName, city, state, scannedAt, competitors, revenueImpact, quickWins, whatYoureDoingWell, competitorIntel, snapshots, verifiedPages, presenceSection, reportHeadline, lossSummary, competitorSummary, competitorAnalysis, priorityFix } = data;
+  const { overallScore, scoreLabel, platforms, allFindings: rawFindings, topPriorities, summary, monthlyGoal, dataQuality, businessName, city, state, scannedAt, competitors, revenueImpact, quickWins, whatYoureDoingWell, competitorIntel, snapshots, verifiedPages, presenceSection, reportHeadline, lossSummary, competitorSummary, competitorAnalysis, priorityFix } = data;
   const sc = scoreColor(overallScore || 0);
   const W = { background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb" };
-  const critical = (allFindings || []).filter(f => f.severity === "critical");
-  const warnings = (allFindings || []).filter(f => f.severity === "warning");
-  const goods = (allFindings || []).filter(f => f.severity === "good");
   const platformKeys = Object.keys(platforms || {}).filter(k => platforms[k] && !platforms[k].excluded);
+
+  // ── Quality filter: suppress weak/generic/unsupported findings ──
+  const SUPPRESS_TITLES = [
+    /schema markup/i, /structured data/i, /json-ld/i,            // too technical
+    /check unavailable/i, /check failed/i, /apify/i,            // internal errors
+    /proxy not configured/i, /token not configured/i,            // config issues
+  ];
+  const isWeak = (f) => {
+    if (!f.title) return true;
+    if (f.title.length < 8) return true;
+    if (SUPPRESS_TITLES.some(re => re.test(f.title))) return true;
+    // Suppress findings with no description AND no impact — not enough info to be useful
+    if (f.severity !== "good" && !f.description && !f.impact) return true;
+    return false;
+  };
+  const allFindings = (rawFindings || []).filter(f => !isWeak(f));
+
+  // Separate by severity
+  const critical = allFindings.filter(f => f.severity === "critical");
+  const warnings = allFindings.filter(f => f.severity === "warning");
+  const goods = allFindings.filter(f => f.severity === "good");
+
+  // Group findings by platform for organized display
+  const platformOrder = ["Google", "Website", "Facebook", "Yelp", "NAP", "Search", "Reviews", "Competitors"];
+  const groupedCritical = {};
+  const groupedWarnings = {};
+  for (const f of critical) { const p = f.platform || "Other"; if (!groupedCritical[p]) groupedCritical[p] = []; groupedCritical[p].push(f); }
+  for (const f of warnings) { const p = f.platform || "Other"; if (!groupedWarnings[p]) groupedWarnings[p] = []; groupedWarnings[p].push(f); }
+  const sortedCriticalPlatforms = Object.keys(groupedCritical).sort((a, b) => (platformOrder.indexOf(a) === -1 ? 99 : platformOrder.indexOf(a)) - (platformOrder.indexOf(b) === -1 ? 99 : platformOrder.indexOf(b)));
+  const sortedWarningPlatforms = Object.keys(groupedWarnings).sort((a, b) => (platformOrder.indexOf(a) === -1 ? 99 : platformOrder.indexOf(a)) - (platformOrder.indexOf(b) === -1 ? 99 : platformOrder.indexOf(b)));
 
   const snapshotMap = {
     website: snapshots?.website || null,
@@ -341,29 +368,32 @@ export default function ScanReport() {
           </div>
         )}
 
-        {/* ═══ 6. COMPLETE FINDINGS ═══ */}
-        {(allFindings || []).length > 0 && (
+        {/* ═══ 6. COMPLETE FINDINGS (grouped by platform) ═══ */}
+        {allFindings.length > 0 && (
           <div style={{ marginBottom: 32 }}>
-            <h2 style={{ ...H, fontSize: 22, fontWeight: 700, color: "#0f172a", marginBottom: 16 }}>Complete Findings — {allFindings.length} Items</h2>
+            <h2 style={{ ...H, fontSize: 22, fontWeight: 700, color: "#0f172a", marginBottom: 16 }}>Complete Findings — {critical.length + warnings.length} Issue{critical.length + warnings.length !== 1 ? "s" : ""} Found</h2>
 
-            {critical.length > 0 && (
-              <div style={{ marginBottom: 20 }}>
-                <p style={{ color: "#dc2626", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>{critical.length} Critical Issue{critical.length > 1 ? "s" : ""}</p>
+            {/* Critical — grouped by platform */}
+            {sortedCriticalPlatforms.map(plat => (
+              <div key={plat} style={{ marginBottom: 20 }}>
+                <p style={{ color: "#dc2626", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>{plat} — {groupedCritical[plat].length} Critical</p>
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  {critical.map((f, i) => <FindingCard key={i} f={f} snapshot={getSnapshotForFinding(f)} />)}
+                  {groupedCritical[plat].map((f, i) => <FindingCard key={i} f={f} snapshot={getSnapshotForFinding(f)} />)}
                 </div>
               </div>
-            )}
+            ))}
 
-            {warnings.length > 0 && (
-              <div style={{ marginBottom: 20 }}>
-                <p style={{ color: "#d97706", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>{warnings.length} Warning{warnings.length > 1 ? "s" : ""}</p>
+            {/* Warnings — grouped by platform */}
+            {sortedWarningPlatforms.map(plat => (
+              <div key={plat} style={{ marginBottom: 20 }}>
+                <p style={{ color: "#d97706", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>{plat} — {groupedWarnings[plat].length} Warning{groupedWarnings[plat].length > 1 ? "s" : ""}</p>
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  {warnings.map((f, i) => <FindingCard key={i} f={f} snapshot={getSnapshotForFinding(f)} />)}
+                  {groupedWarnings[plat].map((f, i) => <FindingCard key={i} f={f} snapshot={getSnapshotForFinding(f)} />)}
                 </div>
               </div>
-            )}
+            ))}
 
+            {/* Good — compact list */}
             {goods.length > 0 && (
               <div>
                 <p style={{ color: "#059669", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>{goods.length} Looking Good</p>
