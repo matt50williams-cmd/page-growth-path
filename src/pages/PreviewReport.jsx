@@ -128,11 +128,13 @@ export default function PreviewReport() {
         {/* PRICING CARD */}
         <div style={{ maxWidth: 400, margin: "0 auto 48px", background: "rgba(37,99,235,0.08)", border: "1px solid rgba(37,99,235,0.2)", borderRadius: 20, padding: 32, textAlign: "center" }}>
           <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#3b82f6", marginBottom: 16 }}>Limited Launch Pricing</p>
-          <p style={{ color: "#64748b", fontSize: 13, marginBottom: 4 }}>Regular price: <span style={{ textDecoration: "line-through" }}>$197</span></p>
+          <p style={{ color: "#64748b", fontSize: 13, marginBottom: 4 }}>Regular price: <span style={{ textDecoration: "line-through" }}>$299</span></p>
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 2, marginBottom: 4 }}>
             <span style={{ ...heading, fontSize: 56, fontWeight: 800, color: "#fff" }}>$39</span>
           </div>
-          <p style={{ color: "#10b981", fontSize: 14, fontWeight: 600, marginBottom: 20 }}>You save $158</p>
+          <p style={{ color: "#10b981", fontSize: 14, fontWeight: 600, marginBottom: 6 }}>You save $260</p>
+          <p style={{ color: "#64748b", fontSize: 11, marginBottom: 6 }}>Small Business Initiative Rate</p>
+          <p style={{ color: "#4b5563", fontSize: 11, lineHeight: 1.5, maxWidth: 300, margin: "0 auto 20px", textAlign: "center" }}>This audit normally costs $299. We created our small business program to make professional-grade online presence analysis affordable for local businesses like yours.</p>
 
           <button onClick={handleUnlock} disabled={unlocking}
             style={{ width: "100%", background: "#f97316", color: "#fff", fontSize: 16, fontWeight: 700, padding: "16px 0", borderRadius: 10, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: unlocking ? 0.6 : 1 }}>

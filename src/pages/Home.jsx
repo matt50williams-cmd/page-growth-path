@@ -32,7 +32,7 @@ const TESTIMONIALS = [
 ];
 
 const FAQS = [
-  { q: "Is this really free?", a: "The initial scan is 100% free — no account, no credit card. You'll see your overall score and top issues instantly. The full detailed report with your action plan is available for a one-time $39.99." },
+  { q: "Is this really free?", a: "The initial scan is 100% free — no account, no credit card. You'll see your overall score and top issues instantly. The full detailed report with your action plan is available for a one-time $39." },
   { q: "How long does the scan take?", a: "About 60 seconds. Our AI checks 20+ platforms simultaneously and generates your score in real time." },
   { q: "What platforms do you check?", a: "Google Business Profile, Yelp, Facebook, Bing Places, Apple Maps, your website SEO, directory listings, NAP consistency, review sites, and competitor positioning." },
   { q: "Do I need a website to use this?", a: "No. We scan your business across all platforms. If you do have a website, we'll include a full SEO analysis as a bonus." },

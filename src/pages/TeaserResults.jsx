@@ -179,10 +179,11 @@ export default function TeaserResults() {
             {/* RIGHT — buy */}
             <div style={{ padding: "22px 24px" }}>
               <p style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#f97316", marginBottom: 10 }}>Get every issue + exact fix</p>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 14 }}>
-                <span style={{ color: "#64748b", fontSize: 14, textDecoration: "line-through" }}>$197</span>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 4 }}>
+                <span style={{ color: "#64748b", fontSize: 14, textDecoration: "line-through" }}>$299</span>
                 <span style={{ ...heading, fontSize: 32, fontWeight: 800, color: "#fff" }}>$39</span>
               </div>
+              <p style={{ color: "#64748b", fontSize: 10, marginBottom: 12 }}>Small Business Initiative Rate</p>
               <button onClick={handleUnlock} disabled={processing}
                 style={{ width: "100%", background: "#f97316", color: "#fff", fontSize: 15, fontWeight: 700, padding: "13px 0", borderRadius: 8, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: processing ? 0.6 : 1 }}>
                 {processing ? <><Loader2 style={{ width: 16, height: 16, animation: "spin 1s linear infinite" }} /> Processing...</> : <>Fix My Business — $39 <ArrowRight style={{ width: 16, height: 16 }} /></>}

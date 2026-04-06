@@ -292,7 +292,7 @@ export default function SubmitPage() {
 
             {/* Pricing */}
             <div style={{ background: "rgba(37,99,235,0.08)", border: "1px solid rgba(37,99,235,0.2)", borderRadius: 16, padding: 28, textAlign: "center", marginBottom: 20 }}>
-              <p style={{ color: "#64748b", fontSize: 13, marginBottom: 4 }}><span style={{ textDecoration: "line-through" }}>$197</span></p>
+              <p style={{ color: "#64748b", fontSize: 13, marginBottom: 4 }}><span style={{ textDecoration: "line-through" }}>$299</span></p>
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 2, marginBottom: 8 }}>
                 <span style={{ ...heading, fontSize: 48, fontWeight: 800, color: "#fff" }}>$39</span>
               </div>
