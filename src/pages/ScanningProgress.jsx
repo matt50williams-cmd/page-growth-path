@@ -43,12 +43,12 @@ export default function ScanningProgress() {
     return () => { document.head.removeChild(link); };
   }, []);
 
-  // Progress bar: 0→95 over 8s
+  // Progress bar: 0→95 over 20s (accommodates Render cold start)
   useEffect(() => {
     const interval = setInterval(() => {
       setProgress(p => {
         if (p >= 95) { clearInterval(interval); return 95; }
-        return p + (95 / 80); // ~80 ticks over 8s at 100ms
+        return p + (95 / 200); // ~200 ticks over 20s at 100ms
       });
     }, 100);
     return () => clearInterval(interval);
@@ -72,35 +72,47 @@ export default function ScanningProgress() {
   useEffect(() => {
     if (!businessName) { setError("No business name provided."); return; }
     const controller = new AbortController();
-    const timeout = setTimeout(() => { controller.abort(); setError("Scan timed out. Please try again."); }, 30000);
+    const timeout = setTimeout(() => { controller.abort(); setError("Scan timed out. The server may be waking up — please try again in 30 seconds."); }, 90000);
 
-    fetch(`${API_BASE}/api/scan/teaser`, {
+    const scanUrl = `${API_BASE}/api/scan/teaser`;
+    console.log("[SCAN] Calling:", scanUrl, { businessName, city, state });
+
+    fetch(scanUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ businessName: businessName || "", city: city || "", state: state || "" }),
       signal: controller.signal,
     })
-      .then(r => { if (!r.ok) throw new Error("Scan failed"); return r.json(); })
+      .then(async (r) => {
+        console.log("[SCAN] Response status:", r.status);
+        if (!r.ok) {
+          const errText = await r.text().catch(() => "");
+          console.error("[SCAN] Error body:", errText);
+          throw new Error(`Scan failed (${r.status}): ${errText.slice(0, 200)}`);
+        }
+        return r.json();
+      })
       .then(data => {
+        console.log("[SCAN] Success. Keys:", Object.keys(data));
         clearTimeout(timeout);
         scanDataRef.current = data;
         scanDone.current = true;
-        // Store Google Places data for pre-filling downstream
         try {
           localStorage.setItem("pageaudit_business_data", JSON.stringify({
-            businessName: data.google?.name || businessName,
-            address: data.google?.address || "",
-            phone: data.google?.phone || "",
-            website: data.google?.website || "",
+            businessName: data.businessName || data.google?.name || businessName,
+            address: data.address || data.google?.address || "",
+            phone: data.phone || data.google?.phone || "",
+            website: data.website || data.google?.website || "",
             city: city,
             state: state,
-            placeId: data.google?.placeId || "",
-            rating: data.google?.rating || null,
-            reviewCount: data.google?.reviewCount || null,
+            placeId: data.placeId || data.google?.placeId || "",
+            rating: data.rating || data.google?.rating || null,
+            reviewCount: data.reviewCount || data.google?.reviewCount || null,
           }));
         } catch {}
       })
       .catch(err => {
+        console.error("[SCAN] Catch:", err.message);
         clearTimeout(timeout);
         if (err.name !== "AbortError") setError(err.message || "Scan failed. Please try again.");
       });
