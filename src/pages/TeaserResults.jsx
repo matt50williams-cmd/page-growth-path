@@ -121,7 +121,7 @@ export default function TeaserResults() {
 
       {/* ═══ 1. STATUS BAR ═══ */}
       <div style={{ background: "rgba(16,185,129,0.06)", borderBottom: "1px solid rgba(16,185,129,0.15)", padding: "8px 20px" }}>
-        <div style={{ maxWidth: 800, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
+        <div style={{ maxWidth: 960, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#10b981", display: "inline-block" }} />
             <span style={{ color: "#10b981", fontSize: 12, fontWeight: 600 }}>Scan Complete</span>
@@ -130,7 +130,7 @@ export default function TeaserResults() {
         </div>
       </div>
 
-      <div style={{ maxWidth: 800, margin: "0 auto", padding: "28px 20px 80px" }}>
+      <div style={{ maxWidth: 960, margin: "0 auto", padding: "32px 24px 80px" }}>
 
         {/* ═══ 2. HEADLINE + PILLS ═══ */}
         <div style={{ textAlign: "center", marginBottom: 24 }}>
