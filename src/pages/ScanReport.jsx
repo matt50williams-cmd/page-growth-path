@@ -1,14 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
-import { BarChart2, Download, Share2, Copy, CheckCircle, AlertCircle, Search, Globe, MapPin, Star as StarIcon, Loader2, Shield, Zap, Facebook } from "lucide-react";
+import { BarChart2, Download, Share2, Copy, CheckCircle, AlertCircle, Search, Globe, MapPin, Star as StarIcon, Loader2, Shield, Zap } from "lucide-react";
 
 const API_BASE = "https://pageaudit-engine.onrender.com";
 
 function scoreColor(s) { if (s >= 70) return "#10b981"; if (s >= 45) return "#f59e0b"; return "#ef4444"; }
 
-const PLATFORM_ICONS = { google: Search, website: Globe, yelp: StarIcon, nap: MapPin, facebook: Facebook, bing: Globe, bbb: Shield };
-const PLATFORM_LABELS = { google: "Google Business Profile", website: "Website", yelp: "Yelp", nap: "NAP Consistency", facebook: "Facebook", bing: "Bing Places", bbb: "BBB" };
-const PLATFORM_MAX = { google: 30, website: 25, facebook: 15, yelp: 15, bing: 5, bbb: 5, nap: 5 };
+const PLATFORM_ICONS = { google: Search, website: Globe, search: Search, nap: MapPin, reviews: StarIcon };
+const PLATFORM_LABELS = { google: "Google Business Profile", website: "Website Quality", search: "Search Visibility", nap: "NAP Consistency", reviews: "Review Intelligence" };
+const PLATFORM_MAX = { google: 35, website: 25, search: 20, nap: 10, reviews: 10 };
 
 const PLANS = [
   { name: "Monthly Monitor", price: "$49", period: "/mo", features: ["Monthly re-scans", "Score tracking", "Email alerts"], featured: false },
@@ -56,13 +56,13 @@ export default function ScanReport() {
 
   if (error || !data) return (<div style={{ minHeight: "100vh", background: "#0a0f1e", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Inter', sans-serif" }}><div style={{ textAlign: "center" }}><AlertCircle style={{ width: 48, height: 48, color: "#ef4444", margin: "0 auto 16px", display: "block" }} /><h2 style={{ ...H, color: "#fff", fontSize: 24, marginBottom: 8 }}>Report Not Found</h2><p style={{ color: "#94a3b8", fontSize: 15, marginBottom: 24 }}>{error || "We couldn't load this report."}</p><button onClick={() => navigate("/")} style={{ background: "#f97316", color: "#fff", border: "none", padding: "12px 24px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Go Home</button></div></div>);
 
-  const { overallScore, scoreLabel, platforms, allFindings, topPriorities, summary, industryContext, monthlyGoal, dataQuality, businessName, city, state, scannedAt, competitors, revenueImpact } = data;
+  const { overallScore, scoreLabel, platforms, allFindings, topPriorities, summary, monthlyGoal, dataQuality, businessName, city, state, scannedAt, competitors, revenueImpact, quickWins, whatYoureDoingWell, competitorIntel } = data;
   const sc = scoreColor(overallScore || 0);
   const W = { background: "#fff", borderRadius: 14, boxShadow: "0 2px 12px rgba(0,0,0,0.15)" };
   const critical = (allFindings || []).filter(f => f.severity === "critical");
   const warnings = (allFindings || []).filter(f => f.severity === "warning");
   const goods = (allFindings || []).filter(f => f.severity === "good");
-  const platformKeys = ["google", "website", "facebook", "yelp", "bing", "bbb", "nap"];
+  const platformKeys = ["google", "website", "search", "nap", "reviews"];
 
   return (
     <div style={{ minHeight: "100vh", background: "#0a0f1e", fontFamily: "'Inter', sans-serif" }}>
@@ -92,6 +92,7 @@ export default function ScanReport() {
             </div>
           </div>
           <p style={{ color: sc, fontSize: 16, fontWeight: 700, marginTop: 10 }}>{scoreLabel || "Not Scored"}</p>
+          {dataQuality && <p style={{ color: "#64748b", fontSize: 12, marginTop: 8 }}>{dataQuality.dataPoints || "—"} data points · {dataQuality.platformsFound || "—"} platforms · {dataQuality.scanTime || "—"}s</p>}
         </div>
 
         {/* ═══ 2. PLATFORM SCORES GRID ═══ */}
@@ -128,8 +129,8 @@ export default function ScanReport() {
           <div style={{ marginBottom: 32 }}>
             <h2 style={{ ...H, fontSize: 22, fontWeight: 700, color: "#fff", marginBottom: 12 }}>What We Found</h2>
             <div style={{ ...W, padding: 24 }}>
-              <p style={{ color: "#374151", fontSize: 15, lineHeight: 1.7, marginBottom: industryContext ? 12 : 0 }}>{summary}</p>
-              {industryContext && <p style={{ color: "#6b7280", fontSize: 13 }}>{industryContext}</p>}
+              <p style={{ color: "#374151", fontSize: 15, lineHeight: 1.7, marginBottom: competitorIntel ? 12 : 0 }}>{summary}</p>
+              {competitorIntel && <p style={{ color: "#6b7280", fontSize: 13 }}>{competitorIntel}</p>}
               {revenueImpact && <div style={{ marginTop: 14, padding: 14, background: "#fef3c7", borderRadius: 10 }}><p style={{ color: "#92400e", fontSize: 13, fontWeight: 600 }}>{"💰 Revenue Impact: "}{revenueImpact}</p></div>}
             </div>
             {monthlyGoal && (
@@ -194,6 +195,39 @@ export default function ScanReport() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {/* ═══ 5b. QUICK WINS ═══ */}
+        {quickWins?.length > 0 && (
+          <div style={{ marginBottom: 32 }}>
+            <h2 style={{ ...H, fontSize: 22, fontWeight: 700, color: "#fff", marginBottom: 4 }}>Quick Wins — Fix Today, Free</h2>
+            <p style={{ color: "#94a3b8", fontSize: 13, marginBottom: 16 }}>Under 15 minutes each, zero cost</p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12 }}>
+              {quickWins.map((w, i) => (
+                <div key={i} style={{ ...W, padding: 18, borderTop: "3px solid #10b981" }}>
+                  <h3 style={{ color: "#111827", fontSize: 14, fontWeight: 700, marginBottom: 6 }}>{w.title || w}</h3>
+                  {w.steps && <div style={{ marginBottom: 8 }}>{w.steps.map((s, j) => <p key={j} style={{ color: "#6b7280", fontSize: 12, lineHeight: 1.5 }}>{j + 1}. {s}</p>)}</div>}
+                  {w.timeNeeded && <p style={{ color: "#9ca3af", fontSize: 11 }}>Time: {w.timeNeeded}</p>}
+                  {w.link && <a href={w.link} target="_blank" rel="noopener noreferrer" style={{ color: "#2563eb", fontSize: 12, fontWeight: 600, textDecoration: "none" }}>Go fix it →</a>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ═══ 5c. WHAT YOU'RE DOING WELL ═══ */}
+        {whatYoureDoingWell?.length > 0 && (
+          <div style={{ marginBottom: 32 }}>
+            <h2 style={{ ...H, fontSize: 22, fontWeight: 700, color: "#fff", marginBottom: 16 }}>What You're Doing Well</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {whatYoureDoingWell.map((item, i) => (
+                <div key={i} style={{ ...W, padding: 14, borderLeft: "4px solid #10b981", display: "flex", alignItems: "center", gap: 10 }}>
+                  <CheckCircle style={{ width: 18, height: 18, color: "#10b981", flexShrink: 0 }} />
+                  <p style={{ color: "#111827", fontSize: 14 }}>{item}</p>
+                </div>
+              ))}
             </div>
           </div>
         )}
