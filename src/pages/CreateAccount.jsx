@@ -199,8 +199,9 @@ export default function CreateAccount() {
     try {
       await signup(order.email, password, order.name);
       const auditId = order.auditId || searchParams.get("audit_id");
+      const stripeSession = searchParams.get("session_id") || "";
       // Navigate to report processing — the new scan engine runs there
-      navigate("/report-processing?id=" + auditId, {
+      navigate("/report-processing?id=" + auditId + (stripeSession ? "&session_id=" + stripeSession : ""), {
         state: {
           auditId,
           businessName: order.businessName || order.name || "",
@@ -215,7 +216,8 @@ export default function CreateAccount() {
         try {
           await login(order.email, password);
           const auditId = order.auditId || searchParams.get("audit_id");
-          navigate("/report-processing?id=" + auditId, {
+          const stripeSession2 = searchParams.get("session_id") || "";
+          navigate("/report-processing?id=" + auditId + (stripeSession2 ? "&session_id=" + stripeSession2 : ""), {
             state: {
               auditId,
               businessName: order.businessName || order.name || "",

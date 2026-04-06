@@ -94,7 +94,17 @@ export default function ReportProcessing() {
     if (!auditId) { setError("No audit ID found."); return; }
 
     const runScan = async () => {
-      // Poll for payment confirmation — up to 15 times, every 2 seconds
+      // First: verify payment directly with Stripe (this also sets paid=true in DB)
+      const sessionId = new URLSearchParams(window.location.search).get("session_id");
+      if (sessionId) {
+        try {
+          const vRes = await fetch(API_BASE + "/api/stripe/verify/" + sessionId);
+          const vData = await vRes.json();
+          console.log("[VERIFY] Payment verified:", vData);
+        } catch (e) { console.log("[VERIFY] Error:", e.message); }
+      }
+
+      // Then poll for confirmation — up to 15 times, every 2 seconds
       let paid = false;
       for (let i = 0; i < 15; i++) {
         try {
