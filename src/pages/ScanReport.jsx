@@ -295,46 +295,59 @@ export default function ScanReport() {
           </div>
         )}
 
-        {/* ═══ 5. COMPETITOR COMPARISON ═══ */}
-        {(competitors?.competitors?.length > 0 || competitorAnalysis) && (
-          <div style={{ marginBottom: 32 }}>
-            <h2 style={{ ...H, fontSize: 22, fontWeight: 700, color: "#0f172a", marginBottom: 16 }}>Competitor Comparison</h2>
-            {competitorSummary && <p style={{ color: "#4b5563", fontSize: 14, lineHeight: 1.6, marginBottom: 16 }}>{competitorSummary}</p>}
-            {competitors?.competitors?.length > 0 && (
-              <div style={{ ...W, padding: 20 }}>
-                {competitors.ranking && <p style={{ fontSize: 14, fontWeight: 700, marginBottom: 14, color: competitors.ranking <= 2 ? "#059669" : "#dc2626" }}>You rank #{competitors.ranking} of {competitors.totalInArea} businesses in your area</p>}
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-                  <thead><tr style={{ borderBottom: "2px solid #e5e7eb" }}>
-                    <th style={{ textAlign: "left", padding: "8px 0", color: "#6b7280", fontWeight: 600 }}>Business</th>
-                    <th style={{ textAlign: "center", padding: "8px 0", color: "#6b7280", fontWeight: 600 }}>Rating</th>
-                    <th style={{ textAlign: "center", padding: "8px 0", color: "#6b7280", fontWeight: 600 }}>Reviews</th>
-                  </tr></thead>
-                  <tbody>
-                    <tr style={{ borderBottom: "1px solid #f3f4f6", background: "#f0fdf4" }}>
-                      <td style={{ padding: "10px 0", fontWeight: 700, color: "#0f172a" }}>{businessName} (You)</td>
-                      <td style={{ textAlign: "center", fontWeight: 700, color: "#059669" }}>{platforms?.google?.rating || "—"}</td>
-                      <td style={{ textAlign: "center", fontWeight: 700, color: "#059669" }}>{platforms?.google?.reviewCount || "—"}</td>
-                    </tr>
-                    {competitors.competitors.map((c, i) => (
+        {/* ═══ 5. COMPETITOR COMPARISON (always shows) ═══ */}
+        <div style={{ marginBottom: 32 }}>
+          <h2 style={{ ...H, fontSize: 22, fontWeight: 700, color: "#0f172a", marginBottom: 6 }}>Competitor Comparison</h2>
+          {competitors?.estimated && <p style={{ color: "#9ca3af", fontSize: 12, marginBottom: 10 }}>Estimated competitors based on local search</p>}
+          {competitorSummary && <p style={{ color: "#4b5563", fontSize: 14, lineHeight: 1.6, marginBottom: 16 }}>{competitorSummary}</p>}
+
+          {competitors?.competitors?.length > 0 ? (
+            <div style={{ ...W, padding: 20 }}>
+              {competitors.ranking && <p style={{ fontSize: 14, fontWeight: 700, marginBottom: 14, color: competitors.ranking <= 2 ? "#059669" : "#dc2626" }}>You rank #{competitors.ranking} of {competitors.totalInArea} businesses in your area</p>}
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <thead><tr style={{ borderBottom: "2px solid #e5e7eb" }}>
+                  <th style={{ textAlign: "left", padding: "8px 0", color: "#6b7280", fontWeight: 600 }}>Business</th>
+                  <th style={{ textAlign: "center", padding: "8px 0", color: "#6b7280", fontWeight: 600 }}>Rating</th>
+                  <th style={{ textAlign: "center", padding: "8px 0", color: "#6b7280", fontWeight: 600 }}>Reviews</th>
+                </tr></thead>
+                <tbody>
+                  <tr style={{ borderBottom: "1px solid #f3f4f6", background: "#f0fdf4" }}>
+                    <td style={{ padding: "10px 0 10px 8px", fontWeight: 700, color: "#0f172a" }}>{businessName} (You)</td>
+                    <td style={{ textAlign: "center", fontWeight: 700, color: "#059669" }}>{platforms?.google?.rating || "—"}</td>
+                    <td style={{ textAlign: "center", fontWeight: 700, color: "#059669" }}>{platforms?.google?.reviewCount || "—"}</td>
+                  </tr>
+                  {competitors.competitors.map((c, i) => {
+                    const myRating = platforms?.google?.rating || 0;
+                    const myReviews = platforms?.google?.reviewCount || 0;
+                    const ratingColor = c.rating && myRating ? (c.rating > myRating ? "#dc2626" : c.rating < myRating ? "#059669" : "#6b7280") : "#6b7280";
+                    const reviewColor = c.reviewCount && myReviews ? (c.reviewCount > myReviews ? "#dc2626" : c.reviewCount < myReviews ? "#059669" : "#6b7280") : "#6b7280";
+                    return (
                       <tr key={i} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                        <td style={{ padding: "10px 0", color: "#374151" }}>{c.name}</td>
-                        <td style={{ textAlign: "center", color: "#6b7280" }}>{c.rating}</td>
-                        <td style={{ textAlign: "center", color: "#6b7280" }}>{c.reviewCount}</td>
+                        <td style={{ padding: "10px 0 10px 8px", color: "#374151" }}>{c.name}{c.estimated ? <span style={{ color: "#9ca3af", fontSize: 10, marginLeft: 6 }}>est.</span> : null}</td>
+                        <td style={{ textAlign: "center", color: ratingColor, fontWeight: 600 }}>{c.rating || "—"}</td>
+                        <td style={{ textAlign: "center", color: reviewColor, fontWeight: 600 }}>{c.reviewCount || "—"}</td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-            {competitorAnalysis && (
-              <div style={{ marginTop: 14 }}>
-                {competitorAnalysis.comparisonSummary && <div style={{ ...W, padding: 18, marginBottom: 10 }}><p style={{ color: "#374151", fontSize: 14, lineHeight: 1.65 }}>{competitorAnalysis.comparisonSummary}</p></div>}
-                {competitorAnalysis.keyGaps?.length > 0 && <div style={{ ...W, padding: 18, marginBottom: 10, borderLeft: "4px solid #ef4444" }}><p style={{ color: "#dc2626", fontSize: 11, fontWeight: 700, textTransform: "uppercase", marginBottom: 6 }}>Key Gaps</p>{competitorAnalysis.keyGaps.map((g, i) => <p key={i} style={{ color: "#4b5563", fontSize: 13, lineHeight: 1.5, marginBottom: 4 }}>• {g}</p>)}</div>}
-                {competitorAnalysis.opportunitiesToWin?.length > 0 && <div style={{ ...W, padding: 18, borderLeft: "4px solid #2563eb" }}><p style={{ color: "#2563eb", fontSize: 11, fontWeight: 700, textTransform: "uppercase", marginBottom: 6 }}>Opportunities</p>{competitorAnalysis.opportunitiesToWin.map((o, i) => <p key={i} style={{ color: "#4b5563", fontSize: 13, lineHeight: 1.5, marginBottom: 4 }}>• {o}</p>)}</div>}
-              </div>
-            )}
-          </div>
-        )}
+                    );
+                  })}
+                </tbody>
+              </table>
+              <p style={{ color: "#9ca3af", fontSize: 11, marginTop: 10 }}>Red = competitor is ahead. Green = you are ahead.</p>
+            </div>
+          ) : (
+            <div style={{ ...W, padding: 24, textAlign: "center" }}>
+              <p style={{ color: "#64748b", fontSize: 14, marginBottom: 6 }}>Competitor data is being gathered for {city || "your area"}.</p>
+              <p style={{ color: "#9ca3af", fontSize: 13 }}>A full comparison will appear after your next scan with verified business pages.</p>
+            </div>
+          )}
+
+          {competitorAnalysis && (
+            <div style={{ marginTop: 14 }}>
+              {competitorAnalysis.comparisonSummary && <div style={{ ...W, padding: 18, marginBottom: 10 }}><p style={{ color: "#374151", fontSize: 14, lineHeight: 1.65 }}>{competitorAnalysis.comparisonSummary}</p></div>}
+              {competitorAnalysis.keyGaps?.length > 0 && <div style={{ ...W, padding: 18, marginBottom: 10, borderLeft: "4px solid #ef4444" }}><p style={{ color: "#dc2626", fontSize: 11, fontWeight: 700, textTransform: "uppercase", marginBottom: 6 }}>Key Gaps</p>{competitorAnalysis.keyGaps.map((g, i) => <p key={i} style={{ color: "#4b5563", fontSize: 13, lineHeight: 1.5, marginBottom: 4 }}>• {g}</p>)}</div>}
+              {competitorAnalysis.opportunitiesToWin?.length > 0 && <div style={{ ...W, padding: 18, borderLeft: "4px solid #2563eb" }}><p style={{ color: "#2563eb", fontSize: 11, fontWeight: 700, textTransform: "uppercase", marginBottom: 6 }}>Opportunities</p>{competitorAnalysis.opportunitiesToWin.map((o, i) => <p key={i} style={{ color: "#4b5563", fontSize: 13, lineHeight: 1.5, marginBottom: 4 }}>• {o}</p>)}</div>}
+            </div>
+          )}
+        </div>
 
         {/* ═══ 5b. QUICK WINS ═══ */}
         {quickWins?.length > 0 && (
