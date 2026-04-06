@@ -63,17 +63,20 @@ export default function Home() {
     return () => observer.disconnect();
   }, []);
 
+  const [scanError, setScanError] = useState("");
+
   const handleScan = (name) => {
     const raw = (name || "").trim();
-    // Try to parse "Joe's Pizza Dallas TX" → businessName, city, state
+    if (!raw) { setScanError("Please enter a business name and city"); return; }
+    if (raw.split(/\s+/).length < 2) { setScanError("Please include both business name and city (e.g. Joe's Pizza Dallas TX)"); return; }
+    setScanError("");
+    // Parse "Joe's Pizza Dallas TX" → businessName, city, state
     const stateMatch = raw.match(/\b([A-Z]{2})\s*$/);
     const st = stateMatch ? stateMatch[1] : "";
     const withoutState = st ? raw.slice(0, -st.length).trim().replace(/,\s*$/, "") : raw;
-    // Last word(s) after business name could be city — rough heuristic
     const parts = withoutState.split(/\s+/);
     let biz = raw, ct = "";
     if (parts.length >= 3) {
-      // Assume last 1-2 words are city
       const cityWords = parts.length >= 4 ? parts.slice(-2) : parts.slice(-1);
       ct = cityWords.join(" ");
       biz = parts.slice(0, parts.length - cityWords.length).join(" ");
@@ -127,13 +130,14 @@ export default function Home() {
               <div style={{ flex: 1, minWidth: 200, position: "relative" }}>
                 <Search style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", width: 18, height: 18, color: "#64748b" }} />
                 <input type="text" value={businessName} onChange={e => setBusinessName(e.target.value)} onKeyDown={e => e.key === "Enter" && handleScan(businessName)} placeholder="e.g. Joe's Plumbing Dallas TX"
-                  style={{ width: "100%", background: "rgba(255,255,255,0.05)", color: "#fff", fontSize: 15, padding: "16px 16px 16px 48px", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, outline: "none", boxSizing: "border-box" }} />
+                  style={{ width: "100%", background: "rgba(255,255,255,0.05)", color: "#fff", fontSize: 15, padding: "16px 16px 16px 48px", border: scanError ? "1px solid rgba(239,68,68,0.4)" : "1px solid rgba(255,255,255,0.05)", borderRadius: 12, outline: "none", boxSizing: "border-box" }} />
               </div>
               <button onClick={() => handleScan(businessName)}
                 style={{ background: "#f97316", color: "#fff", fontWeight: 700, fontSize: 15, padding: "16px 32px", borderRadius: 12, border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap" }}>
                 Scan Free <ArrowRight style={{ width: 16, height: 16 }} />
               </button>
             </div>
+            {scanError && <p style={{ color: "#ef4444", fontSize: 13, fontWeight: 600, textAlign: "center", marginTop: 10 }}>{scanError}</p>}
             <div style={{ display: "flex", justifyContent: "center", gap: 20, flexWrap: "wrap", marginTop: 16, color: "#64748b", fontSize: 13 }}>
               <span style={{ display: "flex", alignItems: "center", gap: 6 }}><Shield style={{ width: 14, height: 14 }} /> No account needed</span>
               <span style={{ display: "flex", alignItems: "center", gap: 6 }}><Zap style={{ width: 14, height: 14 }} /> No credit card</span>
