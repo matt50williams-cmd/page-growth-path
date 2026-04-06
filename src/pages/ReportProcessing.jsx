@@ -141,7 +141,8 @@ export default function ReportProcessing() {
         clearInterval(check);
         setProgress(100);
         setTimeout(() => {
-          navigate("/report/scan/" + auditId, { state: { scanData: scanDataRef.current } });
+          console.log("[REPORT PROCESSING] Navigating to report. auditId:", auditId, "hasData:", !!scanDataRef.current);
+          navigate("/report/scan/" + auditId, { replace: true, state: { scanData: scanDataRef.current, auditId: auditId } });
         }, 800);
       }
     }, 300);

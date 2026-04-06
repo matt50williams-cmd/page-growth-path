@@ -42,12 +42,43 @@ export default function ScanReport() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
   useEffect(() => {
+    console.log("[SCAN REPORT] Init. auditId:", auditId, "hasStateData:", !!location.state?.scanData);
     if (data) { setLoading(false); return; }
     if (!auditId) { setError("No audit ID provided."); setLoading(false); return; }
-    fetch(`${API_BASE}/api/scan/result/${auditId}`)
-      .then(r => { if (!r.ok) throw new Error("Not found"); return r.json(); })
-      .then(d => { setData(d); setLoading(false); })
-      .catch(e => { setError(e.message); setLoading(false); });
+
+    // Try scan/result endpoint first, then fall back to audits endpoint
+    const loadData = async () => {
+      // Attempt 1: scan results table
+      try {
+        const r = await fetch(`${API_BASE}/api/scan/result/${auditId}`);
+        if (r.ok) { const d = await r.json(); if (d && !d.error) { setData(d); setLoading(false); return; } }
+      } catch {}
+
+      // Attempt 2: wait 3 seconds and retry (scan may still be saving)
+      await new Promise(r => setTimeout(r, 3000));
+      try {
+        const r = await fetch(`${API_BASE}/api/scan/result/${auditId}`);
+        if (r.ok) { const d = await r.json(); if (d && !d.error) { setData(d); setLoading(false); return; } }
+      } catch {}
+
+      // Attempt 3: try the regular audit endpoint for legacy reports
+      try {
+        const r = await fetch(`${API_BASE}/api/audits/${auditId}`);
+        if (r.ok) {
+          const audit = await r.json();
+          if (audit?.report_text) {
+            // Legacy report — redirect to old report page
+            window.location.href = `/report/${auditId}`;
+            return;
+          }
+        }
+      } catch {}
+
+      setError("Report not found. It may still be generating — check your dashboard in a minute.");
+      setLoading(false);
+    };
+
+    loadData();
   }, [auditId]);
 
   useEffect(() => {
