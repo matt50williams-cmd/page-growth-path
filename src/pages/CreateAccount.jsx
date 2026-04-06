@@ -173,7 +173,10 @@ export default function CreateAccount() {
       return;
     }
 
-    navigate("/submit-your-page");
+    // No localStorage and no audit_id in URL — can't proceed
+    console.log("[CREATE ACCOUNT] No order data found. searchParams:", Object.fromEntries(searchParams.entries()));
+    // Don't redirect immediately — give the page a chance to load
+    // The user may have navigated here directly
   }, [navigate, searchParams]);
 
   const validatePasswords = () => {

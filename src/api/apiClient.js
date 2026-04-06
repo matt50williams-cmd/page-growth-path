@@ -14,7 +14,7 @@ async function apiFetch(path, options = {}) {
   const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
   if (response.status === 401) {
     clearToken();
-    const publicPaths = ['/', '/submit-your-page', '/analyzing', '/audit-preview', '/privacy', '/terms'];
+    const publicPaths = ['/', '/submit-your-page', '/analyzing', '/audit-preview', '/privacy', '/terms', '/create-account', '/post-payment-details', '/report-processing', '/teaser-results', '/scanning'];
     if (!publicPaths.includes(window.location.pathname)) {
       window.location.href = '/';
     }
