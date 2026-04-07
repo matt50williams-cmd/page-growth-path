@@ -122,7 +122,7 @@ export default function ScanReport() {
 
   if (error || !data) return (<div style={{ minHeight: "100vh", background: "#f9fafb", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Inter', sans-serif" }}><div style={{ textAlign: "center" }}><AlertCircle style={{ width: 48, height: 48, color: "#ef4444", margin: "0 auto 16px", display: "block" }} /><h2 style={{ ...H, color: "#0f172a", fontSize: 24, marginBottom: 8 }}>Report Not Found</h2><p style={{ color: "#64748b", fontSize: 15, marginBottom: 24 }}>{error || "We couldn't load this report."}</p><button onClick={() => navigate("/")} style={{ background: "#2563eb", color: "#fff", border: "none", padding: "12px 24px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Go Home</button></div></div>);
 
-  const { overallScore, scoreLabel, platforms, allFindings: rawFindings, topPriorities, summary, monthlyGoal, dataQuality, businessName, city, state, scannedAt, competitors: rawCompetitors, revenueImpact, quickWins, whatYoureDoingWell, competitorIntel, snapshots, verifiedPages, presenceSection, reportHeadline, lossSummary, competitorSummary, competitorAnalysis, priorityFix } = data;
+  const { overallScore, scoreLabel, platforms, allFindings: rawFindings, topPriorities, summary, monthlyGoal, dataQuality, businessName, city, state, scannedAt, competitors: rawCompetitors, revenueImpact, quickWins, whatYoureDoingWell, competitorIntel, snapshots, verifiedPages, presenceSection, reportHeadline, lossSummary, competitorSummary, competitorAnalysis, priorityFix, operationalInsights, marketOpportunities, webResearch, businessIntelligence, bbbData } = data;
   const sc = scoreColor(overallScore || 0);
   const W = { background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb" };
   const platformKeys = Object.keys(platforms || {}).filter(k => platforms[k] && !platforms[k].excluded);
@@ -267,12 +267,28 @@ export default function ScanReport() {
         </div>
 
         {/* ═══ 3. WHAT WE FOUND ═══ */}
+        {/* ═══ 3. COMPANY OVERVIEW (from web research) ═══ */}
+        {webResearch?.companyOverview && (
+          <div style={{ ...W, padding: 24, marginBottom: 20 }}>
+            <h3 style={{ ...H, fontSize: 16, fontWeight: 700, color: "#0f172a", marginBottom: 12 }}>About {businessName}</h3>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
+              {webResearch.companyOverview.founded && <div><p style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", marginBottom: 2 }}>Founded</p><p style={{ fontSize: 14, color: "#0f172a", fontWeight: 600 }}>{webResearch.companyOverview.founded}</p></div>}
+              {webResearch.companyOverview.owners && <div><p style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", marginBottom: 2 }}>Owners</p><p style={{ fontSize: 14, color: "#0f172a" }}>{webResearch.companyOverview.owners}</p></div>}
+              {webResearch.companyOverview.serviceArea && <div><p style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", marginBottom: 2 }}>Service Area</p><p style={{ fontSize: 14, color: "#0f172a" }}>{webResearch.companyOverview.serviceArea}</p></div>}
+              {webResearch.companyOverview.specialties?.length > 0 && <div><p style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", marginBottom: 2 }}>Specialties</p><p style={{ fontSize: 14, color: "#0f172a" }}>{webResearch.companyOverview.specialties.join(", ")}</p></div>}
+            </div>
+            {webResearch.companyOverview.certifications?.length > 0 && <div style={{ marginTop: 10 }}><p style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", marginBottom: 2 }}>Certifications</p><p style={{ fontSize: 13, color: "#374151" }}>{webResearch.companyOverview.certifications.join(" · ")}</p></div>}
+            {webResearch.companyOverview.awardsOrRecognition?.length > 0 && <div style={{ marginTop: 8 }}><p style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", marginBottom: 2 }}>Awards & Recognition</p><p style={{ fontSize: 13, color: "#374151" }}>{webResearch.companyOverview.awardsOrRecognition.join(" · ")}</p></div>}
+          </div>
+        )}
+
+        {/* ═══ 3b. WHAT WE FOUND ═══ */}
         {summary && (
           <div style={{ marginBottom: 32 }}>
             <h2 style={{ ...H, fontSize: 22, fontWeight: 700, color: "#0f172a", marginBottom: 12 }}>What We Found</h2>
             <div style={{ ...W, padding: 24 }}>
               <p style={{ color: "#374151", fontSize: 15, lineHeight: 1.7, marginBottom: competitorIntel ? 12 : 0 }}>{summary}</p>
-              {competitorIntel && <p style={{ color: "#6b7280", fontSize: 13 }}>{competitorIntel}</p>}
+              {competitorIntel && <p style={{ color: "#4b5563", fontSize: 14, lineHeight: 1.6, marginTop: 8 }}>{competitorIntel}</p>}
               {revenueImpact && <div style={{ marginTop: 14, padding: 14, background: "#fef3c7", borderRadius: 10 }}><p style={{ color: "#92400e", fontSize: 13, fontWeight: 600 }}>Revenue Impact: {revenueImpact}</p></div>}
             </div>
             {monthlyGoal && (
@@ -281,6 +297,69 @@ export default function ScanReport() {
                 <p style={{ color: "#0f172a", fontSize: 15, fontWeight: 600 }}>{monthlyGoal}</p>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ═══ 3c. BBB + REPUTATION ═══ */}
+        {(bbbData || webResearch?.yelp?.found || webResearch?.facebook?.found) && (
+          <div style={{ marginBottom: 32 }}>
+            <h2 style={{ ...H, fontSize: 20, fontWeight: 700, color: "#0f172a", marginBottom: 14 }}>Reputation Across the Web</h2>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+              {bbbData?.found && (
+                <div style={{ ...W, padding: 18 }}>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: "#2563eb", textTransform: "uppercase", marginBottom: 8 }}>BBB</p>
+                  <p style={{ ...H, fontSize: 28, fontWeight: 800, color: "#0f172a" }}>{bbbData.rating || "—"}</p>
+                  <p style={{ fontSize: 12, color: bbbData.accredited ? "#059669" : "#9ca3af", fontWeight: 600 }}>{bbbData.accredited ? "Accredited" : "Not Accredited"}</p>
+                  {bbbData.complaintCount > 0 && <p style={{ fontSize: 12, color: "#dc2626", marginTop: 4 }}>{bbbData.complaintCount} complaint{bbbData.complaintCount > 1 ? "s" : ""}</p>}
+                </div>
+              )}
+              {webResearch?.yelp?.found && (
+                <div style={{ ...W, padding: 18 }}>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: "#dc2626", textTransform: "uppercase", marginBottom: 8 }}>Yelp</p>
+                  <p style={{ ...H, fontSize: 28, fontWeight: 800, color: "#0f172a" }}>{webResearch.yelp.rating || "—"}</p>
+                  <p style={{ fontSize: 12, color: "#6b7280" }}>{webResearch.yelp.reviewCount || 0} reviews</p>
+                </div>
+              )}
+              {webResearch?.facebook?.found && (
+                <div style={{ ...W, padding: 18 }}>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: "#1877F2", textTransform: "uppercase", marginBottom: 8 }}>Facebook</p>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: "#0f172a" }}>{webResearch.facebook.followerCount || "Page found"}</p>
+                  <p style={{ fontSize: 12, color: "#6b7280" }}>Posting: {webResearch.facebook.postingFrequency || "unknown"}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ═══ 3d. OPERATIONAL INSIGHTS ═══ */}
+        {operationalInsights?.length > 0 && (
+          <div style={{ marginBottom: 32 }}>
+            <h2 style={{ ...H, fontSize: 20, fontWeight: 700, color: "#0f172a", marginBottom: 6 }}>Operational Insights from Customer Reviews</h2>
+            <p style={{ color: "#64748b", fontSize: 13, marginBottom: 14 }}>Patterns found in customer feedback that suggest business improvements beyond marketing</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {operationalInsights.map((insight, i) => (
+                <div key={i} style={{ ...W, padding: 16, borderLeft: "4px solid #f59e0b", display: "flex", alignItems: "flex-start", gap: 10 }}>
+                  <AlertCircle style={{ width: 18, height: 18, color: "#f59e0b", flexShrink: 0, marginTop: 1 }} />
+                  <p style={{ color: "#374151", fontSize: 14, lineHeight: 1.6, margin: 0 }}>{insight}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ═══ 3e. MARKET OPPORTUNITIES ═══ */}
+        {marketOpportunities?.length > 0 && (
+          <div style={{ marginBottom: 32 }}>
+            <h2 style={{ ...H, fontSize: 20, fontWeight: 700, color: "#0f172a", marginBottom: 6 }}>Market Opportunities</h2>
+            <p style={{ color: "#64748b", fontSize: 13, marginBottom: 14 }}>Gaps in your local market that {businessName} could fill</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {marketOpportunities.map((opp, i) => (
+                <div key={i} style={{ ...W, padding: 16, borderLeft: "4px solid #10b981", display: "flex", alignItems: "flex-start", gap: 10 }}>
+                  <Zap style={{ width: 18, height: 18, color: "#10b981", flexShrink: 0, marginTop: 1 }} />
+                  <p style={{ color: "#374151", fontSize: 14, lineHeight: 1.6, margin: 0 }}>{opp}</p>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
