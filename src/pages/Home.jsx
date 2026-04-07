@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Search, Check, Star, Shield, Zap, Clock, ChevronRight, BarChart2 } from "lucide-react";
+import { ArrowRight, Globe, Check, Star, Shield, Zap, Clock, ChevronRight, BarChart2 } from "lucide-react";
 
 const PLATFORMS = ["Google", "Yelp", "Facebook", "Your Website", "NAP Consistency", "Competitors"];
 
@@ -50,56 +50,134 @@ const FAQS = [
   { q: "How is this different from free SEO tools?", a: "Free SEO tools check your website only. We scan your entire online presence — Google, Yelp, Facebook, NAP consistency — and compare you directly to local competitors. We tell you what's costing you customers, not just what's technically wrong." },
 ];
 
-function ScanBar({ biz, city, st, onBiz, onCity, onSt, onScan, dark = false, inputId = "", scanError = "" }) {
+const API_BASE = "https://pageaudit-engine.onrender.com";
+
+function ScanBar({ onNavigate, dark = false, inputId = "", scanError = "", setScanError }) {
+  const [websiteUrl, setWebsiteUrl] = useState("");
+  const [biz, setBiz] = useState("");
+  const [city, setCity] = useState("");
+  const [st, setSt] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [showManual, setShowManual] = useState(false);
+
   const bg = dark ? "#1e293b" : "#fff";
   const border = dark ? "#334155" : "#e2e8f0";
   const text = dark ? "#fff" : "#0f172a";
-  const placeholder = dark ? "#64748b" : "#94a3b8";
-  const inputStyle = () => ({
-    width: "100%", padding: "14px 14px", fontSize: 15, border: "none", outline: "none",
-    background: "transparent", color: text, boxSizing: "border-box",
-    fontFamily: "'Inter', sans-serif",
-  });
+  const muted = dark ? "#64748b" : "#94a3b8";
+
+  const handleWebsiteScan = async () => {
+    const url = websiteUrl.trim();
+    if (!url) { setScanError("Please enter your website URL"); return; }
+    setScanError("");
+    setLoading(true);
+    try {
+      const res = await fetch(API_BASE + "/api/scan/identify-from-website", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ websiteUrl: url }),
+      });
+      const data = await res.json();
+      if (data.businessName && data.city) {
+        onNavigate(data.businessName, data.city, data.state || "", url);
+      } else if (data.businessName) {
+        // Got name but no city — show manual fields prefilled
+        setBiz(data.businessName);
+        setShowManual(true);
+        setScanError("We found your business name but need your city to continue");
+      } else {
+        setShowManual(true);
+        setScanError("We couldn't identify your business from the website — please enter your details below");
+      }
+    } catch {
+      setShowManual(true);
+      setScanError("Couldn't reach that website — please enter your details below");
+    }
+    setLoading(false);
+  };
+
+  const handleManualScan = () => {
+    const b = biz.trim(), c = city.trim(), s = st.trim();
+    if (!b) { setScanError("Please enter a business name"); return; }
+    if (!c) { setScanError("Please enter a city"); return; }
+    setScanError("");
+    onNavigate(b, c, s, websiteUrl.trim() || "");
+  };
+
   return (
     <div>
+      {/* Primary: Website URL input */}
       <div style={{
-        display: "flex", flexWrap: "wrap", gap: 8, maxWidth: 600, margin: "0 auto",
-        background: bg, border: `2px solid ${border}`, borderRadius: 12, padding: 8,
+        display: "flex", maxWidth: 560, margin: "0 auto",
+        background: bg, border: `2px solid ${border}`, borderRadius: 12, overflow: "hidden",
         boxShadow: dark ? "none" : "0 2px 12px rgba(0,0,0,0.05)",
       }}>
-        <div style={{ flex: "2 1 180px", position: "relative" }}>
-          <Search style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", width: 16, height: 16, color: placeholder }} />
-          <input type="text" id={inputId || undefined} value={biz} onChange={e => onBiz(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && onScan()}
-            placeholder="Business name"
-            style={{ ...inputStyle(), paddingLeft: 36 }} />
+        <div style={{ flex: 1, position: "relative" }}>
+          <Globe style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", width: 18, height: 18, color: muted }} />
+          <input type="text" id={inputId || undefined} value={websiteUrl} onChange={e => setWebsiteUrl(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && handleWebsiteScan()}
+            placeholder="Enter your website URL"
+            style={{ width: "100%", padding: "16px 16px 16px 48px", fontSize: 16, border: "none", outline: "none", background: "transparent", color: text, boxSizing: "border-box", fontFamily: "'Inter', sans-serif" }} />
         </div>
-        <div style={{ flex: "1 1 110px", borderLeft: `1px solid ${border}` }}>
-          <input type="text" value={city} onChange={e => onCity(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && onScan()}
-            placeholder="City"
-            style={inputStyle()} />
-        </div>
-        <div style={{ flex: "0 0 70px", borderLeft: `1px solid ${border}` }}>
-          <input type="text" value={st} onChange={e => onSt(e.target.value.toUpperCase().slice(0, 2))}
-            onKeyDown={e => e.key === "Enter" && onScan()}
-            placeholder="ST"
-            maxLength={2}
-            style={{ ...inputStyle(), textAlign: "center" }} />
-        </div>
-        <button onClick={onScan} style={{
-          flex: "0 0 auto", background: "#2563eb", color: "#fff", fontWeight: 700, fontSize: 15,
-          padding: "14px 24px", border: "none", borderRadius: 8, cursor: "pointer",
+        <button onClick={handleWebsiteScan} disabled={loading} style={{
+          background: "#2563eb", color: "#fff", fontWeight: 700, fontSize: 15,
+          padding: "16px 28px", border: "none", cursor: "pointer",
           display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap",
-          transition: "background 0.15s",
+          opacity: loading ? 0.7 : 1,
         }}
-          onMouseOver={e => e.currentTarget.style.background = "#1d4ed8"}
+          onMouseOver={e => { if (!loading) e.currentTarget.style.background = "#1d4ed8"; }}
           onMouseOut={e => e.currentTarget.style.background = "#2563eb"}>
-          Scan Free <ArrowRight style={{ width: 16, height: 16 }} />
+          {loading ? "Scanning..." : <>Scan Free <ArrowRight style={{ width: 16, height: 16 }} /></>}
         </button>
       </div>
+
       {scanError && <p style={{ color: "#ef4444", fontSize: 13, fontWeight: 600, textAlign: "center", marginTop: 10 }}>{scanError}</p>}
-      <div style={{ display: "flex", justifyContent: "center", gap: 24, flexWrap: "wrap", marginTop: 16, fontSize: 13, color: dark ? "#64748b" : "#94a3b8", fontWeight: 500 }}>
+
+      {/* "I don't have a website" toggle */}
+      {!showManual && (
+        <p style={{ textAlign: "center", marginTop: 12 }}>
+          <button onClick={() => setShowManual(true)} style={{ background: "none", border: "none", cursor: "pointer", color: dark ? "#60a5fa" : "#2563eb", fontSize: 13, fontWeight: 600, textDecoration: "underline", padding: 0 }}>
+            I don't have a website
+          </button>
+        </p>
+      )}
+
+      {/* Manual fields — animate in */}
+      {showManual && (
+        <div style={{ maxWidth: 560, margin: "12px auto 0", overflow: "hidden", animation: "slideDown 0.3s ease-out" }}>
+          <style>{`@keyframes slideDown{from{max-height:0;opacity:0}to{max-height:200px;opacity:1}}`}</style>
+          <div style={{
+            display: "flex", flexWrap: "wrap", gap: 8,
+            background: bg, border: `1px solid ${border}`, borderRadius: 10, padding: 8,
+          }}>
+            <div style={{ flex: "2 1 180px" }}>
+              <input type="text" value={biz} onChange={e => setBiz(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && handleManualScan()}
+                placeholder="Business name"
+                style={{ width: "100%", padding: "12px 14px", fontSize: 15, border: `1px solid ${border}`, borderRadius: 8, outline: "none", background: "transparent", color: text, boxSizing: "border-box", fontFamily: "'Inter', sans-serif" }} />
+            </div>
+            <div style={{ flex: "1 1 120px" }}>
+              <input type="text" value={city} onChange={e => setCity(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && handleManualScan()}
+                placeholder="City"
+                style={{ width: "100%", padding: "12px 14px", fontSize: 15, border: `1px solid ${border}`, borderRadius: 8, outline: "none", background: "transparent", color: text, boxSizing: "border-box", fontFamily: "'Inter', sans-serif" }} />
+            </div>
+            <div style={{ flex: "0 0 70px" }}>
+              <input type="text" value={st} onChange={e => setSt(e.target.value.toUpperCase().slice(0, 2))}
+                onKeyDown={e => e.key === "Enter" && handleManualScan()}
+                placeholder="ST" maxLength={2}
+                style={{ width: "100%", padding: "12px 14px", fontSize: 15, border: `1px solid ${border}`, borderRadius: 8, outline: "none", background: "transparent", color: text, boxSizing: "border-box", fontFamily: "'Inter', sans-serif", textAlign: "center" }} />
+            </div>
+            <button onClick={handleManualScan} style={{
+              flex: "0 0 auto", background: "#2563eb", color: "#fff", fontWeight: 700, fontSize: 14,
+              padding: "12px 20px", border: "none", borderRadius: 8, cursor: "pointer",
+              display: "flex", alignItems: "center", gap: 6,
+            }}>
+              Scan <ArrowRight style={{ width: 14, height: 14 }} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: "flex", justifyContent: "center", gap: 24, flexWrap: "wrap", marginTop: 16, fontSize: 13, color: muted, fontWeight: 500 }}>
         <span style={{ display: "flex", alignItems: "center", gap: 5 }}><Shield style={{ width: 13, height: 13 }} /> No account needed</span>
         <span style={{ display: "flex", alignItems: "center", gap: 5 }}><Zap style={{ width: 13, height: 13 }} /> No credit card</span>
         <span style={{ display: "flex", alignItems: "center", gap: 5 }}><Clock style={{ width: 13, height: 13 }} /> Results in 60 seconds</span>
@@ -110,12 +188,6 @@ function ScanBar({ biz, city, st, onBiz, onCity, onSt, onScan, dark = false, inp
 
 export default function Home() {
   const navigate = useNavigate();
-  const [bizName, setBizName] = useState("");
-  const [cityVal, setCityVal] = useState("");
-  const [stateVal, setStateVal] = useState("");
-  const [bizName2, setBizName2] = useState("");
-  const [cityVal2, setCityVal2] = useState("");
-  const [stateVal2, setStateVal2] = useState("");
   const [openFaq, setOpenFaq] = useState(/** @type {number|null} */ (null));
   const [scoreVisible, setScoreVisible] = useState(false);
   const scoreRef = useRef(null);
@@ -137,14 +209,15 @@ export default function Home() {
     return () => observer.disconnect();
   }, []);
 
-  const handleScan = (biz, city, st) => {
+  const handleScan = (biz, city, st, website) => {
     const b = (biz || "").trim();
     const c = (city || "").trim();
     const s = (st || "").trim();
+    const w = (website || "").trim();
     if (!b) { setScanError("Please enter a business name"); return; }
     if (!c) { setScanError("Please enter a city"); return; }
     setScanError("");
-    navigate("/scanning", { state: { businessName: b, city: c, state: s } });
+    navigate("/scanning", { state: { businessName: b, city: c, state: s, website: w } });
   };
 
   const h = { fontFamily: "'Plus Jakarta Sans', sans-serif" };
@@ -187,7 +260,7 @@ export default function Home() {
           <p style={{ fontSize: "clamp(16px, 1.8vw, 19px)", color: "#64748b", lineHeight: 1.65, maxWidth: 580, margin: "0 auto 40px", letterSpacing: "-0.01em" }}>
             See exactly how your business looks online compared to competitors. Google, Yelp, Facebook, your website &mdash; scanned in 60 seconds.
           </p>
-          <ScanBar biz={bizName} city={cityVal} st={stateVal} onBiz={setBizName} onCity={setCityVal} onSt={setStateVal} onScan={() => handleScan(bizName, cityVal, stateVal)} inputId="heroInput" scanError={scanError} />
+          <ScanBar onNavigate={(b, c, s, w) => handleScan(b, c, s, w)} inputId="heroInput" scanError={scanError} setScanError={setScanError} />
         </div>
       </section>
 
@@ -386,7 +459,7 @@ export default function Home() {
             Find out where you stand.<br /><span style={{ color: "#60a5fa" }}>Right now. Free.</span>
           </h2>
           <p style={{ fontSize: 17, color: "#94a3b8", marginBottom: 36 }}>60 seconds. No account. No credit card.</p>
-          <ScanBar biz={bizName2} city={cityVal2} st={stateVal2} onBiz={setBizName2} onCity={setCityVal2} onSt={setStateVal2} onScan={() => handleScan(bizName2, cityVal2, stateVal2)} dark scanError={scanError} />
+          <ScanBar onNavigate={(b, c, s, w) => handleScan(b, c, s, w)} dark scanError={scanError} setScanError={setScanError} />
         </div>
       </section>
 
