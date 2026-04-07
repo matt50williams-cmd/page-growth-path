@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
-import { BarChart2, Download, Share2, Copy, CheckCircle, AlertCircle, Search, Globe, Star as StarIcon, Loader2, Shield, Zap, ExternalLink } from "lucide-react";
+import { BarChart2, Download, Share2, Copy, CheckCircle, AlertCircle, Search, Globe, Star as StarIcon, Loader2, Shield, Zap, ExternalLink, ChevronDown, ChevronUp, TrendingUp, TrendingDown, Minus, Plus } from "lucide-react";
 
 const API_BASE = "https://pageaudit-engine.onrender.com";
 
@@ -80,6 +80,259 @@ function FindingCard({ f, snapshot }) {
   );
 }
 
+function ThreatBadge({ level }) {
+  const colors = { high: { bg: "#fef2f2", text: "#dc2626", border: "#fecaca" }, medium: { bg: "#fffbeb", text: "#d97706", border: "#fde68a" }, low: { bg: "#f0fdf4", text: "#16a34a", border: "#bbf7d0" } };
+  const c = colors[level?.toLowerCase()] || colors.low;
+  return <span style={{ background: c.bg, color: c.text, border: `1px solid ${c.border}`, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 100, textTransform: "uppercase", letterSpacing: "0.04em" }}>{level || "Unknown"}</span>;
+}
+
+function UrgencyBadge({ level }) {
+  const colors = { high: { bg: "#fef2f2", text: "#dc2626" }, medium: { bg: "#fffbeb", text: "#d97706" }, low: { bg: "#f0fdf4", text: "#16a34a" } };
+  const c = colors[level?.toLowerCase()] || colors.medium;
+  return <span style={{ background: c.bg, color: c.text, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 100, textTransform: "uppercase" }}>{level}</span>;
+}
+
+function FrequencyBadge({ freq }) {
+  const colors = { high: "#2563eb", medium: "#7c3aed", low: "#6b7280" };
+  return <span style={{ background: `${colors[freq?.toLowerCase()] || "#6b7280"}15`, color: colors[freq?.toLowerCase()] || "#6b7280", fontSize: 10, fontWeight: 600, padding: "2px 6px", borderRadius: 4 }}>{freq}</span>;
+}
+
+function CompetitorIntelligenceSection({ auditId, profiles, changes, competitorList, businessName, city, W, H }) {
+  const [activeTab, setActiveTab] = useState("intelligence");
+  const [expandedCards, setExpandedCards] = useState({});
+  const [addName, setAddName] = useState("");
+  const [addCity, setAddCity] = useState("");
+  const [adding, setAdding] = useState(false);
+  const [localProfiles, setLocalProfiles] = useState(profiles || []);
+  const [localChanges, setLocalChanges] = useState(changes || []);
+
+  const toggleCard = (name) => setExpandedCards(prev => ({ ...prev, [name]: !prev[name] }));
+
+  const handleAddCompetitor = async () => {
+    if (!addName.trim()) return;
+    setAdding(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/audits/${auditId}/update-competitors`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ competitors: [{ name: addName.trim(), city: addCity.trim() || city || "" }] })
+      });
+      if (res.ok) {
+        const intel = await fetch(`${API_BASE}/api/audits/${auditId}/competitor-intelligence`);
+        if (intel.ok) { const d = await intel.json(); setLocalProfiles(d.profiles || []); setLocalChanges(d.changes || []); }
+        setAddName(""); setAddCity("");
+      }
+    } catch (e) { console.error("Add competitor failed:", e); }
+    setAdding(false);
+  };
+
+  const hasChanges = localChanges.length > 0;
+
+  return (
+    <div style={{ marginBottom: 32 }}>
+      <h2 style={{ ...H, fontSize: 22, fontWeight: 700, color: "#0f172a", marginBottom: 6 }}>Competitor Intelligence</h2>
+      <p style={{ color: "#64748b", fontSize: 13, marginBottom: 16 }}>Deep analysis of your competitors' online presence and reputation</p>
+
+      {/* Tab switcher */}
+      <div style={{ display: "flex", gap: 0, marginBottom: 20, borderBottom: "2px solid #e5e7eb" }}>
+        <button onClick={() => setActiveTab("intelligence")} style={{ padding: "10px 20px", fontSize: 13, fontWeight: 600, color: activeTab === "intelligence" ? "#2563eb" : "#6b7280", borderBottom: activeTab === "intelligence" ? "2px solid #2563eb" : "2px solid transparent", marginBottom: -2, background: "none", border: "none", borderBottomWidth: 2, borderBottomStyle: "solid", borderBottomColor: activeTab === "intelligence" ? "#2563eb" : "transparent", cursor: "pointer" }}>Intelligence</button>
+        {hasChanges && <button onClick={() => setActiveTab("changes")} style={{ padding: "10px 20px", fontSize: 13, fontWeight: 600, color: activeTab === "changes" ? "#2563eb" : "#6b7280", borderBottom: activeTab === "changes" ? "2px solid #2563eb" : "2px solid transparent", marginBottom: -2, background: "none", border: "none", borderBottomWidth: 2, borderBottomStyle: "solid", borderBottomColor: activeTab === "changes" ? "#2563eb" : "transparent", cursor: "pointer" }}>Changes {localChanges.length > 0 && <span style={{ background: "#ef4444", color: "#fff", fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 100, marginLeft: 6 }}>{localChanges.length}</span>}</button>}
+      </div>
+
+      {/* INTELLIGENCE TAB */}
+      {activeTab === "intelligence" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {localProfiles.length === 0 ? (
+            <div style={{ ...W, padding: 24, textAlign: "center" }}>
+              <p style={{ color: "#64748b", fontSize: 14, marginBottom: 6 }}>No competitor intelligence yet.</p>
+              <p style={{ color: "#9ca3af", fontSize: 13 }}>Add competitors below to start gathering intelligence.</p>
+            </div>
+          ) : localProfiles.map((p, idx) => {
+            const research = p.raw_research || {};
+            const expanded = expandedCards[p.competitor_name];
+            const praiseThemes = p.top_praise_themes || research.reviewAnalysis?.praiseThemes || [];
+            const complaintThemes = p.top_complaint_themes || research.reviewAnalysis?.complaintThemes || [];
+            const advantages = p.competitive_advantages || research.competitiveProfile?.uniqueAdvantages || [];
+            const weaknesses = p.competitive_weaknesses || research.competitiveProfile?.exploitableWeaknesses || [];
+            const keyIntel = research.keyIntelligence || "";
+
+            return (
+              <div key={idx} style={{ ...W, overflow: "hidden" }}>
+                {/* Header row */}
+                <div onClick={() => toggleCard(p.competitor_name)} style={{ padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", background: expanded ? "#f8fafc" : "#fff" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}>{p.competitor_name}</span>
+                    {p.google_rating && <span style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 13, color: "#f59e0b", fontWeight: 600 }}>★ {p.google_rating}</span>}
+                    {p.google_review_count != null && <span style={{ fontSize: 12, color: "#6b7280" }}>{p.google_review_count} reviews</span>}
+                    <ThreatBadge level={p.overall_threat_level} />
+                  </div>
+                  {expanded ? <ChevronUp style={{ width: 18, height: 18, color: "#9ca3af" }} /> : <ChevronDown style={{ width: 18, height: 18, color: "#9ca3af" }} />}
+                </div>
+
+                {/* Expanded details */}
+                {expanded && (
+                  <div style={{ padding: "0 20px 20px", display: "flex", flexDirection: "column", gap: 16 }}>
+                    {/* Praise themes */}
+                    {praiseThemes.length > 0 && (
+                      <div>
+                        <p style={{ fontSize: 12, fontWeight: 700, color: "#059669", textTransform: "uppercase", marginBottom: 8 }}>What customers love about them</p>
+                        {praiseThemes.map((t, i) => (
+                          <div key={i} style={{ marginBottom: 8, padding: "8px 12px", background: "#f0fdf4", borderRadius: 8 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                              <span style={{ fontSize: 13, fontWeight: 600, color: "#15803d" }}>{typeof t === "string" ? t : t.theme}</span>
+                              {t.frequency && <FrequencyBadge freq={t.frequency} />}
+                            </div>
+                            {t.examplePhrases?.length > 0 && <p style={{ fontSize: 12, color: "#6b7280", fontStyle: "italic" }}>"{t.examplePhrases[0]}"</p>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Complaint themes */}
+                    {complaintThemes.length > 0 && (
+                      <div>
+                        <p style={{ fontSize: 12, fontWeight: 700, color: "#dc2626", textTransform: "uppercase", marginBottom: 8 }}>Their problems</p>
+                        {complaintThemes.map((t, i) => {
+                          const isResolved = t.trend?.toLowerCase() === "decreasing" && t.lastSeenApprox && !t.lastSeenApprox.includes("recent");
+                          const isEmerging = t.trend?.toLowerCase() === "increasing" && (!t.lastSeenApprox || t.lastSeenApprox.includes("recent"));
+                          return (
+                            <div key={i} style={{ marginBottom: 8, padding: "8px 12px", background: isResolved ? "#f9fafb" : isEmerging ? "#fef2f2" : "#fff7ed", borderRadius: 8, opacity: isResolved ? 0.6 : 1 }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                                <span style={{ fontSize: 13, fontWeight: 600, color: isResolved ? "#9ca3af" : isEmerging ? "#dc2626" : "#92400e" }}>{typeof t === "string" ? t : t.theme}</span>
+                                {t.trend && (
+                                  <span style={{ display: "flex", alignItems: "center", gap: 2 }}>
+                                    {t.trend.toLowerCase() === "increasing" && <TrendingUp style={{ width: 12, height: 12, color: "#dc2626" }} />}
+                                    {t.trend.toLowerCase() === "decreasing" && <TrendingDown style={{ width: 12, height: 12, color: "#16a34a" }} />}
+                                    {t.trend.toLowerCase() === "stable" && <Minus style={{ width: 12, height: 12, color: "#6b7280" }} />}
+                                  </span>
+                                )}
+                                {isResolved && <span style={{ fontSize: 10, fontWeight: 600, color: "#6b7280" }}>Resolved ✓</span>}
+                                {isEmerging && <span style={{ fontSize: 10, fontWeight: 700, color: "#dc2626" }}>Emerging ⚠️</span>}
+                                {t.frequency && <FrequencyBadge freq={t.frequency} />}
+                              </div>
+                              {t.examplePhrases?.length > 0 && <p style={{ fontSize: 12, color: "#6b7280", fontStyle: "italic" }}>"{t.examplePhrases[0]}"</p>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Competitive advantages */}
+                    {advantages.length > 0 && (
+                      <div>
+                        <p style={{ fontSize: 12, fontWeight: 700, color: "#dc2626", textTransform: "uppercase", marginBottom: 8 }}>Why customers choose them over you</p>
+                        {advantages.map((a, i) => <p key={i} style={{ fontSize: 13, color: "#374151", marginBottom: 4, paddingLeft: 12 }}>• {typeof a === "string" ? a : a.advantage || JSON.stringify(a)}</p>)}
+                      </div>
+                    )}
+
+                    {/* Exploitable weaknesses */}
+                    {weaknesses.length > 0 && (
+                      <div style={{ padding: 14, background: "#f0fdf4", borderRadius: 8, border: "1px solid #bbf7d0" }}>
+                        <p style={{ fontSize: 12, fontWeight: 700, color: "#16a34a", textTransform: "uppercase", marginBottom: 8 }}>Their weak spots — where you can win</p>
+                        {weaknesses.map((w, i) => <p key={i} style={{ fontSize: 13, color: "#15803d", marginBottom: 4, paddingLeft: 12, fontWeight: 500 }}>• {typeof w === "string" ? w : JSON.stringify(w)}</p>)}
+                      </div>
+                    )}
+
+                    {/* Key intelligence callout */}
+                    {keyIntel && (
+                      <div style={{ padding: 16, background: "#eff6ff", borderRadius: 8, border: "1px solid #bfdbfe" }}>
+                        <p style={{ fontSize: 11, fontWeight: 700, color: "#2563eb", textTransform: "uppercase", marginBottom: 6 }}>Key Intelligence</p>
+                        <p style={{ fontSize: 14, color: "#1e40af", lineHeight: 1.6 }}>{keyIntel}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* CHANGES TAB */}
+      {activeTab === "changes" && hasChanges && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {localChanges.map((ch, idx) => {
+            const ratingDelta = parseFloat(ch.rating_change) || 0;
+            const reviewDelta = ch.review_count_change || 0;
+            const analysis = ch.analysis || {};
+            const newThreats = ch.new_complaint_themes || analysis.newThreats || [];
+            const newOpps = ch.resolved_complaint_themes || analysis.newOpportunities || [];
+            return (
+              <div key={idx} style={{ ...W, padding: 20 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}>{ch.competitor_name}</span>
+                  <span style={{ fontSize: 12, color: "#6b7280" }}>—</span>
+                  <span style={{ fontSize: 13, color: "#374151", fontStyle: "italic" }}>{ch.summary || analysis.headline || "Changes detected"}</span>
+                </div>
+
+                <div style={{ display: "flex", gap: 16, marginBottom: 14, flexWrap: "wrap" }}>
+                  {/* Rating change */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ fontSize: 12, color: "#6b7280" }}>Rating:</span>
+                    <span style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 14, fontWeight: 700, color: ratingDelta > 0 ? "#dc2626" : ratingDelta < 0 ? "#16a34a" : "#6b7280" }}>
+                      {ratingDelta > 0 ? <TrendingUp style={{ width: 14, height: 14 }} /> : ratingDelta < 0 ? <TrendingDown style={{ width: 14, height: 14 }} /> : <Minus style={{ width: 14, height: 14 }} />}
+                      {ratingDelta > 0 ? "+" : ""}{ratingDelta.toFixed(1)}
+                    </span>
+                  </div>
+                  {/* Review count change */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ fontSize: 12, color: "#6b7280" }}>Reviews:</span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: reviewDelta > 0 ? "#dc2626" : reviewDelta < 0 ? "#16a34a" : "#6b7280" }}>
+                      {reviewDelta > 0 ? "+" : ""}{reviewDelta}
+                    </span>
+                  </div>
+                  {/* Velocity */}
+                  {ch.threat_level_change && <div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ fontSize: 12, color: "#6b7280" }}>Momentum:</span><span style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>{ch.threat_level_change}</span></div>}
+                </div>
+
+                {/* New threats */}
+                {newThreats.length > 0 && (
+                  <div style={{ marginBottom: 10, padding: 12, background: "#fef2f2", borderRadius: 8 }}>
+                    <p style={{ fontSize: 11, fontWeight: 700, color: "#dc2626", textTransform: "uppercase", marginBottom: 6 }}>New threats this month</p>
+                    {newThreats.map((t, i) => <p key={i} style={{ fontSize: 13, color: "#991b1b", marginBottom: 2 }}>• {typeof t === "string" ? t : JSON.stringify(t)}</p>)}
+                  </div>
+                )}
+
+                {/* New opportunities */}
+                {newOpps.length > 0 && (
+                  <div style={{ marginBottom: 10, padding: 12, background: "#f0fdf4", borderRadius: 8 }}>
+                    <p style={{ fontSize: 11, fontWeight: 700, color: "#16a34a", textTransform: "uppercase", marginBottom: 6 }}>New opportunities this month</p>
+                    {newOpps.map((o, i) => <p key={i} style={{ fontSize: 13, color: "#15803d", marginBottom: 2 }}>• {typeof o === "string" ? o : JSON.stringify(o)}</p>)}
+                  </div>
+                )}
+
+                {/* Recommendation */}
+                {analysis.recommendation && (
+                  <div style={{ padding: 14, background: "#eff6ff", borderRadius: 8, border: "1px solid #bfdbfe", display: "flex", alignItems: "flex-start", gap: 10 }}>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontSize: 11, fontWeight: 700, color: "#2563eb", textTransform: "uppercase", marginBottom: 4 }}>Recommended Action</p>
+                      <p style={{ fontSize: 13, color: "#1e40af", lineHeight: 1.5 }}>{analysis.recommendation}</p>
+                    </div>
+                    {analysis.urgency && <UrgencyBadge level={analysis.urgency} />}
+                  </div>
+                )}
+
+                <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 8 }}>Detected {ch.detected_at ? new Date(ch.detected_at).toLocaleDateString() : ""}</p>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Add competitor */}
+      <div style={{ ...W, padding: 20, marginTop: 20 }}>
+        <p style={{ fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 10 }}>Not seeing your real competitors? Add them:</p>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          <input value={addName} onChange={e => setAddName(e.target.value)} placeholder="Business Name" style={{ flex: 1, minWidth: 180, padding: "8px 12px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, outline: "none" }} />
+          <input value={addCity} onChange={e => setAddCity(e.target.value)} placeholder="City, State" style={{ flex: 1, minWidth: 140, padding: "8px 12px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, outline: "none" }} />
+          <button onClick={handleAddCompetitor} disabled={adding || !addName.trim()} style={{ background: adding ? "#9ca3af" : "#2563eb", color: "#fff", border: "none", padding: "8px 16px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: adding ? "default" : "pointer", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}>
+            {adding ? <><Loader2 style={{ width: 14, height: 14, animation: "spin 1s linear infinite" }} /> Researching...</> : <><Plus style={{ width: 14, height: 14 }} /> Add Competitor</>}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ScanReport() {
   const { auditId } = useParams();
   const location = useLocation();
@@ -93,10 +346,12 @@ export default function ScanReport() {
   const [quoteSubmitting, setQuoteSubmitting] = useState(false);
   const [barsVisible, setBarsVisible] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [compIntel, setCompIntel] = useState(null);
   const barsRef = useRef(null);
 
   useEffect(() => { const l = document.createElement("link"); l.rel = "stylesheet"; l.href = "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600&display=swap"; document.head.appendChild(l); return () => { document.head.removeChild(l); }; }, []);
   useEffect(() => { window.scrollTo(0, 0); }, []);
+  useEffect(() => { if (!auditId) return; fetch(`${API_BASE}/api/audits/${auditId}/competitor-intelligence`).then(r => r.ok ? r.json() : null).then(d => { if (d) setCompIntel(d); }).catch(() => {}); }, [auditId]);
 
   useEffect(() => {
     if (data) { setLoading(false); return; }
@@ -390,59 +645,17 @@ export default function ScanReport() {
           </div>
         )}
 
-        {/* ═══ 5. COMPETITOR COMPARISON (always shows) ═══ */}
-        <div style={{ marginBottom: 32 }}>
-          <h2 style={{ ...H, fontSize: 22, fontWeight: 700, color: "#0f172a", marginBottom: 6 }}>Competitor Comparison</h2>
-          {competitors?.estimated && <p style={{ color: "#9ca3af", fontSize: 12, marginBottom: 10 }}>Estimated competitors based on local search</p>}
-          {competitorSummary && <p style={{ color: "#4b5563", fontSize: 14, lineHeight: 1.6, marginBottom: 16 }}>{competitorSummary}</p>}
-
-          {competitors?.competitors?.length > 0 ? (
-            <div style={{ ...W, padding: 20 }}>
-              {competitors.ranking && <p style={{ fontSize: 14, fontWeight: 700, marginBottom: 14, color: competitors.ranking <= 2 ? "#059669" : "#dc2626" }}>You rank #{competitors.ranking} of {competitors.totalInArea} businesses in your area</p>}
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-                <thead><tr style={{ borderBottom: "2px solid #e5e7eb" }}>
-                  <th style={{ textAlign: "left", padding: "8px 0", color: "#6b7280", fontWeight: 600 }}>Business</th>
-                  <th style={{ textAlign: "center", padding: "8px 0", color: "#6b7280", fontWeight: 600 }}>Rating</th>
-                  <th style={{ textAlign: "center", padding: "8px 0", color: "#6b7280", fontWeight: 600 }}>Reviews</th>
-                </tr></thead>
-                <tbody>
-                  <tr style={{ borderBottom: "1px solid #f3f4f6", background: "#f0fdf4" }}>
-                    <td style={{ padding: "10px 0 10px 8px", fontWeight: 700, color: "#0f172a" }}>{businessName} (You)</td>
-                    <td style={{ textAlign: "center", fontWeight: 700, color: "#059669" }}>{g.rating || "—"}</td>
-                    <td style={{ textAlign: "center", fontWeight: 700, color: "#059669" }}>{g.reviewCount || "—"}</td>
-                  </tr>
-                  {competitors.competitors.map((c, i) => {
-                    const myRating = g.rating || 0;
-                    const myReviews = g.reviewCount || 0;
-                    const ratingColor = c.rating && myRating ? (c.rating > myRating ? "#dc2626" : c.rating < myRating ? "#059669" : "#6b7280") : "#6b7280";
-                    const reviewColor = c.reviewCount && myReviews ? (c.reviewCount > myReviews ? "#dc2626" : c.reviewCount < myReviews ? "#059669" : "#6b7280") : "#6b7280";
-                    return (
-                      <tr key={i} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                        <td style={{ padding: "10px 0 10px 8px", color: "#374151" }}>{c.name}{c.estimated ? <span style={{ color: "#9ca3af", fontSize: 10, marginLeft: 6 }}>est.</span> : null}</td>
-                        <td style={{ textAlign: "center", color: ratingColor, fontWeight: 600 }}>{c.rating || "—"}</td>
-                        <td style={{ textAlign: "center", color: reviewColor, fontWeight: 600 }}>{c.reviewCount || "—"}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              <p style={{ color: "#9ca3af", fontSize: 11, marginTop: 10 }}>Red = competitor is ahead. Green = you are ahead.</p>
-            </div>
-          ) : (
-            <div style={{ ...W, padding: 24, textAlign: "center" }}>
-              <p style={{ color: "#64748b", fontSize: 14, marginBottom: 6 }}>Competitor data is being gathered for {city || "your area"}.</p>
-              <p style={{ color: "#9ca3af", fontSize: 13 }}>A full comparison will appear after your next scan with verified business pages.</p>
-            </div>
-          )}
-
-          {competitorAnalysis && (
-            <div style={{ marginTop: 14 }}>
-              {competitorAnalysis.comparisonSummary && <div style={{ ...W, padding: 18, marginBottom: 10 }}><p style={{ color: "#374151", fontSize: 14, lineHeight: 1.65 }}>{competitorAnalysis.comparisonSummary}</p></div>}
-              {competitorAnalysis.keyGaps?.length > 0 && <div style={{ ...W, padding: 18, marginBottom: 10, borderLeft: "4px solid #ef4444" }}><p style={{ color: "#dc2626", fontSize: 11, fontWeight: 700, textTransform: "uppercase", marginBottom: 6 }}>Key Gaps</p>{competitorAnalysis.keyGaps.map((g, i) => <p key={i} style={{ color: "#4b5563", fontSize: 13, lineHeight: 1.5, marginBottom: 4 }}>• {g}</p>)}</div>}
-              {competitorAnalysis.opportunitiesToWin?.length > 0 && <div style={{ ...W, padding: 18, borderLeft: "4px solid #2563eb" }}><p style={{ color: "#2563eb", fontSize: 11, fontWeight: 700, textTransform: "uppercase", marginBottom: 6 }}>Opportunities</p>{competitorAnalysis.opportunitiesToWin.map((o, i) => <p key={i} style={{ color: "#4b5563", fontSize: 13, lineHeight: 1.5, marginBottom: 4 }}>• {o}</p>)}</div>}
-            </div>
-          )}
-        </div>
+        {/* ═══ 5. COMPETITOR INTELLIGENCE ═══ */}
+        <CompetitorIntelligenceSection
+          auditId={auditId}
+          profiles={compIntel?.profiles || []}
+          changes={compIntel?.changes || []}
+          competitorList={compIntel?.competitorList || []}
+          businessName={businessName}
+          city={city}
+          W={W}
+          H={H}
+        />
 
         {/* ═══ 5b. QUICK WINS ═══ */}
         {quickWins?.length > 0 && (

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
-import { LayoutDashboard, Users, DollarSign, BarChart2, Globe, Star, TrendingUp, RefreshCw, Trash2, Mail, Loader2, LogOut, ChevronDown, UserCheck, AlertTriangle } from "lucide-react";
+import { LayoutDashboard, Users, DollarSign, BarChart2, Globe, Star, TrendingUp, RefreshCw, Trash2, Mail, Loader2, LogOut, ChevronDown, UserCheck, AlertTriangle, Shield, Plus, X, TrendingDown, Minus } from "lucide-react";
 
 const API_BASE = "https://pageaudit-engine.onrender.com";
 
@@ -35,9 +35,10 @@ const NAV_ITEMS = [
   { key: "reviews", label: "Reviews", icon: Star },
   { key: "reps", label: "Reps", icon: UserCheck },
   { key: "services", label: "Services", icon: Star },
+  { key: "competitors", label: "Competitors", icon: Shield },
 ];
 
-const TAB_TITLES = { overview: "Overview", customers: "Customers", revenue: "Revenue", funnel: "Funnel", seo: "SEO Audits", analytics: "Analytics", reviews: "Reviews", reps: "Rep Management", services: "Service Requests" };
+const TAB_TITLES = { overview: "Overview", customers: "Customers", revenue: "Revenue", funnel: "Funnel", seo: "SEO Audits", analytics: "Analytics", reviews: "Reviews", reps: "Rep Management", services: "Service Requests", competitors: "Competitor Intelligence" };
 
 const TH = "text-left text-[12px] font-semibold uppercase tracking-[0.04em] text-[#6b7280] px-4 py-3";
 const CARD = "bg-white rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.08)]";
@@ -59,6 +60,13 @@ export default function Backoffice() {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [filterStatus, setFilterStatus] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [compAuditId, setCompAuditId] = useState(null);
+  const [compIntel, setCompIntel] = useState(null);
+  const [compLoading, setCompLoading] = useState(false);
+  const [compRescanning, setCompRescanning] = useState(false);
+  const [compAddName, setCompAddName] = useState("");
+  const [compAddCity, setCompAddCity] = useState("");
+  const [compAdding, setCompAdding] = useState(false);
 
   useEffect(() => {
     if (isLoadingAuth) return;
@@ -730,6 +738,198 @@ export default function Backoffice() {
               </div>
             </div>
           )}
+
+          {activeTab === "competitors" && (() => {
+            const auditOptions = audits.filter(a => a.status === "completed");
+
+            const loadCompIntel = async (auditId) => {
+              setCompAuditId(auditId);
+              setCompLoading(true);
+              setCompIntel(null);
+              try {
+                const token = document.cookie.match(/pageaudit_token=([^;]+)/)?.[1] || localStorage.getItem("pageaudit_token");
+                const res = await fetch(`${API_BASE}/api/audits/${auditId}/competitor-intelligence`, { headers: { Authorization: `Bearer ${token}` } });
+                if (res.ok) setCompIntel(await res.json());
+              } catch (e) { console.error("Load intel failed:", e); }
+              setCompLoading(false);
+            };
+
+            const handleRescan = async () => {
+              if (!compAuditId) return;
+              setCompRescanning(true);
+              try {
+                const token = document.cookie.match(/pageaudit_token=([^;]+)/)?.[1] || localStorage.getItem("pageaudit_token");
+                await fetch(`${API_BASE}/api/audits/${compAuditId}/rescan-competitors`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` } });
+                await loadCompIntel(compAuditId);
+              } catch (e) { console.error("Rescan failed:", e); }
+              setCompRescanning(false);
+            };
+
+            const handleAddComp = async () => {
+              if (!compAuditId || !compAddName.trim()) return;
+              setCompAdding(true);
+              try {
+                const token = document.cookie.match(/pageaudit_token=([^;]+)/)?.[1] || localStorage.getItem("pageaudit_token");
+                await fetch(`${API_BASE}/api/audits/${compAuditId}/update-competitors`, {
+                  method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                  body: JSON.stringify({ competitors: [{ name: compAddName.trim(), city: compAddCity.trim() }] })
+                });
+                setCompAddName(""); setCompAddCity("");
+                await loadCompIntel(compAuditId);
+              } catch (e) { console.error("Add failed:", e); }
+              setCompAdding(false);
+            };
+
+            const handleRemoveComp = async (name) => {
+              if (!compAuditId || !compIntel) return;
+              const updated = (compIntel.competitorList || []).filter(c => c.name !== name);
+              try {
+                const token = document.cookie.match(/pageaudit_token=([^;]+)/)?.[1] || localStorage.getItem("pageaudit_token");
+                await fetch(`${API_BASE}/api/audits/${compAuditId}/update-competitors`, {
+                  method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                  body: JSON.stringify({ competitors: updated })
+                });
+                await loadCompIntel(compAuditId);
+              } catch (e) { console.error("Remove failed:", e); }
+            };
+
+            return (
+              <div className="space-y-6">
+                {/* Audit selector */}
+                <div className={`${CARD} p-6`}>
+                  <h3 className={`${SECTION_TITLE} mb-4`}>Select Audit</h3>
+                  <select
+                    value={compAuditId || ""}
+                    onChange={e => { const id = parseInt(e.target.value); if (id) loadCompIntel(id); }}
+                    className="w-full max-w-md border border-[#d1d5db] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Choose an audit...</option>
+                    {auditOptions.map(a => (
+                      <option key={a.id} value={a.id}>{a.business_name || a.customer_name || a.email} — {a.city || "Unknown"}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {compLoading && (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="w-6 h-6 text-blue-500 animate-spin mr-3" />
+                    <span className="text-sm text-[#6b7280]">Loading competitor intelligence...</span>
+                  </div>
+                )}
+
+                {compIntel && !compLoading && (
+                  <>
+                    {/* Current competitor list */}
+                    <div className={`${CARD} p-6`}>
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h3 className={SECTION_TITLE}>Competitor List</h3>
+                          {compIntel.lastUpdated && <p className="text-xs text-[#9ca3af] mt-1">Last researched: {new Date(compIntel.lastUpdated).toLocaleDateString()}</p>}
+                        </div>
+                        <button onClick={handleRescan} disabled={compRescanning}
+                          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold ${compRescanning ? "bg-gray-100 text-gray-400" : "bg-blue-500 text-white hover:bg-blue-600"} transition-colors`}>
+                          {compRescanning ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Rescanning...</> : <><RefreshCw className="w-3.5 h-3.5" /> Rescan All Competitors</>}
+                        </button>
+                      </div>
+
+                      {(compIntel.competitorList || []).length === 0 ? (
+                        <p className="text-sm text-[#9ca3af] text-center py-4">No competitors configured. Add one below.</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {compIntel.competitorList.map((c, i) => {
+                            const profile = (compIntel.profiles || []).find(p => p.competitor_name === c.name);
+                            return (
+                              <div key={i} className="flex items-center justify-between px-4 py-3 bg-[#f9fafb] rounded-lg">
+                                <div className="flex items-center gap-3">
+                                  <span className="font-semibold text-sm text-[#111827]">{c.name}</span>
+                                  <span className="text-xs text-[#9ca3af]">{c.city || ""}</span>
+                                  {profile && <>
+                                    {profile.google_rating && <span className="text-xs text-yellow-500 font-semibold">★ {profile.google_rating}</span>}
+                                    {profile.google_review_count != null && <span className="text-xs text-[#6b7280]">{profile.google_review_count} reviews</span>}
+                                    {profile.overall_threat_level && (
+                                      <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
+                                        profile.overall_threat_level.toLowerCase() === "high" ? "bg-red-50 text-red-600 border border-red-200" :
+                                        profile.overall_threat_level.toLowerCase() === "medium" ? "bg-yellow-50 text-yellow-600 border border-yellow-200" :
+                                        "bg-green-50 text-green-600 border border-green-200"
+                                      }`}>{profile.overall_threat_level}</span>
+                                    )}
+                                  </>}
+                                </div>
+                                <button onClick={() => handleRemoveComp(c.name)} className="text-[#9ca3af] hover:text-red-500 transition-colors" title="Remove">
+                                  <X className="w-4 h-4" />
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Add competitor */}
+                      <div className="flex items-center gap-2 mt-4 pt-4 border-t border-[#e5e7eb]">
+                        <input value={compAddName} onChange={e => setCompAddName(e.target.value)} placeholder="Business Name"
+                          className="flex-1 border border-[#d1d5db] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        <input value={compAddCity} onChange={e => setCompAddCity(e.target.value)} placeholder="City, State"
+                          className="flex-1 border border-[#d1d5db] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        <button onClick={handleAddComp} disabled={compAdding || !compAddName.trim()}
+                          className={`flex items-center gap-1 px-4 py-2 rounded-lg text-xs font-semibold ${compAdding ? "bg-gray-100 text-gray-400" : "bg-green-500 text-white hover:bg-green-600"} transition-colors whitespace-nowrap`}>
+                          {compAdding ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Adding...</> : <><Plus className="w-3.5 h-3.5" /> Add Competitor</>}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Changes timeline */}
+                    <div className={`${CARD} p-6`}>
+                      <h3 className={`${SECTION_TITLE} mb-4`}>Competitor Activity Timeline</h3>
+                      <p className="text-xs text-[#9ca3af] mb-4">Last 3 months of competitor activity</p>
+
+                      {(compIntel.changes || []).length === 0 ? (
+                        <p className="text-sm text-[#9ca3af] text-center py-6">No changes detected yet. Changes will appear after the first rescan.</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {compIntel.changes.map((ch, i) => {
+                            const ratingDelta = parseFloat(ch.rating_change) || 0;
+                            const reviewDelta = ch.review_count_change || 0;
+                            const urgency = ch.threat_level_change;
+                            return (
+                              <div key={i} className="flex items-start gap-4 px-4 py-4 bg-[#f9fafb] rounded-lg">
+                                <div className="flex-shrink-0 mt-1">
+                                  {ratingDelta > 0 ? <TrendingUp className="w-4 h-4 text-red-500" /> :
+                                   ratingDelta < 0 ? <TrendingDown className="w-4 h-4 text-green-500" /> :
+                                   <Minus className="w-4 h-4 text-gray-400" />}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap mb-1">
+                                    <span className="font-semibold text-sm text-[#111827]">{ch.competitor_name}</span>
+                                    {urgency && (
+                                      <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
+                                        urgency === "improving" ? "bg-red-50 text-red-600" :
+                                        urgency === "declining" ? "bg-green-50 text-green-600" :
+                                        "bg-gray-50 text-gray-500"
+                                      }`}>{urgency}</span>
+                                    )}
+                                    <span className="text-xs text-[#9ca3af]">{ch.detected_at ? new Date(ch.detected_at).toLocaleDateString() : ""}</span>
+                                  </div>
+                                  <p className="text-sm text-[#374151] mb-2">{ch.summary || "Changes detected"}</p>
+                                  <div className="flex items-center gap-4 text-xs">
+                                    <span className={`font-semibold ${ratingDelta > 0 ? "text-red-500" : ratingDelta < 0 ? "text-green-500" : "text-gray-400"}`}>
+                                      Rating: {ratingDelta > 0 ? "+" : ""}{ratingDelta.toFixed(1)}
+                                    </span>
+                                    <span className={`font-semibold ${reviewDelta > 0 ? "text-red-500" : reviewDelta < 0 ? "text-green-500" : "text-gray-400"}`}>
+                                      Reviews: {reviewDelta > 0 ? "+" : ""}{reviewDelta}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })()}
         </main>
       </div>
 
