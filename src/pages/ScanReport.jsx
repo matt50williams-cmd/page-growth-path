@@ -1,14 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
-import { BarChart2, Download, Share2, Copy, CheckCircle, AlertCircle, Search, Globe, MapPin, Star as StarIcon, Loader2, Shield, Zap, ExternalLink } from "lucide-react";
+import { BarChart2, Download, Share2, Copy, CheckCircle, AlertCircle, Search, Globe, Star as StarIcon, Loader2, Shield, Zap, ExternalLink } from "lucide-react";
 
 const API_BASE = "https://pageaudit-engine.onrender.com";
 
 function scoreColor(s) { if (s >= 70) return "#10b981"; if (s >= 45) return "#f59e0b"; return "#ef4444"; }
 
-const PLATFORM_ICONS = { google: Search, website: Globe, search: Search, nap: MapPin, reviews: StarIcon, facebook: Globe, yelp: StarIcon };
-const PLATFORM_LABELS = { google: "Google Business Profile", website: "Website Quality", search: "Search Visibility", nap: "NAP Consistency", reviews: "Review Intelligence", facebook: "Facebook Presence", yelp: "Yelp Profile" };
-const PLATFORM_MAX = { google: 35, website: 25, search: 20, nap: 10, reviews: 10, facebook: 10, yelp: 10 };
+// Score card icons are defined inline in scoreCards array
 
 const PLANS = [
   { name: "Monthly Monitor", price: "$49", period: "/mo", features: ["Monthly re-scans", "Score tracking", "Email alerts"], featured: false },
@@ -122,10 +120,22 @@ export default function ScanReport() {
 
   if (error || !data) return (<div style={{ minHeight: "100vh", background: "#f9fafb", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Inter', sans-serif" }}><div style={{ textAlign: "center" }}><AlertCircle style={{ width: 48, height: 48, color: "#ef4444", margin: "0 auto 16px", display: "block" }} /><h2 style={{ ...H, color: "#0f172a", fontSize: 24, marginBottom: 8 }}>Report Not Found</h2><p style={{ color: "#64748b", fontSize: 15, marginBottom: 24 }}>{error || "We couldn't load this report."}</p><button onClick={() => navigate("/")} style={{ background: "#2563eb", color: "#fff", border: "none", padding: "12px 24px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Go Home</button></div></div>);
 
-  const { overallScore, scoreLabel, platforms, allFindings: rawFindings, topPriorities, summary, monthlyGoal, dataQuality, businessName, city, state, scannedAt, competitors: rawCompetitors, revenueImpact, quickWins, whatYoureDoingWell, competitorIntel, snapshots, verifiedPages, presenceSection, reportHeadline, lossSummary, competitorSummary, competitorAnalysis, priorityFix, operationalInsights, marketOpportunities, webResearch, businessIntelligence, bbbData } = data;
+  const { overallScore, scoreLabel, google, website, allFindings: rawFindings, topPriorities, summary, monthlyGoal, dataQuality, businessName, city, state, scannedAt, competitors: rawCompetitors, revenueImpact, quickWins, whatYoureDoingWell, competitorIntel, snapshots, verifiedPages, presenceSection, reportHeadline, lossSummary, competitorSummary, competitorAnalysis, priorityFix, operationalInsights, marketOpportunities, webResearch, bbbData, socialLinks,
+    // Legacy support — old scans stored platforms object
+    platforms } = data;
   const sc = scoreColor(overallScore || 0);
   const W = { background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb" };
-  const platformKeys = Object.keys(platforms || {}).filter(k => platforms[k] && !platforms[k].excluded);
+
+  // Build score cards from new shape (google/website direct) or legacy (platforms object)
+  const g = google || platforms?.google || {};
+  const w = website || platforms?.website || {};
+  const reputationScore = (() => { let s = 0; if (webResearch?.bbb?.found) s += 5; if (webResearch?.yelp?.found) s += 5; if (webResearch?.facebook?.found) s += 3; if ((webResearch?.redFlags?.length || 0) === 0) s += 3; return Math.min(s, 20); })();
+  const scoreCards = [
+    { key: 'google', label: 'Google Business Profile', icon: Search, raw: g.rawScore || 0, max: 35, found: g.found !== false },
+    { key: 'website', label: 'Website Quality', icon: Globe, raw: w.rawScore || 0, max: 25, found: w.found !== false && (w.rawScore || 0) > 0 },
+    { key: 'reputation', label: 'Online Reputation', icon: Shield, raw: reputationScore, max: 20, found: !!webResearch },
+    { key: 'competitive', label: 'Competitive Position', icon: StarIcon, raw: (rawCompetitors?.competitors?.length || 0) > 0 ? 10 : 0, max: 10, found: (rawCompetitors?.competitors?.length || 0) > 0 },
+  ];
 
   // Normalize competitors: backend may send {competitors:[...], ranking} or flat [...] or null
   const competitors = (() => {
@@ -239,16 +249,10 @@ export default function ScanReport() {
           </div>
         )}
 
-        {/* ═══ 2. PLATFORM SCORES GRID ═══ */}
+        {/* ═══ 2. SCORE CARDS ═══ */}
         <div ref={barsRef} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 14, marginBottom: 32 }}>
-          {platformKeys.map(key => {
-            const p = platforms?.[key];
-            const Icon = PLATFORM_ICONS[key] || Globe;
-            const label = PLATFORM_LABELS[key] || key;
-            const raw = p?.rawScore || 0;
-            const max = PLATFORM_MAX[key] || 100;
+          {scoreCards.map(({ key, label, icon: Icon, raw, max, found }) => {
             const pct = max > 0 ? Math.round((raw / max) * 100) : 0;
-            const found = p?.found !== false && raw > 0;
             const barColor = pct >= 70 ? "#10b981" : pct >= 45 ? "#f59e0b" : "#ef4444";
             const borderLeft = found ? `4px solid ${barColor}` : "4px solid #d1d5db";
             return (
@@ -404,12 +408,12 @@ export default function ScanReport() {
                 <tbody>
                   <tr style={{ borderBottom: "1px solid #f3f4f6", background: "#f0fdf4" }}>
                     <td style={{ padding: "10px 0 10px 8px", fontWeight: 700, color: "#0f172a" }}>{businessName} (You)</td>
-                    <td style={{ textAlign: "center", fontWeight: 700, color: "#059669" }}>{platforms?.google?.rating || "—"}</td>
-                    <td style={{ textAlign: "center", fontWeight: 700, color: "#059669" }}>{platforms?.google?.reviewCount || "—"}</td>
+                    <td style={{ textAlign: "center", fontWeight: 700, color: "#059669" }}>{g.rating || "—"}</td>
+                    <td style={{ textAlign: "center", fontWeight: 700, color: "#059669" }}>{g.reviewCount || "—"}</td>
                   </tr>
                   {competitors.competitors.map((c, i) => {
-                    const myRating = platforms?.google?.rating || 0;
-                    const myReviews = platforms?.google?.reviewCount || 0;
+                    const myRating = g.rating || 0;
+                    const myReviews = g.reviewCount || 0;
                     const ratingColor = c.rating && myRating ? (c.rating > myRating ? "#dc2626" : c.rating < myRating ? "#059669" : "#6b7280") : "#6b7280";
                     const reviewColor = c.reviewCount && myReviews ? (c.reviewCount > myReviews ? "#dc2626" : c.reviewCount < myReviews ? "#059669" : "#6b7280") : "#6b7280";
                     return (
@@ -525,13 +529,13 @@ export default function ScanReport() {
 
         {/* ═══ 8. AGENCY SERVICES ═══ */}
         {(() => {
-          const gs = platforms?.google?.rawScore; const ws = platforms?.website?.rawScore; const ns = platforms?.nap?.rawScore;
-          const rc = platforms?.google?.reviewCount || 0;
+          const gs = g.rawScore; const ws = w.rawScore;
+          const rc = g.reviewCount || 0;
           const services = [];
           if (ws != null && ws < 15) services.push({ icon: "🌐", title: "Website Rebuild", desc: `Your website scored ${ws}/25. We'll rebuild it fast, modern, and optimized.`, price: "Starting at $1,500", service: "website_build" });
           if ((gs != null && gs < 20) || rc < 20) services.push({ icon: "📍", title: "Local SEO & Google Maps", desc: `You have ${rc} reviews. We'll get you ranking higher within 90 days.`, price: "Starting at $500/mo", service: "local_seo" });
           if (rc < 20) services.push({ icon: "⭐", title: "Review Growth", desc: `You have ${rc} reviews. Top businesses have 50+. We'll get you there.`, price: "Starting at $299/mo", service: "review_management" });
-          if (ns != null && ns < 3) services.push({ icon: "📋", title: "Citation Cleanup", desc: "Your info is wrong on directories. We'll fix every listing.", price: "One-time $199", service: "citation_cleanup" });
+          if (!webResearch?.bbb?.found) services.push({ icon: "📋", title: "Citation & Directory Cleanup", desc: "Your business info may be inconsistent across directories. We'll fix every listing.", price: "One-time $199", service: "citation_cleanup" });
           services.push({ icon: "🚀", title: "Full Service Package", desc: "Website, SEO, reviews, social — done for you monthly.", price: "Custom pricing", service: "full_service_package" });
 
           return services.length > 1 ? (
